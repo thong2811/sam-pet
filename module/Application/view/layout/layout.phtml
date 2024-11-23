@@ -1,0 +1,69 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<?= $this->doctype() ?>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <?= $this->headTitle('Laminas MVC Skeleton')->setSeparator(' - ')->setAutoEscape(false) ?>
+
+        <?= $this->headMeta()
+            ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+            ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+        ?>
+
+        <!-- Styles -->
+        <?= $this->headLink([
+                'rel' => 'shortcut icon',
+                'type' => 'image/vnd.microsoft.icon',
+                'href' => $this->basePath() . '/img/favicon.ico'
+            ])
+            ->prependStylesheet($this->basePath('css/style.css'))
+            ->prependStylesheet($this->basePath('css/bootstrap.min.css')) ?>
+
+        <!-- Scripts -->
+        <?= $this->headScript() ?>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Sam Pet - Dịch Vụ Thú Cưng</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/application/product">Hàng hóa</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Chi</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Kho</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Điều trị</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Báo cáo</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="container">
+            <?= $this->content ?>
+            <hr>
+            <footer>
+                <p>
+                    &copy;2024 Sampet Project
+                </p>
+            </footer>
+        </div>
+        <?= $this->inlineScript()
+            ->prependFile($this->basePath('js/bootstrap.min.js')) ?>
+    </body>
+</html>
