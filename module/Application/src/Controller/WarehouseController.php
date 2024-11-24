@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Application\Controller;
 
 use Application\Model\Product;
+use Application\Model\Warehouse;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
-class ProductController extends AbstractActionController
+class WarehouseController extends AbstractActionController
 {
     public function indexAction()
     {
-        $productModel = new Product();
-        $data = $productModel->getData();
+        $warehouseModel = new Warehouse();
+        $data = $warehouseModel->getData();
         return new ViewModel(['data' => $data]);
     }
 
@@ -28,21 +29,21 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->addRow($postData);
+        $warehouseModel = new Warehouse();
+        $warehouseModel->addRow($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'add']);
+        $this->redirect()->toRoute('warehouse', ['action' => 'add']);
     }
 
     public function editAction()
     {
         $id = $this->params()->fromRoute('id', null);
         if (is_null($id)) {
-            $this->redirect()->toRoute('product', ['action' => 'index']);
+            $this->redirect()->toRoute('warehouse', ['action' => 'index']);
         }
 
-        $productModel = new Product();
-        $data = $productModel->getDataById($id);
+        $warehouseModel = new Warehouse();
+        $data = $warehouseModel->getDataById($id);
         return new ViewModel(['data' => $data]);
     }
 
@@ -51,10 +52,10 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->updateDataById($postData);
+        $warehouseModel = new Warehouse();
+        $warehouseModel->updateDataById($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'edit']);
+        $this->redirect()->toRoute('warehouse', ['action' => 'edit']);
     }
 
     public function doDeleteAction()
@@ -72,8 +73,8 @@ class ProductController extends AbstractActionController
             }
 
             $id = $data['id'];
-            $product = new Product();
-            $product->deleteDataById($id);
+            $warehouseModel = new Warehouse();
+            $warehouseModel->deleteDataById($id);
             return new JsonModel([
                 'success' => true,
                 'message' => 'Xóa thành công!',

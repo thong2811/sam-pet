@@ -20,29 +20,35 @@
                 'type' => 'image/vnd.microsoft.icon',
                 'href' => $this->basePath() . '/img/favicon.ico'
             ])
-            ->prependStylesheet($this->basePath('css/style.css'))
-            ->prependStylesheet($this->basePath('css/bootstrap.min.css')) ?>
+            ->appendStylesheet($this->basePath('css/style.css'))
+            ->appendStylesheet($this->basePath('css/bootstrap.min.css'))
+            ->appendStylesheet('https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css')
+        ?>
 
         <!-- Scripts -->
-        <?= $this->headScript() ?>
+        <?= $this->headScript()
+            ->appendFile($this->basePath('js/bootstrap.min.js'))
+            ->appendFile('https://code.jquery.com/jquery-3.6.0.min.js')
+            ->appendFile('https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js')
+        ?>
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#">Sam Pet - Dịch Vụ Thú Cưng</a>
+                <a class="navbar-brand" href="/product">Sam Pet - Dịch Vụ Thú Cưng</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" href="/application/product">Hàng hóa</a>
+                            <a class="nav-link" href="/product">Hàng hóa</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Chi</a>
+                            <a class="nav-link" href="/warehouse">Chi</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Kho</a>
+                            <a class="nav-link" href="/warehouse">Kho</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#">Điều trị</a>
@@ -63,7 +69,5 @@
                 </p>
             </footer>
         </div>
-        <?= $this->inlineScript()
-            ->prependFile($this->basePath('js/bootstrap.min.js')) ?>
     </body>
 </html>

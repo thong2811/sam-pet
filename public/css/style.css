@@ -15,3 +15,7 @@
 .navbar li.active a {
     color: var(--bs-navbar-active-color);
 }
+
+.data-table th{
+    text-align: center!important;
+}

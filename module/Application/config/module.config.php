@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace Application;
 
-use Laminas\Router\Http\Literal;
+use Application\Service\CsvService;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 
 return [
     'router' => [
         'routes' => [
-            'home' => [
-                'type'    => Literal::class,
+            'product' => [
+                'type'    => Segment::class,
                 'options' => [
-                    'route'    => '/',
+                    'route'    => '/product[/:action][/:id]',
                     'defaults' => [
-                        'controller' => Controller\IndexController::class,
+                        'controller' => Controller\ProductController::class,
                         'action'     => 'index',
                     ],
                 ],
             ],
-            'application' => [
+            'warehouse' => [
                 'type'    => Segment::class,
                 'options' => [
-                    'route'    => '/application[/:action]',
+                    'route'    => '/warehouse[/:action][/:id]',
                     'defaults' => [
-                        'controller' => Controller\IndexController::class,
+                        'controller' => Controller\WarehouseController::class,
                         'action'     => 'index',
                     ],
                 ],
@@ -35,8 +35,15 @@ return [
     ],
     'controllers' => [
         'factories' => [
-            Controller\IndexController::class => InvokableFactory::class,
+            Controller\IndexController::class     => InvokableFactory::class,
+            Controller\ProductController::class   => InvokableFactory::class,
+            Controller\WarehouseController::class => InvokableFactory::class,
         ],
+    ],
+    'service_manager' => [
+        'factories' => [
+            CsvService::class => InvokableFactory::class,
+        ]
     ],
     'view_manager' => [
         'display_not_found_reason' => true,
@@ -53,5 +60,6 @@ return [
         'template_path_stack' => [
             __DIR__ . '/../view',
         ],
+        'strategies' => ['ViewJsonStrategy']
     ],
 ];
