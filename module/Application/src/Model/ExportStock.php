@@ -4,11 +4,11 @@ namespace Application\Model;
 
 use Application\Service\CsvService;
 
-class Warehouse extends CsvService
+class ExportStock extends CsvService
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'quantity', 'price', 'date_added', 'type'],
-        'fileName' => 'warehouse.csv'
+        'header' => ['id', 'quantity', 'date'],
+        'fileName' => 'export-stock.csv'
     ];
 
     public function __construct()

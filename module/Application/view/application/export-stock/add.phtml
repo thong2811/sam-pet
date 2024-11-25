@@ -1,0 +1,93 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+
+<div class="row mt-5">
+    <h1> Nhập hàng hóa </h1>
+    <input type="hidden" id="productList" value='<?= json_encode($this->productList ?? []) ?>'>
+    <form method="post" action="/export-stock/do-add">
+        <div class="container">
+            <label class="form-label">Ngày</label>
+            <input id="date" class="form-control" type="date" />
+
+            <table class="table table-striped table-form">
+                <thead>
+                <tr>
+                    <th>Tên hàng hóa</th>
+                    <th style="width: 150px">Số lượng</th>
+                    <th style="width: 200px">Giá</th>
+                    <th style="width: 400px">Ghi chú</th>
+                    <th style="width: 100px">Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <select class="select-product form-control select2" name="productId[]" onchange="addInputRow(this)">
+                            <option value="">Chọn hàng hóa</option>
+                            <?php foreach ($this->productList as $id => $product): ?>
+                            <option value="<?= $id ?>"><?= $product['name'] ?? '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="form-control" type="number" name="quantity[]" value="1">
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="purchasePrice" name="purchasePrice[]">
+                        </div>
+                    </td>
+                    <td>
+                        <textarea class="form-control" name="note[]" rows="1"></textarea>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" onclick="removeInputRow(this)"> Xóa </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Tạo</button>
+            <a href="/warehouse" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    let tableInputRowHtml = ``;
+    let productList = [];
+    $(document).ready(function() {
+        tableInputRowHtml = $('.table-form').find('tbody').html();
+        $('.select2').select2();
+        setValueProductList();
+    });
+
+    function setValueProductList() {
+        let data = $('#productList').val();
+        productList = JSON.parse(data);
+    }
+
+    function addInputRow(elm) {
+        let value = $(elm).val();
+        const tbodyElm = $(elm).closest('tbody');
+        const trElm = $(elm).closest('tr');
+        if (value) {
+            if ($('.select-product').last().val() !== '') {
+                tbodyElm.append(tableInputRowHtml);
+                tbodyElm.find('.select2').select2();
+            }
+
+            const productData = productList[value] ?? {};
+            trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
+        }
+    }
+
+    function removeInputRow(elm) {
+        $(elm).closest('tr').remove();
+    }
+</script>

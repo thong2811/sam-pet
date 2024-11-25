@@ -11,6 +11,16 @@ use Laminas\ServiceManager\Factory\InvokableFactory;
 return [
     'router' => [
         'routes' => [
+            'home' => [
+                'type'    => Segment::class,
+                'options' => [
+                    'route'    => '/',
+                    'defaults' => [
+                        'controller' => Controller\ProductController::class,
+                        'action'     => 'index',
+                    ],
+                ],
+            ],
             'product' => [
                 'type'    => Segment::class,
                 'options' => [
@@ -31,6 +41,16 @@ return [
                     ],
                 ],
             ],
+            'exportStock' => [
+                'type'    => Segment::class,
+                'options' => [
+                    'route'    => '/export-stock[/:action][/:id]',
+                    'defaults' => [
+                        'controller' => Controller\ExportStockController::class,
+                        'action'     => 'index',
+                    ],
+                ],
+            ],
         ],
     ],
     'controllers' => [
@@ -38,6 +58,7 @@ return [
             Controller\IndexController::class     => InvokableFactory::class,
             Controller\ProductController::class   => InvokableFactory::class,
             Controller\WarehouseController::class => InvokableFactory::class,
+            Controller\ExportStockController::class => InvokableFactory::class,
         ],
     ],
     'service_manager' => [

@@ -4,9 +4,9 @@
  */
 ?>
 <div class="container mt-5">
-    <h1 class="mb-5"> Danh sách sản phẩm</h1>
+    <h1 class="mb-5"> Xuất hàng </h1>
     <div class="my-2">
-        <a href="/product/add" class="btn btn-primary">+ Thêm mới</a>
+        <a href="/export-stock/add" class="btn btn-primary">+ Thêm mới</a>
     </div>
     <table id="productTable" class="table table-striped" style="width:100%">
         <thead>
@@ -33,7 +33,7 @@
             <td><?= $this->escapeHtml(number_format($row['purchasePrice']- $row['sellingPrice'])) ?> VNĐ</td>
             <td>
                 <a href="/product/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
-                <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
+                <a href='javascript:remove("<?= $id ?>")' class="btn btn-danger">Xóa</a>
             </td>
         </tr>
         <?php $no++; endforeach; ?>
