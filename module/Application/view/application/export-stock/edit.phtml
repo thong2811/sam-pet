@@ -5,36 +5,95 @@
 ?>
 
 <div class="row mt-5">
-    <h1> Chỉnh sửa sản phẩm </h1>
-    <form method="post" action="/product/do-edit">
-        <div class="mb-3">
-            <label class="form-label">Tên</label>
-            <input type="text" class="form-control" id="name" name="name" value="<?= $this->data['name'] ?>">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Đơn vị</label>
-            <input type="text" class="form-control" id="name"name="unit" value="<?= $this->data['unit'] ?>">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Giá nhập</label>
-            <div class="input-group">
-                <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="sellingPrice" value="<?= $this->data['sellingPrice'] ?>">
-            </div>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Giá bán</label>
-            <div class="input-group">
-                <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="purchasePrice" value="<?= $this->data['purchasePrice'] ?>">
-            </div>
-        </div>
-        <div>
-            <input type="hidden" name="id" value="<?= $this->data['id'] ?>">
+    <h1> Chỉnh sửa xuất hàng ngày <?= $this->date ?></h1>
+    <input type="hidden" id="productList" value='<?= json_encode($this->productList ?? []) ?>'>
+    <form method="post" action="/export-stock/do-edit">
+        <div class="container">
+            <table class="table table-striped table-form mt-3">
+                <thead>
+                <tr>
+                    <th style="width: 150px">Ngày</th>
+                    <th style="min-width: 250px">Tên hàng hóa</th>
+                    <th style="width: 150px">Giá nhập</th>
+                    <th style="width: 150px">Giá bán</th>
+                    <th style="width: 80px">Số lượng</th>
+                    <th style="width: 400px">Ghi chú</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+                foreach ($this->exportStockList as $exportStockId => $exportStockData):
+                    $date = $exportStockData['date'] ?? '';
+                    $quantity = $exportStockData['quantity'] ?? 0;
+                    $sellingPrice = $exportStockData['sellingPrice'] ?? 0;
+                    $purchasePrice = $exportStockData['purchasePrice'] ?? 0;
+                    $note = $exportStockData['note'] ?? '';
+                ?>
+                <tr>
+                    <div>
+                        <input type="hidden" name="exportStockId[]" value="<?= $exportStockId ?>">
+                    </div>
+                    <td>
+                        <input class="form-control date-picker w-100" name="date[]" value="<?= $date ?>" autocomplete="off" required/>
+                    </td>
+                    <td>
+                        <select class="select-product form-control select2" name="productId[]" required>
+                            <option value="">Chọn hàng hóa</option>
+                            <?php
+                            foreach ($this->productList as $productId => $productData):
+                                $isSelected = !empty($exportStockData['productId']) && $exportStockData['productId'] == $productId;
+                                $selected = $isSelected ? 'selected' : '';
+                                $productName = $productData['name'] ?? '-';
+                            ?>
+                                <option value="<?= $productId ?>" <?= $selected ?> > <?= $productName ?> </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="purchasePrice" value="<?= $purchasePrice ?>" name="purchasePrice[]" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="sellingPrice" value="<?= $sellingPrice ?>" name="sellingPrice[]" required>
+                        </div>
+                    </td>
+                    <td>
+                        <input class="form-control" type="number" name="quantity[]" value="<?= $quantity ?>" value="1" required>
+                    </td>
+                    <td>
+                        <textarea class="form-control" name="note[]" rows="1"><?= $note ?></textarea>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
         <div class="mb-3">
             <button type="submit" class="btn btn-primary float-end">Lưu</button>
-            <a href="/product" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <a href="/export-stock" class="btn btn-danger float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
+
+<script>
+    let tableInputRowHtml = ``;
+    let productList = [];
+    $(document).ready(function() {
+        tableInputRowHtml = $('.table-form').find('tbody').html();
+        $('.select2').select2();
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+    });
+
+    $(document).keypress(event => {
+        if (event.which == '13') {
+            event.preventDefault();
+        }
+    });
+</script>

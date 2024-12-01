@@ -10,7 +10,7 @@
         <a href="/import-stock" class="btn btn-primary">Nhập hàng</a>
         <a href="/export-stock" class="btn btn-primary">Xuất hàng</a>
     </div>
-    <table id="productTable" class="table table-striped" style="width:100%">
+    <table id="dataTable" class="table table-striped" style="width:100%">
         <thead>
         <tr>
             <th>STT</th>
@@ -43,7 +43,7 @@
     </table>
 </div>
 <script>
-    const tabeId = '#productTable';
+    const tabeId = '#dataTable';
     const table = new DataTable(tabeId);
 
     $(document).ready(function() {

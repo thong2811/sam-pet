@@ -9,28 +9,28 @@
     <form method="post" action="/product/do-edit">
         <div class="mb-3">
             <label class="form-label">Tên</label>
-            <input type="text" class="form-control" id="name" name="name" value="<?= $this->data['name'] ?>">
+            <input type="text" class="form-control" id="name" name="name" value="<?= $this->productData['name'] ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Đơn vị</label>
-            <input type="text" class="form-control" id="name"name="unit" value="<?= $this->data['unit'] ?>">
+            <input type="text" class="form-control" id="name"name="unit" value="<?= $this->productData['unit'] ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Giá nhập</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="sellingPrice" value="<?= $this->data['sellingPrice'] ?>">
+                <input type="text" class="form-control" name="sellingPrice" value="<?= $this->productData['sellingPrice'] ?>">
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">Giá bán</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="purchasePrice" value="<?= $this->data['purchasePrice'] ?>">
+                <input type="text" class="form-control" name="purchasePrice" value="<?= $this->productData['purchasePrice'] ?>">
             </div>
         </div>
         <div>
-            <input type="hidden" name="id" value="<?= $this->data['id'] ?>">
+            <input type="hidden" name="id" value="<?= $this->productData['id'] ?>">
         </div>
         <div class="mb-3">
             <button type="submit" class="btn btn-primary float-end">Lưu</button>

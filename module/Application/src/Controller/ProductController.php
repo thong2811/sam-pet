@@ -14,8 +14,8 @@ class ProductController extends AbstractActionController
     public function indexAction()
     {
         $productModel = new Product();
-        $data = $productModel->getData();
-        return new ViewModel(['data' => $data]);
+        $productList = $productModel->getData();
+        return new ViewModel(['productList' => $productList]);
     }
 
     public function addAction()
@@ -42,8 +42,8 @@ class ProductController extends AbstractActionController
         }
 
         $productModel = new Product();
-        $data = $productModel->getDataById($id);
-        return new ViewModel(['data' => $data]);
+        $productData = $productModel->getDataById($id);
+        return new ViewModel(['productData' => $productData]);
     }
 
     public function doEditAction()
@@ -52,7 +52,7 @@ class ProductController extends AbstractActionController
         $postData = $request->getPost()->toArray();
 
         $product = new Product();
-        $product->updateDataById($postData);
+        $product->doEdit($postData);
 
         $this->redirect()->toRoute('product', ['action' => 'edit']);
     }

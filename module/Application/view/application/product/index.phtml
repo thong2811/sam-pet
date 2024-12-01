@@ -8,7 +8,7 @@
     <div class="my-2">
         <a href="/product/add" class="btn btn-primary">+ Thêm mới</a>
     </div>
-    <table id="productTable" class="table table-striped" style="width:100%">
+    <table id="dataTable" class="table table-striped" style="width:100%">
         <thead>
         <tr>
             <th>STT</th>
@@ -23,7 +23,7 @@
         <tbody>
         <?php
         $no = 1;
-        foreach ($this->data as $id => $row): ?>
+        foreach ($this->productList as $id => $row): ?>
         <tr id="row-<?= $id ?>">
             <td><?= $no ?></td>
             <td><?= $this->escapeHtml($row['name']) ?></td>
@@ -41,8 +41,23 @@
     </table>
 </div>
 <script>
-    const tabeId = '#productTable';
-    const table = new DataTable(tabeId);
+    const tabeId = '#dataTable';
+    const table = new DataTable(tabeId, {
+        order: [[1, 'desc']],
+        columnDefs: [
+            {
+                searchable: false,
+                orderable: false,
+                targets: [0,6]
+            }
+        ]
+    });
+    table.on('order.dt search.dt', function () {
+        let i = 1;
+        table.cells(null, 0, {search: 'applied', order: 'applied'}).every(function (cell) {
+            this.data(i++);
+        });
+    }).draw();
 
     $(document).ready(function() {
     });

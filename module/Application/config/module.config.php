@@ -8,49 +8,67 @@ use Application\Service\CsvService;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 
+function createSegmentRoute($controller, $baseRoute, $childRoutes = [])
+{
+    $childRoutesDefault = [
+        'default' => [
+            'type' => Segment::class,
+            'options' => [
+                'route'       => '[/:action]',
+                'defaults'    => [
+                    'action' => 'action',
+                ],
+            ],
+        ]
+    ];
+
+    return [
+        'type' => Segment::class,
+        'options' => [
+            'route'    => $baseRoute,
+            'defaults' => [
+                'controller' => $controller,
+                'action'     => 'index',
+            ],
+        ],
+        'may_terminate' => true,
+        'child_routes' => array_merge($childRoutesDefault, $childRoutes),
+    ];
+}
+
+function createChildRoute($action, $params = [], $constraints = [])
+{
+    $paramSegment = array_map(fn($param) => sprintf(':%s', $param), $params);
+    $routePath = sprintf('/%s/%s', $action, implode('/', $paramSegment));
+
+    return [
+        'type' => Segment::class,
+        'options' => [
+            'route'       => $routePath,
+            'constraints' => $constraints,
+            'defaults'    => [
+                'action' => $action,
+            ],
+        ],
+    ];
+}
+
 return [
     'router' => [
         'routes' => [
-            'home' => [
-                'type'    => Segment::class,
-                'options' => [
-                    'route'    => '/',
-                    'defaults' => [
-                        'controller' => Controller\ProductController::class,
-                        'action'     => 'index',
-                    ],
-                ],
-            ],
-            'product' => [
-                'type'    => Segment::class,
-                'options' => [
-                    'route'    => '/product[/:action][/:id]',
-                    'defaults' => [
-                        'controller' => Controller\ProductController::class,
-                        'action'     => 'index',
-                    ],
-                ],
-            ],
-            'warehouse' => [
-                'type'    => Segment::class,
-                'options' => [
-                    'route'    => '/warehouse[/:action][/:id]',
-                    'defaults' => [
-                        'controller' => Controller\WarehouseController::class,
-                        'action'     => 'index',
-                    ],
-                ],
-            ],
-            'exportStock' => [
-                'type'    => Segment::class,
-                'options' => [
-                    'route'    => '/export-stock[/:action][/:id]',
-                    'defaults' => [
-                        'controller' => Controller\ExportStockController::class,
-                        'action'     => 'index',
-                    ],
-                ],
-            ],
+            'default' => createSegmentRoute(Controller\ProductController::class, '/'),
+            'product' => createSegmentRoute(Controller\ProductController::class, '/product', [
+                'edit' => createChildRoute('edit', ['id']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'warehouse' => createSegmentRoute(Controller\WarehouseController::class, '/warehouse', [
+                'edit' => createChildRoute('edit', ['id']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'exportStock' => createSegmentRoute(Controller\ExportStockController::class, '/export-stock', [
+                'edit' => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
         ],
     ],
     'controllers' => [

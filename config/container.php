@@ -10,6 +10,14 @@ if (file_exists(__DIR__ . '/development.config.php')) {
     $devConfig = require __DIR__ . '/development.config.php';
     $appConfig = ArrayUtils::merge($appConfig, $devConfig);
 }
+$services = Application::init($appConfig)->getServiceManager();
 
-return Application::init($appConfig)
-    ->getServiceManager();
+$config = $services->get('config');
+$phpSettings = $config['php_settings'];
+if ($phpSettings) {
+    foreach ($phpSettings as $key => $value) {
+        ini_set($key, $value);
+    }
+}
+
+return $services;

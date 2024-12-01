@@ -24,6 +24,7 @@
             ->appendStylesheet($this->basePath('css/bootstrap.min.css'))
             ->appendStylesheet('https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css')
             ->appendStylesheet('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css')
+            ->appendStylesheet('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css')
         ?>
 
         <!-- Scripts -->
@@ -32,6 +33,7 @@
             ->appendFile('https://code.jquery.com/jquery-3.6.0.min.js')
             ->appendFile('https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js')
             ->appendFile('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js')
+            ->appendFile('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js')
         ?>
     </head>
     <body>
@@ -45,6 +47,12 @@
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
                             <a class="nav-link" href="/product">Hàng hóa</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/export-stock">Xuất hàng</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/import-stock">Nhập hàng</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/warehouse">Chi</a>

@@ -6,34 +6,54 @@
 <div class="container mt-5">
     <h1 class="mb-5"> Xuất hàng </h1>
     <div class="my-2">
-        <a href="/export-stock/add" class="btn btn-primary">+ Thêm mới</a>
+        <div class="d-flex">
+            <a href="/export-stock/add" class="btn btn-primary"> Thêm mới +</a>
+            <div class="input-group w-50 ms-3">
+                <button class="btn btn-primary" onclick="editByDate()"> Chỉnh sửa </button>
+                <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="Nhập ngày chỉnh sửa..." required/>
+            </div>
+        </div>
     </div>
-    <table id="productTable" class="table table-striped" style="width:100%">
+    <table id="dataTable" class="table table-striped" style="width:100%">
         <thead>
         <tr>
             <th>STT</th>
-            <th>Tên</th>
-            <th>Đơn vị</th>
+            <th>Ngày</th>
+            <th>Tên hàng hóa</th>
             <th>Giá nhập</th>
             <th>Giá bán</th>
-            <th>Lãi</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+            <th>Ghi chú</th>
             <th>Thao tác</th>
         </tr>
         </thead>
         <tbody>
         <?php
         $no = 1;
-        foreach ($this->data as $id => $row): ?>
+        foreach ($this->exportStockList as $id => $row):
+            if (empty($row['productId'])) {
+                continue;
+            }
+            $productId = $row['productId'];
+            $productName = $this->productList[$productId]['name'] ?? '-';
+            $date = !empty($row['date']) ? $row['date'] : '-';
+            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
+            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
+            $quantity = !empty($row['quantity']) ? $row['quantity'] : 1;
+            $note = $row['note'] ?? '-';
+        ?>
         <tr id="row-<?= $id ?>">
             <td><?= $no ?></td>
-            <td><?= $this->escapeHtml($row['name']) ?></td>
-            <td><?= $this->escapeHtml($row['unit']) ?></td>
-            <td><?= $this->escapeHtml(number_format($row['sellingPrice'])) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($row['purchasePrice'])) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($row['purchasePrice']- $row['sellingPrice'])) ?> VNĐ</td>
+            <td><?= $this->escapeHtml($date) ?></td>
+            <td><?= $this->escapeHtml($productName) ?></td>
+            <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($quantity)) ?></td>
+            <td><?= $this->escapeHtml(number_format($sellingPrice*$quantity)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml($note) ?></td>
             <td>
-                <a href="/product/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
-                <a href='javascript:remove("<?= $id ?>")' class="btn btn-danger">Xóa</a>
+                <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
             </td>
         </tr>
         <?php $no++; endforeach; ?>
@@ -41,10 +61,29 @@
     </table>
 </div>
 <script>
-    const tabeId = '#productTable';
-    const table = new DataTable(tabeId);
+    const tabeId = '#dataTable';
+    const table = new DataTable(tabeId, {
+        order: [[1, 'desc']],
+        columnDefs: [
+            {
+                searchable: false,
+                orderable: false,
+                targets: [0, 8]
+            }
+        ]
+    });
+    table.on('order.dt search.dt', function () {
+        let i = 1;
+        table.cells(null, 0, {search: 'applied', order: 'applied'}).every(function (cell) {
+            this.data(i++);
+        });
+    }).draw();
 
     $(document).ready(function() {
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
     });
 
     function remove(id) {
@@ -52,11 +91,12 @@
             return;
         }
         $.ajax({
-            url: '/product/do-delete',
+            url: '/export-stock/do-delete',
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({ id: id }),
             success: function (response) {
+                debugger
                 if (response.success) {
                     table.row(`#row-${id}`).remove().draw(false);
                 } else {
@@ -68,5 +108,14 @@
                 alert('Đã xảy ra lỗi khi xóa.');
             },
         });
+    }
+
+    function editByDate() {
+        const date = $('#editDate').val();
+        if (!date) {
+            alert("Hãy nhập ngày chỉnh sửa !");
+            return;
+        }
+        location.href = `/export-stock/edit/${date}`;
     }
 </script>

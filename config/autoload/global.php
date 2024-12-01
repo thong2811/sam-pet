@@ -13,5 +13,8 @@
  */
 
 return [
-    // ...
+    'php_settings' => [
+        'date.timezone' => 'Asia/Ho_Chi_Minh',
+        'locale' => 'vi_VN'
+    ],
 ];
