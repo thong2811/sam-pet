@@ -12,10 +12,10 @@ function createSegmentRoute($controller, $baseRoute, $childRoutes = [])
 {
     $childRoutesDefault = [
         'default' => [
-            'type' => Segment::class,
+            'type'    => Segment::class,
             'options' => [
-                'route'       => '[/:action]',
-                'defaults'    => [
+                'route'    => '[/:action]',
+                'defaults' => [
                     'action' => 'action',
                 ],
             ],
@@ -23,8 +23,8 @@ function createSegmentRoute($controller, $baseRoute, $childRoutes = [])
     ];
 
     return [
-        'type' => Segment::class,
-        'options' => [
+        'type'          => Segment::class,
+        'options'       => [
             'route'    => $baseRoute,
             'defaults' => [
                 'controller' => $controller,
@@ -32,7 +32,7 @@ function createSegmentRoute($controller, $baseRoute, $childRoutes = [])
             ],
         ],
         'may_terminate' => true,
-        'child_routes' => array_merge($childRoutesDefault, $childRoutes),
+        'child_routes'  => array_merge($childRoutesDefault, $childRoutes),
     ];
 }
 
@@ -42,7 +42,7 @@ function createChildRoute($action, $params = [], $constraints = [])
     $routePath = sprintf('/%s/%s', $action, implode('/', $paramSegment));
 
     return [
-        'type' => Segment::class,
+        'type'    => Segment::class,
         'options' => [
             'route'       => $routePath,
             'constraints' => $constraints,
@@ -54,29 +54,44 @@ function createChildRoute($action, $params = [], $constraints = [])
 }
 
 return [
-    'router' => [
+    'router'          => [
         'routes' => [
-            'default' => createSegmentRoute(Controller\ProductController::class, '/'),
-            'product' => createSegmentRoute(Controller\ProductController::class, '/product', [
-                'edit' => createChildRoute('edit', ['id']),
-                'delete' => createChildRoute('delete', ['id'])
-            ]),
-            'warehouse' => createSegmentRoute(Controller\WarehouseController::class, '/warehouse', [
-                'edit' => createChildRoute('edit', ['id']),
+            'default'     => createSegmentRoute(Controller\ProductController::class, '/'),
+            'product'     => createSegmentRoute(Controller\ProductController::class, '/product', [
+                'edit'   => createChildRoute('edit', ['id']),
                 'delete' => createChildRoute('delete', ['id'])
             ]),
             'exportStock' => createSegmentRoute(Controller\ExportStockController::class, '/export-stock', [
-                'edit' => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'importStock' => createSegmentRoute(Controller\ImportStockController::class, '/import-stock', [
+                'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'vetCare'     => createSegmentRoute(Controller\VetCareController::class, '/vet-care', [
+                'edit'   => createChildRoute('edit', ['id']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'expenses'    => createSegmentRoute(Controller\ExpensesController::class, '/expenses', [
+                'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'report'      => createSegmentRoute(Controller\ReportController::class, '/report', [
+                'edit'   => createChildRoute('edit', ['id']),
                 'delete' => createChildRoute('delete', ['id'])
             ]),
         ],
     ],
-    'controllers' => [
+    'controllers'     => [
         'factories' => [
-            Controller\IndexController::class     => InvokableFactory::class,
-            Controller\ProductController::class   => InvokableFactory::class,
-            Controller\WarehouseController::class => InvokableFactory::class,
+            Controller\IndexController::class       => InvokableFactory::class,
+            Controller\ProductController::class     => InvokableFactory::class,
             Controller\ExportStockController::class => InvokableFactory::class,
+            Controller\ImportStockController::class => InvokableFactory::class,
+            Controller\VetCareController::class     => InvokableFactory::class,
+            Controller\ExpensesController::class    => InvokableFactory::class,
+            Controller\ReportController::class      => InvokableFactory::class,
         ],
     ],
     'service_manager' => [
@@ -84,21 +99,21 @@ return [
             CsvService::class => InvokableFactory::class,
         ]
     ],
-    'view_manager' => [
+    'view_manager'    => [
         'display_not_found_reason' => true,
         'display_exceptions'       => true,
         'doctype'                  => 'HTML5',
         'not_found_template'       => 'error/404',
         'exception_template'       => 'error/index',
-        'template_map' => [
+        'template_map'             => [
             'layout/layout'           => __DIR__ . '/../view/layout/layout.phtml',
             'application/index/index' => __DIR__ . '/../view/application/index/index.phtml',
             'error/404'               => __DIR__ . '/../view/error/404.phtml',
             'error/index'             => __DIR__ . '/../view/error/index.phtml',
         ],
-        'template_path_stack' => [
+        'template_path_stack'      => [
             __DIR__ . '/../view',
         ],
-        'strategies' => ['ViewJsonStrategy']
+        'strategies'               => ['ViewJsonStrategy']
     ],
 ];

@@ -9,24 +9,24 @@
     <form method="post" action="/product/do-edit">
         <div class="mb-3">
             <label class="form-label">Tên</label>
-            <input type="text" class="form-control" id="name" name="name" value="<?= $this->productData['name'] ?>">
+            <input type="text" class="form-control" id="name" name="name" required value="<?= $this->productData['name'] ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Đơn vị</label>
-            <input type="text" class="form-control" id="name"name="unit" value="<?= $this->productData['unit'] ?>">
+            <input type="text" class="form-control" id="name"name="unit" required value="<?= $this->productData['unit'] ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Giá nhập</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="sellingPrice" value="<?= $this->productData['sellingPrice'] ?>">
+                <input type="text" class="form-control" name="sellingPrice" required value="<?= $this->productData['sellingPrice'] ?>">
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">Giá bán</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="purchasePrice" value="<?= $this->productData['purchasePrice'] ?>">
+                <input type="text" class="form-control" name="purchasePrice" required value="<?= $this->productData['purchasePrice'] ?>">
             </div>
         </div>
         <div>

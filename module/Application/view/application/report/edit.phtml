@@ -1,0 +1,55 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<?php
+$id = $this->reportData['id'] ?? '';
+$date = $this->reportData['date'] ?? '';
+$revenue = !empty($this->reportData['revenue']) ? $this->reportData['revenue'] : 0;
+$expenses = !empty($this->reportData['expenses']) ? $this->reportData['expenses'] : 0;
+$note = $this->reportData['note'] ?? 0;
+?>
+<div class="row mt-5">
+    <h1> Thêm báo cáo thu - chi </h1>
+    <form method="post" action="/report/do-edit">
+        <div>
+            <input type="hidden" name="id" value="<?= $id ?>">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ngày</label>
+            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" required value="<?= $date ?>">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Thu</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" name="revenue" required value="<?= $revenue ?>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Chi</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" name="expenses" required value="<?= $expenses ?>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ghi chú</label>
+            <textarea class="form-control" name="note"><?= $note ?></textarea>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Lưu</button>
+            <a href="/report" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+    });
+</script>

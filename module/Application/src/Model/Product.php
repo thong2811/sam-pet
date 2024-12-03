@@ -3,12 +3,11 @@
 namespace Application\Model;
 
 use Application\Service\CsvService;
-use League\Csv\Exception;
 
 class Product extends CsvService
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'name', 'unit', 'sellingPrice', 'purchasePrice' ],
+        'header'   => ['id', 'name', 'unit', 'sellingPrice', 'purchasePrice', 'initStock'],
         'fileName' => 'product.csv'
     ];
 
@@ -17,12 +16,29 @@ class Product extends CsvService
         parent::__construct(self::CSV_CONSTRUCT);
     }
 
-    public function doEdit($postData) {
+    public function getDataToView() {
+        $importStockModel = new ImportStock();
+        $importStock = $importStockModel->totalQuantityByProduct();
 
-        $row = $this->mappingDataWithHeaders($postData);
-        if (empty($row['id'])) {
-            throw new Exception("Không thể cập nhật dữ liệu với ID rỗng !");
+        $exportStockModel = new ExportStock();
+        $exportStock = $exportStockModel->totalQuantityByProduct();
+
+        $productList = $this->getData();
+        foreach ($productList as $productId => &$productData) {
+            $productData['importStock'] = $importStock[$productId] ?? 0;
+            $productData['exportStock'] = $exportStock[$productId] ?? 0;
         }
-        $this->updateRow($row['id'], $row);
+
+        return $productList;
+    }
+
+    public function doAdd($postData)
+    {
+        $this->addRow($postData);
+    }
+
+    public function doEdit($postData)
+    {
+        $this->updateRow($postData);
     }
 }

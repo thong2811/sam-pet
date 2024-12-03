@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
+use Application\Model\Expenses;
 use Application\Model\Product;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
-class ProductController extends AbstractActionController
+class ExpensesController extends AbstractActionController
 {
     public function indexAction()
     {
-        $productModel = new Product();
-        $productList = $productModel->getDataToView();
-        return new ViewModel(['productList' => $productList]);
+        $expensesModel = new Expenses();
+        $expensesList = $expensesModel->getData();
+
+        return new ViewModel(['expensesList' => $expensesList]);
     }
 
     public function addAction()
@@ -28,24 +30,20 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doAdd($postData);
+        $expensesModel = new Expenses();
+        $expensesModel->doAdd($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'add']);
+        $this->redirect()->toRoute('expenses');
     }
 
     public function editAction()
     {
-        $id = $this->params()->fromRoute('id', null);
+        $date = $this->params()->fromRoute('date', '');
 
-        if (is_null($id)) {
-            $this->redirect()->toRoute('product', ['action' => 'index']);
-        }
+        $expensesModel = new Expenses();
+        $expensesList = $expensesModel->getDataByKey('date', $date);
 
-        $productModel = new Product();
-        $productData = $productModel->getDataById($id);
-
-        return new ViewModel(['productData' => $productData]);
+        return new ViewModel(['date' => $date, 'expensesList' => $expensesList]);
     }
 
     public function doEditAction()
@@ -53,10 +51,10 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doEdit($postData);
+        $expensesModel = new Expenses();
+        $expensesModel->doEdit($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'edit']);
+        $this->redirect()->toRoute('expenses');
     }
 
     public function doDeleteAction()
@@ -74,8 +72,8 @@ class ProductController extends AbstractActionController
             }
 
             $id = $data['id'];
-            $product = new Product();
-            $product->deleteDataById($id);
+            $expensesModel = new Expenses();
+            $expensesModel->deleteDataById($id);
 
             return new JsonModel([
                 'success' => true,

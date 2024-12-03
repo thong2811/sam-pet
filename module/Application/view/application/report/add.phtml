@@ -1,0 +1,75 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<?php
+$date = date('d-m-Y');
+
+$exportStockTotalAmountByDate = $this->exportStockTotalAmountByDate ?? [];
+$exportStockTotalAmount = $exportStockTotalAmountByDate[$date] ?? 0;
+
+$vetCareTotalAmountByDate = $this->vetCareTotalAmountByDate ?? [];
+$vetCareTotalAmount = $vetCareTotalAmountByDate[$date] ?? 0;
+
+$expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
+$expensesTotalAmount = $expensesTotalAmountByDate[$date] ?? 0;
+
+$revenue = $exportStockTotalAmount + $vetCareTotalAmount;
+$expenses = $expensesTotalAmount;
+?>
+<div class="row mt-5">
+    <h1> Báo cáo thu - chi </h1>
+    <form method="post" action="/report/do-add">
+        <input type="hidden" id="exportStockTotalAmountByDate" value="<?= json_encode($exportStockTotalAmountByDate) ?>">
+        <input type="hidden" id="vetCareTotalAmountByDate" value="<?= json_encode($vetCareTotalAmountByDate) ?>">
+        <input type="hidden" id="expensesTotalAmountByDate" value="<?= json_encode($expensesTotalAmountByDate) ?>">
+        <div class="mb-3">
+            <label class="form-label">Ngày</label>
+            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= $date ?>" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Thu</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" name="revenue" required value="<?= $revenue ?>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Chi</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" name="expenses" required value="<?= $expenses ?>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ghi chú</label>
+            <textarea class="form-control" name="note"></textarea>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Tạo</button>
+            <a href="/report" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    let exportStockTotalAmountByDate = [];
+    let vetCareTotalAmountByDate = [];
+    let expensesTotalAmountByDate = [];
+
+    $(document).ready(function() {
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+
+        initVariable()
+    });
+
+    function initVariable() {
+        exportStockTotalAmountByDate = JSON.parse($('#exportStockTotalAmountByDate').val() ?? '{}');
+        vetCareTotalAmountByDate = JSON.parse($('#vetCareTotalAmountByDate').val() ?? '{}');
+        expensesTotalAmountByDate = JSON.parse($('#expensesTotalAmountByDate').val() ?? '{}');
+    }
+</script>

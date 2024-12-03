@@ -4,23 +4,30 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
+use Application\Model\ImportStock;
 use Application\Model\Product;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
-class ProductController extends AbstractActionController
+class ImportStockController extends AbstractActionController
 {
     public function indexAction()
     {
+        $importStockModel = new ImportStock();
+        $importStockList = $importStockModel->getData();
+
         $productModel = new Product();
-        $productList = $productModel->getDataToView();
-        return new ViewModel(['productList' => $productList]);
+        $productList = $productModel->getData();
+
+        return new ViewModel(['importStockList' => $importStockList, 'productList' => $productList]);
     }
 
     public function addAction()
     {
-        return new ViewModel();
+        $productModel = new Product();
+        $productList = $productModel->getData();
+        return new ViewModel(['productList' => $productList]);
     }
 
     public function doAddAction()
@@ -28,24 +35,23 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doAdd($postData);
+        $importStockModel = new ImportStock();
+        $importStockModel->doAdd($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'add']);
+        $this->redirect()->toRoute('importStock');
     }
 
     public function editAction()
     {
-        $id = $this->params()->fromRoute('id', null);
+        $date = $this->params()->fromRoute('date', '');
 
-        if (is_null($id)) {
-            $this->redirect()->toRoute('product', ['action' => 'index']);
-        }
+        $importStockModel = new ImportStock();
+        $importStockList = $importStockModel->getDataByKey('date', $date);
 
         $productModel = new Product();
-        $productData = $productModel->getDataById($id);
+        $productList = $productModel->getData();
 
-        return new ViewModel(['productData' => $productData]);
+        return new ViewModel(['date' => $date, 'importStockList' => $importStockList, 'productList' => $productList]);
     }
 
     public function doEditAction()
@@ -53,10 +59,10 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doEdit($postData);
+        $importStockModel = new ImportStock();
+        $importStockModel->doEdit($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'edit']);
+        $this->redirect()->toRoute('importStock');
     }
 
     public function doDeleteAction()
@@ -74,8 +80,8 @@ class ProductController extends AbstractActionController
             }
 
             $id = $data['id'];
-            $product = new Product();
-            $product->deleteDataById($id);
+            $importStockModel = new ImportStock();
+            $importStockModel->deleteDataById($id);
 
             return new JsonModel([
                 'success' => true,

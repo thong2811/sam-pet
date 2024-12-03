@@ -37,6 +37,7 @@ class ExportStockController extends AbstractActionController
 
         $exportStockModel = new ExportStock();
         $exportStockModel->doAdd($postData);
+
         $this->redirect()->toRoute('exportStock');
     }
 
@@ -45,7 +46,7 @@ class ExportStockController extends AbstractActionController
         $date = $this->params()->fromRoute('date', '');
 
         $exportStockModel = new ExportStock();
-        $exportStockList = $exportStockModel->getDataByDate($date);
+        $exportStockList = $exportStockModel->getDataByKey('date', $date);
 
         $productModel = new Product();
         $productList = $productModel->getData();
@@ -60,6 +61,7 @@ class ExportStockController extends AbstractActionController
 
         $exportStockModel = new ExportStock();
         $exportStockModel->doEdit($postData);
+
         $this->redirect()->toRoute('exportStock');
     }
 
@@ -80,6 +82,7 @@ class ExportStockController extends AbstractActionController
             $id = $data['id'];
             $exportStockModel = new ExportStock();
             $exportStockModel->deleteDataById($id);
+
             return new JsonModel([
                 'success' => true,
                 'message' => 'Xóa thành công!',

@@ -4,10 +4,10 @@
  */
 ?>
 <div class="container mt-5">
-    <h1 class="mb-5"> Xuất hàng </h1>
+    <h1 class="mb-5"> Nhập hàng </h1>
     <div class="my-2">
         <div class="d-flex">
-            <a href="/export-stock/add" class="btn btn-primary"> Thêm mới +</a>
+            <a href="/import-stock/add" class="btn btn-primary"> Thêm mới +</a>
             <div class="input-group w-50 ms-3">
                 <button class="btn btn-primary" onclick="editByDate()"> Chỉnh sửa </button>
                 <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="Nhập ngày chỉnh sửa..." required/>
@@ -21,7 +21,6 @@
             <th>Ngày</th>
             <th>Tên hàng hóa</th>
             <th>Giá nhập</th>
-            <th>Giá bán</th>
             <th>Số lượng</th>
             <th>Thành tiền</th>
             <th>Ghi chú</th>
@@ -31,7 +30,7 @@
         <tbody>
         <?php
         $no = 1;
-        foreach ($this->exportStockList as $id => $row):
+        foreach ($this->importStockList as $id => $row):
             if (empty($row['productId'])) {
                 continue;
             }
@@ -39,7 +38,6 @@
             $productName = $this->productList[$productId]['name'] ?? '-';
             $date = !empty($row['date']) ? $row['date'] : '-';
             $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
-            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
             $quantity = !empty($row['quantity']) ? $row['quantity'] : 1;
             $note = $row['note'] ?? '-';
         ?>
@@ -48,9 +46,8 @@
             <td><?= $this->escapeHtml($date) ?></td>
             <td><?= $this->escapeHtml($productName) ?></td>
             <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
             <td><?= $this->escapeHtml(number_format($quantity)) ?></td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice*$quantity)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($purchasePrice*$quantity)) ?> VNĐ</td>
             <td><?= $this->escapeHtml($note) ?></td>
             <td>
                 <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
@@ -91,7 +88,7 @@
             return;
         }
         $.ajax({
-            url: '/export-stock/do-delete',
+            url: '/import-stock/do-delete',
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({ id: id }),
@@ -116,6 +113,6 @@
             alert("Hãy nhập ngày chỉnh sửa !");
             return;
         }
-        location.href = `/export-stock/edit/${date}`;
+        location.href = `/import-stock/edit/${date}`;
     }
 </script>

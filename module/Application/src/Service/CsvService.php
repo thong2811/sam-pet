@@ -2,9 +2,10 @@
 
 namespace Application\Service;
 
+use League\Csv\Exception;
 use League\Csv\Reader;
 use League\Csv\Writer;
-use MongoDB\BSON\UTCDateTime;
+use function PHPUnit\Framework\directoryExists;
 
 class CsvService
 {
@@ -12,11 +13,13 @@ class CsvService
     private $headers;
 
     const DEFAULT_HEADERS = ['createdAt', 'updatedAt'];
+    const DEFAULT_PRIMARY_KEY = 'id';
 
     protected function __construct(array $csvConstruct)
     {
         $this->filePath = './data/' . $csvConstruct['fileName'];
         $this->headers = array_merge($csvConstruct['header'], self::DEFAULT_HEADERS);
+        $this->primaryKey = $csvConstruct['primaryKey'] ?? self::DEFAULT_PRIMARY_KEY;
 
         if (!file_exists($this->filePath)) {
             $this->createFile();
@@ -28,7 +31,11 @@ class CsvService
     public function createFile()
     {
         $dir = dirname($this->filePath);
-        mkdir($dir, 0777, true);
+        if (!directoryExists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        Writer::createFromPath($this->filePath, 'w');
     }
 
     public function checkHeaders()
@@ -65,23 +72,23 @@ class CsvService
         $csvData = iterator_to_array($csv->getRecords());
 
         foreach ($csvData as $row) {
-            if (empty($row['id'])) {
+            if (empty($row[$this->primaryKey])) {
                 continue;
             }
 
-            $data[$row['id']] = $row;
+            $data[$row[$this->primaryKey]] = $row;
         }
 
         return $data;
     }
 
-    public function getDataByDate($date)
+    public function getDataByKey($key, $value)
     {
         $data = $this->getData();
 
-        return array_filter($data, function ($row) use ($date) {
-            return isset($row['date']) && $row['date'] == $date;
-        });;
+        return array_filter($data, function ($row) use ($key, $value) {
+            return isset($row[$key]) && $row[$key] == $value;
+        });
     }
 
     public function getDataById($id)
@@ -89,7 +96,7 @@ class CsvService
         $data = $this->getData();
 
         foreach ($data as $row) {
-            if (isset($row['id']) && $row['id'] = $id) {
+            if (isset($row[$this->primaryKey]) && $row[$this->primaryKey] == $id) {
                 return $row;
             }
         }
@@ -106,17 +113,7 @@ class CsvService
 
     public function addRow($row)
     {
-        $csv = Writer::createFromPath($this->filePath, 'a');
-
-        if (empty($row['id'])) {
-            $row['id'] = self::generateId();
-        }
-
-        $row['createdAt'] = time();
-        $row['updatedAt'] = time();
-        $row = $this->mappingDataWithHeaders($row);
-
-        $csv->insertOne($row);
+        $this->addRows([$row]);
     }
 
     public function addRows($rows)
@@ -128,15 +125,15 @@ class CsvService
         $data = $this->getData();
         foreach ($rows as $row) {
 
-            if (empty($row['id'])) {
-                $row['id'] = self::generateId();
+            if (empty($row[$this->primaryKey])) {
+                $row[$this->primaryKey] = self::generateId();
             }
 
             $row['createdAt'] = time();
             $row['updatedAt'] = time();
 
             $row = $this->mappingDataWithHeaders($row);
-            $data[$row['id']] = $row;
+            $data[$row[$this->primaryKey]] = $row;
         }
 
         $this->saveData($data);
@@ -150,7 +147,12 @@ class CsvService
 
         $data = $this->getData();
 
-        foreach ($rows as $id => $row) {
+        foreach ($rows as $row) {
+            if (!isset($row[$this->primaryKey])) {
+                throw new Exception("Không tìm thấy khóa chính để cập nhật: " . $this->primaryKey);
+            }
+
+            $id = $row[$this->primaryKey];
             $row['updatedAt'] = time();
             $row = $this->prepareRowToUpdate($data, $id, $row);
 
@@ -160,15 +162,9 @@ class CsvService
         $this->saveData($data);
     }
 
-    public function updateRow($id, $row)
+    public function updateRow($row)
     {
-        $data = $this->getData();
-
-        $row['updatedAt'] = time();
-        $row = $this->prepareRowToUpdate($data, $id, $row);
-
-        $data[$id] = $row;
-        $this->saveData($data);
+        $this->updateRows([$row]);
     }
 
     public function deleteDataById($id)

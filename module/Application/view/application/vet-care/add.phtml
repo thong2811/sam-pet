@@ -1,0 +1,46 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+
+<div class="row mt-5">
+    <h1> Thêm tiền điều trị - spa </h1>
+    <form method="post" action="/vet-care/do-add">
+        <div class="mb-3">
+            <label class="form-label">Ngày</label>
+            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= date('d-m-Y') ?>" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tiền điều trị</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" name="treatmentAmount" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tiền spa</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" name="spaAmount" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ghi chú</label>
+            <textarea class="form-control" name="note"></textarea>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Tạo</button>
+            <a href="/vet-care" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+    });
+</script>

@@ -4,7 +4,7 @@
  */
 ?>
 <div class="container mt-5">
-    <h1 class="mb-5"> Danh sách sản phẩm</h1>
+    <h1 class="mb-5"> Quản lý kho</h1>
     <div class="my-2">
         <a href="/product/add" class="btn btn-primary">+ Thêm mới</a>
     </div>
@@ -17,20 +17,37 @@
             <th>Giá nhập</th>
             <th>Giá bán</th>
             <th>Lãi</th>
+            <th>Tồn đầu kỳ</th>
+            <th>Nhập</th>
+            <th>Xuất</th>
+            <th>Còn lại</th>
             <th>Thao tác</th>
         </tr>
         </thead>
         <tbody>
         <?php
         $no = 1;
-        foreach ($this->productList as $id => $row): ?>
+        foreach ($this->productList as $id => $row):
+            $name = $row['name'] ?? '-';
+            $unit = $row['unit'] ?? '-';
+            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
+            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
+            $initStock = !empty($row['initStock']) ? $row['initStock'] : 0;
+            $importStock = !empty($row['importStock']) ? $row['importStock'] : 0;
+            $exportStock = !empty($row['exportStock']) ? $row['exportStock'] : 0;
+            $remainStock = $initStock + $importStock - $exportStock;
+        ?>
         <tr id="row-<?= $id ?>">
             <td><?= $no ?></td>
-            <td><?= $this->escapeHtml($row['name']) ?></td>
-            <td><?= $this->escapeHtml($row['unit']) ?></td>
-            <td><?= $this->escapeHtml(number_format($row['sellingPrice'])) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($row['purchasePrice'])) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($row['purchasePrice']- $row['sellingPrice'])) ?> VNĐ</td>
+            <td><?= $this->escapeHtml($name) ?></td>
+            <td><?= $this->escapeHtml($unit) ?></td>
+            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($purchasePrice - $sellingPrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($initStock)) ?></td>
+            <td><?= $this->escapeHtml(number_format($importStock)) ?></td>
+            <td><?= $this->escapeHtml(number_format($exportStock)) ?></td>
+            <td><?= $this->escapeHtml(number_format($remainStock)) ?></td>
             <td>
                 <a href="/product/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
                 <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
@@ -48,7 +65,7 @@
             {
                 searchable: false,
                 orderable: false,
-                targets: [0,6]
+                targets: [0, -1]
             }
         ]
     });

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
-use Application\Model\Product;
+use Application\Model\VetCare;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
-class ProductController extends AbstractActionController
+class VetCareController extends AbstractActionController
 {
     public function indexAction()
     {
-        $productModel = new Product();
-        $productList = $productModel->getDataToView();
-        return new ViewModel(['productList' => $productList]);
+        $vetCareModel = new VetCare();
+        $vetCareList = $vetCareModel->getData();
+
+        return new ViewModel(['vetCareList' => $vetCareList]);
     }
 
     public function addAction()
@@ -28,24 +29,20 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doAdd($postData);
+        $vetCareModel = new VetCare();
+        $vetCareModel->addRow($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'add']);
+        $this->redirect()->toRoute('vetCare');
     }
 
     public function editAction()
     {
-        $id = $this->params()->fromRoute('id', null);
+        $id = $this->params()->fromRoute('id', '');
 
-        if (is_null($id)) {
-            $this->redirect()->toRoute('product', ['action' => 'index']);
-        }
+        $vetCareModel = new VetCare();
+        $vetCareData = $vetCareModel->getDataById($id);
 
-        $productModel = new Product();
-        $productData = $productModel->getDataById($id);
-
-        return new ViewModel(['productData' => $productData]);
+        return new ViewModel(['vetCareData' => $vetCareData]);
     }
 
     public function doEditAction()
@@ -53,10 +50,10 @@ class ProductController extends AbstractActionController
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doEdit($postData);
+        $vetCareModel = new VetCare();
+        $vetCareModel->doEdit($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'edit']);
+        $this->redirect()->toRoute('vet-care');
     }
 
     public function doDeleteAction()
@@ -74,8 +71,8 @@ class ProductController extends AbstractActionController
             }
 
             $id = $data['id'];
-            $product = new Product();
-            $product->deleteDataById($id);
+            $vetCareModel = new VetCare();
+            $vetCareModel->deleteDataById($id);
 
             return new JsonModel([
                 'success' => true,

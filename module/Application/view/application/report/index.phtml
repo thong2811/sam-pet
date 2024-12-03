@@ -1,0 +1,99 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<div class="container mt-5">
+    <h1 class="mb-5"> Báo cáo thu - chi </h1>
+    <div class="my-2">
+        <div class="d-flex">
+            <a href="/report/add" class="btn btn-primary"> Thêm mới +</a>
+        </div>
+    </div>
+    <table id="dataTable" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>STT</th>
+            <th>Ngày</th>
+            <th>Thu</th>
+            <th>Chi</th>
+            <th>Còn lại</th>
+            <th>Ghi chú</th>
+            <th>Thao tác</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php
+        $no = 1;
+        foreach ($this->reportList as $id => $row):
+            $date = !empty($row['date']) ? $row['date'] : '-';
+            $revenue = !empty($row['revenue']) ? $row['revenue'] : 0;
+            $expenses = !empty($row['expenses']) ? $row['expenses'] : 0;
+            $note = $row['note'] ?? '-';
+            ?>
+            <tr id="row-<?= $id ?>">
+                <td><?= $no ?></td>
+                <td><?= $this->escapeHtml($date) ?></td>
+                <td><?= $this->escapeHtml(number_format($revenue)) ?> VNĐ</td>
+                <td><?= $this->escapeHtml(number_format($expenses)) ?> VNĐ</td>
+                <td><?= $this->escapeHtml(number_format($revenue - $expenses)) ?> VNĐ</td>
+                <td><?= $this->escapeHtml($note) ?></td>
+                <td>
+                    <a href="/report/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
+                    <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
+                </td>
+            </tr>
+            <?php $no++; endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<script>
+    const tabeId = '#dataTable';
+    const table = new DataTable(tabeId, {
+        order: [[1, 'desc']],
+        columnDefs: [
+            {
+                searchable: false,
+                orderable: false,
+                targets: [0, -1]
+            }
+        ]
+    });
+    table.on('order.dt search.dt', function () {
+        let i = 1;
+        table.cells(null, 0, {search: 'applied', order: 'applied'}).every(function (cell) {
+            this.data(i++);
+        });
+    }).draw();
+
+    $(document).ready(function() {
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+    });
+
+    function remove(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
+            return;
+        }
+        $.ajax({
+            url: '/report/do-delete',
+            type: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: id }),
+            success: function (response) {
+                debugger
+                if (response.success) {
+                    table.row(`#row-${id}`).remove().draw(false);
+                } else {
+                    alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi xóa.');
+            },
+        });
+    }
+</script>
