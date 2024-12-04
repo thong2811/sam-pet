@@ -7,7 +7,7 @@ use Application\Service\CsvService;
 class ExportStock extends CsvService
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'date', 'productId', 'quantity', 'sellingPrice', 'purchasePrice', 'note'],
+        'header' => ['id', 'date', 'productId', 'productName', 'quantity', 'sellingPrice', 'purchasePrice', 'note'],
         'fileName' => 'export-stock.csv'
     ];
 

@@ -7,7 +7,7 @@ use Application\Service\CsvService;
 class ImportStock extends CsvService
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'date', 'productId', 'quantity', 'purchasePrice', 'note'],
+        'header' => ['id', 'date', 'productId', 'productName', 'quantity', 'purchasePrice', 'note'],
         'fileName' => 'import-stock.csv'
     ];
 

@@ -19,3 +19,7 @@
 .data-table th{
     text-align: center!important;
 }
+
+#dataTable {
+    font-size: 12px !important;
+}

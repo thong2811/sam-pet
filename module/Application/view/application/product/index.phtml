@@ -41,9 +41,9 @@
             <td><?= $no ?></td>
             <td><?= $this->escapeHtml($name) ?></td>
             <td><?= $this->escapeHtml($unit) ?></td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
             <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($purchasePrice - $sellingPrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
+            <td><?= $this->escapeHtml(number_format($sellingPrice - $purchasePrice)) ?> VNĐ</td>
             <td><?= $this->escapeHtml(number_format($initStock)) ?></td>
             <td><?= $this->escapeHtml(number_format($importStock)) ?></td>
             <td><?= $this->escapeHtml(number_format($exportStock)) ?></td>
