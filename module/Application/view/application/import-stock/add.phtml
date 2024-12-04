@@ -23,7 +23,7 @@
                 <tbody>
                 <tr>
                     <td>
-                        <input class="form-control date-picker w-100" name="date[]" value="<?= date('d-m-Y') ?>" autocomplete="off" required/>
+                        <input class="form-control date-picker w-100" name="date[]" value="<?= date('d/m/Y') ?>" autocomplete="off" required/>
                     </td>
                     <td>
                         <select class="select-product form-control select2" name="productId[]" onchange="addInputRow(this)" required>
@@ -68,7 +68,7 @@
         initVariable();
 
         $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
+            format: 'dd/mm/yyyy',
             autoclose:true
         });
     });
@@ -102,7 +102,7 @@
                 const datePicker = tbodyElm.find('.date-picker');
                 datePicker.val();
                 datePicker.datepicker({
-                    format: 'dd-mm-yyyy',
+                    format: 'dd/mm/yyyy',
                     autoclose:true
                 });
                 datePicker.val(datePicked);

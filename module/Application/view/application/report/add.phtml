@@ -4,7 +4,7 @@
  */
 ?>
 <?php
-$date = date('d-m-Y');
+$date = date('d/m/Y');
 
 $exportStockTotalAmountByDate = $this->exportStockTotalAmountByDate ?? [];
 $exportStockTotalAmount = $exportStockTotalAmountByDate[$date] ?? 0;
@@ -21,25 +21,32 @@ $expenses = $expensesTotalAmount;
 <div class="row mt-5">
     <h1> Báo cáo thu - chi </h1>
     <form method="post" action="/report/do-add">
-        <input type="hidden" id="exportStockTotalAmountByDate" value="<?= json_encode($exportStockTotalAmountByDate) ?>">
-        <input type="hidden" id="vetCareTotalAmountByDate" value="<?= json_encode($vetCareTotalAmountByDate) ?>">
-        <input type="hidden" id="expensesTotalAmountByDate" value="<?= json_encode($expensesTotalAmountByDate) ?>">
+        <input type="hidden" id="exportStockTotalAmountByDate" value='<?= json_encode($exportStockTotalAmountByDate) ?>'>
+        <input type="hidden" id="vetCareTotalAmountByDate" value='<?= json_encode($vetCareTotalAmountByDate) ?>'>
+        <input type="hidden" id="expensesTotalAmountByDate" value='<?= json_encode($expensesTotalAmountByDate) ?>'>
         <div class="mb-3">
             <label class="form-label">Ngày</label>
-            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= $date ?>" required>
+            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= $date ?>" onchange="reloadReportByDate()" required>
         </div>
         <div class="mb-3">
             <label class="form-label">Thu</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="revenue" required value="<?= $revenue ?>">
+                <input type="text" class="form-control" id="revenue" name="revenue" required value="<?= $revenue ?>">
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">Chi</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="expenses" required value="<?= $expenses ?>">
+                <input type="text" class="form-control" id="expenses" name="expenses" required value="<?= $expenses ?>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Còn lại</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input style="background: silver" type="text" class="form-control" id="remaining" required value="<?= $revenue - $expenses ?>">
             </div>
         </div>
         <div class="mb-3">
@@ -60,7 +67,7 @@ $expenses = $expensesTotalAmount;
 
     $(document).ready(function() {
         $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
+            format: 'dd/mm/yyyy',
             autoclose:true
         });
 
@@ -71,5 +78,19 @@ $expenses = $expensesTotalAmount;
         exportStockTotalAmountByDate = JSON.parse($('#exportStockTotalAmountByDate').val() ?? '{}');
         vetCareTotalAmountByDate = JSON.parse($('#vetCareTotalAmountByDate').val() ?? '{}');
         expensesTotalAmountByDate = JSON.parse($('#expensesTotalAmountByDate').val() ?? '{}');
+    }
+
+    function reloadReportByDate() {
+        const date = $('#date').val();
+
+        const exportStock = exportStockTotalAmountByDate[date] ?? 0;
+        const vetCare = vetCareTotalAmountByDate[date] ?? 0;
+        const revenue = exportStock + vetCare;
+
+        const expenses = expensesTotalAmountByDate[date] ?? 0;
+
+        $('#revenue').val(revenue);
+        $('#expenses').val(expenses);
+        $('#remaining').val(revenue - expenses);
     }
 </script>

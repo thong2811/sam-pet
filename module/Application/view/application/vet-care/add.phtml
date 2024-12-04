@@ -9,7 +9,7 @@
     <form method="post" action="/vet-care/do-add">
         <div class="mb-3">
             <label class="form-label">Ngày</label>
-            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= date('d-m-Y') ?>" required>
+            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= date('d/m/Y') ?>" required>
         </div>
         <div class="mb-3">
             <label class="form-label">Tiền điều trị</label>
@@ -39,7 +39,7 @@
 <script>
     $(document).ready(function() {
         $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
+            format: 'dd/mm/yyyy',
             autoclose:true
         });
     });

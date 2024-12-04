@@ -62,7 +62,21 @@ class ReportController extends AbstractActionController
         $reportModel = new Report();
         $reportData = $reportModel->getDataById($id);
 
-        return new ViewModel(['reportData' => $reportData]);
+        $exportStockModel = new ExportStock();
+        $exportStockTotalAmountByDate = $exportStockModel->totalAmountByDate();
+
+        $vetCareModel = new VetCare();
+        $vetCareTotalAmountByDate = $vetCareModel->totalAmountByDate();
+
+        $expensesModel = new Expenses();
+        $expensesTotalAmountByDate = $expensesModel->totalAmountByDate();
+
+        return new ViewModel([
+            'reportData' => $reportData,
+            "exportStockTotalAmountByDate" => $exportStockTotalAmountByDate,
+            "vetCareTotalAmountByDate" => $vetCareTotalAmountByDate,
+            "expensesTotalAmountByDate" => $expensesTotalAmountByDate
+        ]);
     }
 
     public function doEditAction()

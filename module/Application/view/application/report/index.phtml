@@ -72,7 +72,7 @@
 
     $(document).ready(function() {
         $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
+            format: 'dd/mm/yyyy',
             autoclose:true
         });
     });
@@ -87,7 +87,6 @@
             contentType: 'application/json',
             data: JSON.stringify({ id: id }),
             success: function (response) {
-                debugger
                 if (response.success) {
                     table.row(`#row-${id}`).remove().draw(false);
                 } else {
