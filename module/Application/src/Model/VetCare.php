@@ -11,6 +11,8 @@ class VetCare extends CsvService
         'fileName' => 'vet-care.csv'
     ];
 
+    const TREATMENT_PROFIT_PERCENT = 0.4;
+
     public function __construct()
     {
         parent::__construct(self::CSV_CONSTRUCT);
@@ -34,13 +36,15 @@ class VetCare extends CsvService
             $date = $row['date'] ?? null;
             $treatmentAmount = $row['treatmentAmount'] ?? null;
             $spaAmount = $row['spaAmount'] ?? null;
-            $quantity = $row['quantity'] ?? null;
             if (empty($date) || !is_numeric($treatmentAmount) || !is_numeric($spaAmount)) {
                 continue;
             }
 
-            $sum = $total[$date] ?? 0;
-            $total[$date] = $sum + ($treatmentAmount + $spaAmount);
+            $treatmentSum = $total[$date]['treatment'] ?? 0;
+            $total[$date]['treatment'] = $treatmentSum + $treatmentAmount;
+
+            $spaSum = $total[$date]['spa'] ?? 0;
+            $total[$date]['spa'] = $spaSum + $spaAmount;
         }
 
         return $total;

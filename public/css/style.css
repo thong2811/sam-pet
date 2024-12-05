@@ -27,3 +27,7 @@
 #dataTable .btn{
     font-size: 12px !important;
 }
+
+.form-label {
+    font-weight: bold;
+}

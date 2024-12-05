@@ -4,51 +4,87 @@
  */
 ?>
 <?php
+$treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
+
 $id = $this->reportData['id'] ?? '';
 $date = $this->reportData['date'] ?? '';
-$revenue = !empty($this->reportData['revenue']) ? $this->reportData['revenue'] : 0;
-$expenses = !empty($this->reportData['expenses']) ? $this->reportData['expenses'] : 0;
-$note = $this->reportData['note'] ?? 0;
 
 $exportStockTotalAmountByDate = $this->exportStockTotalAmountByDate ?? [];
 $vetCareTotalAmountByDate = $this->vetCareTotalAmountByDate ?? [];
 $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
 ?>
 <div class="row mt-5">
-    <h1> Thêm báo cáo thu - chi </h1>
+    <h1> Báo cáo thu - chi </h1>
     <form method="post" action="/report/do-edit">
-            <input type="hidden" name="id" value="<?= $id ?>">
-            <input type="hidden" id="exportStockTotalAmountByDate" value='<?= json_encode($exportStockTotalAmountByDate) ?>'>
-            <input type="hidden" id="vetCareTotalAmountByDate" value='<?= json_encode($vetCareTotalAmountByDate) ?>'>
-            <input type="hidden" id="expensesTotalAmountByDate" value='<?= json_encode($expensesTotalAmountByDate) ?>'>
+        <input type="hidden" name="id" value='<?= $id ?>'>
+        <input type="hidden" id="exportStockTotalAmountByDate" value='<?= json_encode($exportStockTotalAmountByDate) ?>'>
+        <input type="hidden" id="vetCareTotalAmountByDate" value='<?= json_encode($vetCareTotalAmountByDate) ?>'>
+        <input type="hidden" id="expensesTotalAmountByDate" value='<?= json_encode($expensesTotalAmountByDate) ?>'>
         <div class="mb-3">
             <label class="form-label">Ngày</label>
-            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" required onchange="reloadReportByDate()" value="<?= $date ?>">
+            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= $date ?>" onchange="reloadReportByDate()" required>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Thu</label>
-            <div class="input-group">
-                <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" id="revenue" name="revenue" required value="<?= $revenue ?>">
+        <div class="col-12 float-start">
+            <label class="form-label col-12">Pet shop</label>
+            <div class="mb-3 col-5 float-start">
+                <div class="input-group">
+                    <span class="input-group-text">Doanh thu</span>
+                    <input type="text" class="form-control" id="petShopRevenue" name="petShopRevenue" required readonly>
+                </div>
+            </div>
+            <div class="mb-3 col-5 float-end">
+                <div class="input-group">
+                    <span class="input-group-text">Lãi</span>
+                    <input type="text" class="form-control" id="petShopProfit" name="petShopProfit" required readonly>
+                </div>
             </div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Chi</label>
+            <label class="form-label">Thu spa</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" id="expenses" name="expenses" required value="<?= $expenses ?>">
+                <input type="text" class="form-control" id="spaRevenue" name="spaRevenue" required readonly>
+            </div>
+        </div>
+        <div class="col-12 float-start">
+            <label class="form-label col-12">Điều trị</label>
+            <div class="mb-3 col-5 float-start">
+                <div class="input-group">
+                    <span class="input-group-text">Doanh thu</span>
+                    <input type="text" class="form-control" id="treatmentRevenue" name="treatmentRevenue" required readonly>
+                </div>
+            </div>
+            <div class="mb-3 col-5 float-end">
+                <div class="input-group">
+                    <span class="input-group-text">Lãi (<?= $treatmentProfitPercent*100 ?>%)</span>
+                    <input type="text" class="form-control" id="treatmentProfit" name="treatmentProfit" required readonly>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tổng thu</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" id="revenue" name="revenue" required" readonly>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tổng chi</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" id="expenses" name="expenses" required readonly>
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">Còn lại</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input style="background: silver" type="text" class="form-control" id="remaining" required value="<?= $revenue - $expenses ?>">
+                <input type="text" class="form-control" id="remaining" required readonly>
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">Ghi chú</label>
-            <textarea class="form-control" name="note"><?= $note ?></textarea>
+            <textarea class="form-control" name="note"></textarea>
         </div>
         <div class="mb-3">
             <button type="submit" class="btn btn-primary float-end">Lưu</button>
@@ -68,7 +104,8 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
             autoclose:true
         });
 
-        initVariable()
+        initVariable();
+        reloadReportByDate();
     });
 
     function initVariable() {
@@ -79,15 +116,27 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
 
     function reloadReportByDate() {
         const date = $('#date').val();
-debugger
-        const exportStock = exportStockTotalAmountByDate[date] ?? 0;
-        const vetCare = vetCareTotalAmountByDate[date] ?? 0;
-        const revenue = exportStock + vetCare;
+        const exportStock = exportStockTotalAmountByDate[date] ?? {};
+        const vetCare = vetCareTotalAmountByDate[date] ?? {};
 
+        const petShopRevenue = exportStock.revenue ?? 0;
+        const petShopProfit = exportStock.profit ?? 0;
+        $('#petShopRevenue').val(petShopRevenue);
+        $('#petShopProfit').val(petShopProfit);
+
+        const spaRevenue = vetCare.spa ?? 0;
+        $('#spaRevenue').val(spaRevenue);
+
+        const treatmentRevenue = vetCare.treatment ?? 0;
+        const treatmentProfit = treatmentRevenue * <?= $treatmentProfitPercent ?>;
+        $('#treatmentRevenue').val(treatmentRevenue);
+        $('#treatmentProfit').val(treatmentProfit);
+
+        const revenue = petShopRevenue + spaRevenue + treatmentRevenue;
         const expenses = expensesTotalAmountByDate[date] ?? 0;
-
         $('#revenue').val(revenue);
         $('#expenses').val(expenses);
+
         $('#remaining').val(revenue - expenses);
     }
 </script>

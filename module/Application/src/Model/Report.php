@@ -7,7 +7,7 @@ use Application\Service\CsvService;
 class Report extends CsvService
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'date', 'revenue', 'expenses', 'note'],
+        'header' => ['id', 'date', 'petShopRevenue', 'petShopProfit', 'spaRevenue', 'treatmentRevenue', 'expenses', 'note'],
         'fileName' => 'report.csv'
     ];
 

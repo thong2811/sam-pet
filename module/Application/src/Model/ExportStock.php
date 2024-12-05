@@ -85,9 +85,11 @@ class ExportStock extends CsvService
         foreach ($data as $row) {
             $productId = $row['productId'] ?? null;
             $quantity = $row['quantity'] ?? null;
+
             if (is_null($productId) || !is_numeric($quantity)) {
                 continue;
             }
+
             $sum = $total[$productId] ?? 0;
             $total[$productId] = $sum + $quantity;
         }
@@ -102,13 +104,19 @@ class ExportStock extends CsvService
         foreach ($data as $row) {
             $date = $row['date'] ?? null;
             $sellingPrice = $row['sellingPrice'] ?? null;
+            $purchasePrice = $row['purchasePrice'] ?? null;
+            $profit = $sellingPrice - $purchasePrice;
             $quantity = $row['quantity'] ?? null;
+
             if (empty($date) || !is_numeric($sellingPrice) || !is_numeric($quantity)) {
                 continue;
             }
 
-            $sum = $total[$date] ?? 0;
-            $total[$date] = $sum + ($sellingPrice * $quantity);
+            $sellingPriceSum = $total[$date]['revenue'] ?? 0;
+            $total[$date]['revenue'] = $sellingPriceSum + ($sellingPrice * $quantity);
+
+            $profitSum = $total[$date]['profit'] ?? 0;
+            $total[$date]['profit'] = $profitSum + ($profit * $quantity);
         }
 
         return $total;
