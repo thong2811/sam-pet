@@ -6,7 +6,7 @@
 <?php
 $treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
 
-$date = date('d/m/Y');
+$date = date('d-m-Y');
 
 $exportStockTotalAmountByDate = $this->exportStockTotalAmountByDate ?? [];
 
@@ -101,7 +101,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
 
     $(document).ready(function() {
         $('.date-picker').datepicker({
-            format: 'dd/mm/yyyy',
+            format: 'dd-mm-yyyy',
             autoclose:true
         });
 

@@ -55,7 +55,7 @@
                 <td><?= $this->escapeHtml(number_format($revenue - $expenses)) ?> VNĐ</td>
                 <td><?= $this->escapeHtml($note) ?></td>
                 <td>
-                    <a href="/report/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
+<!--                    <a href="/report/edit/--><?//= $id ?><!--" class="btn btn-primary">Chỉnh sửa</a>-->
                     <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
                 </td>
             </tr>
@@ -88,7 +88,7 @@
 
     $(document).ready(function() {
         $('.date-picker').datepicker({
-            format: 'dd/mm/yyyy',
+            format: 'dd-mm-yyyy',
             autoclose:true
         });
     });
