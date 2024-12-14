@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Application\Controller;
 
 use Application\Model\Expenses;
-use Application\Model\Product;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;

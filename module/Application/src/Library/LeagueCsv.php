@@ -1,13 +1,13 @@
 <?php
 
-namespace Application\Service;
+namespace Application\Library;
 
 use League\Csv\Exception;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use function PHPUnit\Framework\directoryExists;
 
-class CsvService
+class LeagueCsv
 {
     private $filePath;
     private $headers;
@@ -204,5 +204,57 @@ class CsvService
     public static function generateId()
     {
         return uniqid();
+    }
+
+    function serverSideProcessing($data) {
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 0;
+        $start = isset($_POST['start']) ? intval($_POST['start']) : 0;
+        $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
+        $searchValue = $_POST['search']['value'] ?? '';
+        $orderColumnIndex = isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0;
+        $orderDirection = $_POST['order'][0]['dir'] ?? 'asc';
+
+        // Lấy các cột từ dữ liệu
+        $columns = array_keys(reset($data)); // Lấy các key làm tên cột
+
+        // Xác định cột cần sắp xếp
+        $orderColumn = $columns[$orderColumnIndex] ?? $columns[0];
+
+        // Tìm kiếm dữ liệu (nếu có từ khóa)
+        $filteredData = [];
+        if (!empty($searchValue)) {
+            foreach ($data as $key => $row) {
+                foreach ($row as $value) {
+                    if (stripos($value, $searchValue) !== false) {
+                        $filteredData[$key] = $row;
+                        break;
+                    }
+                }
+            }
+        } else {
+            $filteredData = $data;
+        }
+
+        // Sắp xếp dữ liệu
+        uasort($filteredData, function ($a, $b) use ($orderColumn, $orderDirection) {
+            if ($a[$orderColumn] == $b[$orderColumn]) {
+                return 0;
+            }
+            return ($a[$orderColumn] < $b[$orderColumn] ? -1 : 1) * ($orderDirection === 'asc' ? 1 : -1);
+        });
+
+        // Phân trang dữ liệu
+        $paginatedData = array_slice($filteredData, $start, $length, true);
+
+        // Trả về JSON cho DataTables
+        $response = [
+            "draw" => $draw,
+            "recordsTotal" => count($data), // Tổng số dòng không lọc
+            "recordsFiltered" => count($filteredData), // Tổng số dòng sau khi lọc
+            "data" => array_values($paginatedData), // Chỉ lấy giá trị
+        ];
+
+        header('Content-Type: application/json');
+        echo json_encode($response);
     }
 }

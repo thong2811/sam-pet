@@ -2,9 +2,9 @@
 
 namespace Application\Model;
 
-use Application\Service\CsvService;
+use Application\Library\LeagueCsv;
 
-class VetCare extends CsvService
+class VetCare extends LeagueCsv
 {
     public const CSV_CONSTRUCT = [
         'header' => ['id', 'date', 'treatmentAmount', 'spaAmount', 'note'],

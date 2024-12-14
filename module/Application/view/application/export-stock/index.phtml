@@ -28,71 +28,28 @@
             <th>Thao tác</th>
         </tr>
         </thead>
-        <tbody>
-        <?php
-        $no = 1;
-        foreach ($this->exportStockList as $id => $row):
-            if (empty($row['productId'])) {
-                continue;
-            }
-            $productId = $row['productId'];
-            $productName = $this->productList[$productId]['name'] ?? '-';
-            $date = !empty($row['date']) ? $row['date'] : '-';
-            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
-            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
-            $quantity = !empty($row['quantity']) ? $row['quantity'] : 1;
-            $note = $row['note'] ?? '-';
-        ?>
-        <tr id="row-<?= $id ?>">
-            <td><?= $no ?></td>
-            <td><?= $this->escapeHtml($date) ?></td>
-            <td><?= $this->escapeHtml($productName) ?></td>
-            <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($quantity)) ?></td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice*$quantity)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml($note) ?></td>
-            <td>
-                <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
-            </td>
-        </tr>
-        <?php $no++; endforeach; ?>
-        </tbody>
     </table>
 </div>
 <script>
-    const tabeId = '#dataTable';
-    const table = new DataTable(tabeId, {
-        aLengthMenu: [
-            [25, 50, 100, 200, -1],
-            [25, 50, 100, 200, "Tất cả"]
+    const table = new DataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: {
+            url: 'export-stock/data-table-server-side',
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'date', data: 'date' },
+            { name: 'productName', data: 'productName' },
+            { name: 'purchasePrice', data: 'purchasePrice' },
+            { name: 'sellingPrice', data: 'sellingPrice' },
+            { name: 'quantity', data: 'quantity' },
+            { name: 'total', data: 'total' },
+            { name: 'note', data: 'note' },
+            { name: 'action', data: 'action' }
         ],
-        iDisplayLength: 25,
-        order: [[1, 'desc']],
-        columnDefs: [
-            {
-                searchable: false,
-                orderable: false,
-                targets: [0, -1]
-            },
-            {
-                type: "date-eu",
-                targets: [1]
-            }
-        ]
-    });
-    table.on('order.dt search.dt', function () {
-        let i = 1;
-        table.cells(null, 0, {search: 'applied', order: 'applied'}).every(function (cell) {
-            this.data(i++);
-        });
-    }).draw();
-
-    $(document).ready(function() {
-        $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
-            autoclose:true
-        });
+        processing: true,
+        serverSide: true
     });
 
     function remove(id) {

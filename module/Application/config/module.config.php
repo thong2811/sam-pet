@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Application;
 
-use Application\Service\CsvService;
+use Application\Library\LeagueCsv;
+use Application\Service\CommonService;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 
@@ -96,7 +97,8 @@ return [
     ],
     'service_manager' => [
         'factories' => [
-            CsvService::class => InvokableFactory::class,
+            LeagueCsv::class => InvokableFactory::class,
+            CommonService::class => InvokableFactory::class
         ]
     ],
     'view_manager'    => [

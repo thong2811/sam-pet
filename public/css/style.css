@@ -16,18 +16,32 @@
     color: var(--bs-navbar-active-color);
 }
 
-.data-table th{
+.form-label {
+    font-weight: bold;
+}
+
+/*Datatable*/
+
+#dataTable_wrapper {
+    font-size: 12px !important;
+}
+
+#dataTable_wrapper th{
     text-align: center!important;
 }
 
-#dataTable {
+#dataTable_wrapper .btn{
     font-size: 12px !important;
 }
 
-#dataTable .btn{
-    font-size: 12px !important;
+#dataTable_wrapper .dt-layout-row:has(.active-sticky) {
+    background: white;
+    position: sticky;
+    top: 0;
 }
 
-.form-label {
-    font-weight: bold;
+#dataTable_wrapper table thead tr {
+    background: white;
+    position: sticky;
+    top: 18px;
 }

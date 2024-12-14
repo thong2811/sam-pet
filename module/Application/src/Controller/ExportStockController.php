@@ -6,6 +6,7 @@ namespace Application\Controller;
 
 use Application\Model\ExportStock;
 use Application\Model\Product;
+use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -87,6 +88,25 @@ class ExportStockController extends AbstractActionController
                 'success' => true,
                 'message' => 'Xóa thành công!',
             ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function dataTableServerSideAction()
+    {
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost();
+
+            $exportStockModel = new ExportStock();
+            $data = $exportStockModel->getData();
+            $response = CommonService::dataTableServerSideProcessing($postData, $data);
+            return new JsonModel($response);
+
         } catch (\RuntimeException $e) {
             return new JsonModel([
                 'success' => false,

@@ -2,9 +2,9 @@
 
 namespace Application\Model;
 
-use Application\Service\CsvService;
+use Application\Library\LeagueCsv;
 
-class ImportStock extends CsvService
+class ImportStock extends LeagueCsv
 {
     public const CSV_CONSTRUCT = [
         'header' => ['id', 'date', 'productId', 'productName', 'quantity', 'purchasePrice', 'note'],
