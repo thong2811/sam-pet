@@ -8,6 +8,9 @@ use Application\Library\LeagueCsv;
 use Application\Service\CommonService;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
+use Laminas\Session\Container;
+use Laminas\Session\SessionManager;
+use Laminas\Session\Storage\SessionArrayStorage;
 
 function createSegmentRoute($controller, $baseRoute, $childRoutes = [])
 {
@@ -95,12 +98,6 @@ return [
             Controller\ReportController::class      => InvokableFactory::class,
         ],
     ],
-    'service_manager' => [
-        'factories' => [
-            LeagueCsv::class => InvokableFactory::class,
-            CommonService::class => InvokableFactory::class
-        ]
-    ],
     'view_manager'    => [
         'display_not_found_reason' => true,
         'display_exceptions'       => true,
@@ -117,5 +114,24 @@ return [
             __DIR__ . '/../view',
         ],
         'strategies'               => ['ViewJsonStrategy']
+    ],
+
+// Service
+    'service_manager' => [
+        'factories' => [
+            LeagueCsv::class => InvokableFactory::class,
+            CommonService::class => InvokableFactory::class
+        ]
+    ],
+
+// Session
+    'session_containers' => [
+        Container::class,
+    ],
+    'session_storage' => [
+        'type' => SessionArrayStorage::class,
+    ],
+    'session_config'  => [
+        'gc_maxlifetime' => 7200,
     ],
 ];

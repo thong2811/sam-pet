@@ -2,9 +2,11 @@
 
 namespace Application\Library;
 
+use Application\Service\CommonService;
 use League\Csv\Exception;
 use League\Csv\Reader;
 use League\Csv\Writer;
+
 use function PHPUnit\Framework\directoryExists;
 
 class LeagueCsv
@@ -12,8 +14,8 @@ class LeagueCsv
     private $filePath;
     private $headers;
 
-    const DEFAULT_HEADERS = ['createdAt', 'updatedAt'];
-    const DEFAULT_PRIMARY_KEY = 'id';
+    public const DEFAULT_HEADERS = ['createdAt', 'updatedAt'];
+    public const DEFAULT_PRIMARY_KEY = 'id';
 
     protected function __construct(array $csvConstruct)
     {
@@ -91,6 +93,14 @@ class LeagueCsv
         });
     }
 
+    public function getDataByKeyTypeDate($key, $date)
+    {
+        $data = $this->getData();
+        return array_filter($data, function ($row) use ($key, $date) {
+            return isset($row[$key]) && CommonService::compareDate($row[$key], $date) === 0;
+        });
+    }
+
     public function getDataById($id)
     {
         $data = $this->getData();
@@ -108,6 +118,14 @@ class LeagueCsv
     {
         $csv = Writer::createFromPath($this->filePath, 'w');
         $csv->insertOne($this->headers);
+
+        // TODO convert date format. (delete in future)
+        foreach ($data as &$row) {
+            if (isset($row['date'])) {
+                $row['date'] = (new \DateTime($row['date']))->format('d-m-Y');
+            }
+        }
+
         $csv->insertAll($data);
     }
 
@@ -189,7 +207,8 @@ class LeagueCsv
         return $result;
     }
 
-    public function prepareRowToUpdate($data, $id, $rowUpdate) {
+    public function prepareRowToUpdate($data, $id, $rowUpdate)
+    {
         $row = $data[$id] ?? [];
 
         foreach ($this->headers as $key) {
@@ -200,61 +219,9 @@ class LeagueCsv
 
         return $row;
     }
-    
+
     public static function generateId()
     {
         return uniqid();
-    }
-
-    function serverSideProcessing($data) {
-        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 0;
-        $start = isset($_POST['start']) ? intval($_POST['start']) : 0;
-        $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
-        $searchValue = $_POST['search']['value'] ?? '';
-        $orderColumnIndex = isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0;
-        $orderDirection = $_POST['order'][0]['dir'] ?? 'asc';
-
-        // Lấy các cột từ dữ liệu
-        $columns = array_keys(reset($data)); // Lấy các key làm tên cột
-
-        // Xác định cột cần sắp xếp
-        $orderColumn = $columns[$orderColumnIndex] ?? $columns[0];
-
-        // Tìm kiếm dữ liệu (nếu có từ khóa)
-        $filteredData = [];
-        if (!empty($searchValue)) {
-            foreach ($data as $key => $row) {
-                foreach ($row as $value) {
-                    if (stripos($value, $searchValue) !== false) {
-                        $filteredData[$key] = $row;
-                        break;
-                    }
-                }
-            }
-        } else {
-            $filteredData = $data;
-        }
-
-        // Sắp xếp dữ liệu
-        uasort($filteredData, function ($a, $b) use ($orderColumn, $orderDirection) {
-            if ($a[$orderColumn] == $b[$orderColumn]) {
-                return 0;
-            }
-            return ($a[$orderColumn] < $b[$orderColumn] ? -1 : 1) * ($orderDirection === 'asc' ? 1 : -1);
-        });
-
-        // Phân trang dữ liệu
-        $paginatedData = array_slice($filteredData, $start, $length, true);
-
-        // Trả về JSON cho DataTables
-        $response = [
-            "draw" => $draw,
-            "recordsTotal" => count($data), // Tổng số dòng không lọc
-            "recordsFiltered" => count($filteredData), // Tổng số dòng sau khi lọc
-            "data" => array_values($paginatedData), // Chỉ lấy giá trị
-        ];
-
-        header('Content-Type: application/json');
-        echo json_encode($response);
     }
 }

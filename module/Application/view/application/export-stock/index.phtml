@@ -63,7 +63,7 @@
             data: JSON.stringify({ id: id }),
             success: function (response) {
                 if (response.success) {
-                    table.row(`#row-${id}`).remove().draw(false);
+                    table.draw(false);
                 } else {
                     alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
                 }

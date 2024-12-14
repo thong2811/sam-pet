@@ -40,7 +40,7 @@ class ExpensesController extends AbstractActionController
         $date = $this->params()->fromRoute('date', '');
 
         $expensesModel = new Expenses();
-        $expensesList = $expensesModel->getDataByKey('date', $date);
+        $expensesList = $expensesModel->getDataByKeyTypeDate('date', $date);
 
         return new ViewModel(['date' => $date, 'expensesList' => $expensesList]);
     }

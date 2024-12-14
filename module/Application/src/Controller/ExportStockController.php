@@ -47,7 +47,7 @@ class ExportStockController extends AbstractActionController
         $date = $this->params()->fromRoute('date', '');
 
         $exportStockModel = new ExportStock();
-        $exportStockList = $exportStockModel->getDataByKey('date', $date);
+        $exportStockList = $exportStockModel->getDataByKeyTypeDate('date', $date);
 
         $productModel = new Product();
         $productList = $productModel->getData();
@@ -103,7 +103,8 @@ class ExportStockController extends AbstractActionController
             $postData = $request->getPost();
 
             $exportStockModel = new ExportStock();
-            $data = $exportStockModel->getData();
+            $data = $exportStockModel->getDataToView();
+
             $response = CommonService::dataTableServerSideProcessing($postData, $data);
             return new JsonModel($response);
 

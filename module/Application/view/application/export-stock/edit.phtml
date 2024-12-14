@@ -6,7 +6,7 @@
 
 <div class="row mt-5">
     <h1> Chỉnh sửa xuất hàng ngày <?= $this->date ?></h1>
-    <input type="hidden" id="productList" value='<?= json_encode($this->productList ?? []) ?>'>
+    <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
     <form method="post" action="/export-stock/do-edit">
         <div class="container">
             <table class="table table-striped table-form mt-3">

@@ -46,7 +46,7 @@ class ImportStockController extends AbstractActionController
         $date = $this->params()->fromRoute('date', '');
 
         $importStockModel = new ImportStock();
-        $importStockList = $importStockModel->getDataByKey('date', $date);
+        $importStockList = $importStockModel->getDataByKeyTypeDate('date', $date);
 
         $productModel = new Product();
         $productList = $productModel->getData();
