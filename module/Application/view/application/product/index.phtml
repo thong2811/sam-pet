@@ -24,49 +24,30 @@
             <th>Thao tác</th>
         </tr>
         </thead>
-        <tbody>
-        <?php
-        $no = 1;
-        foreach ($this->productList as $id => $row):
-            $name = $row['name'] ?? '-';
-            $unit = $row['unit'] ?? '-';
-            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
-            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
-            $initStock = !empty($row['initStock']) ? $row['initStock'] : 0;
-            $importStock = !empty($row['importStock']) ? $row['importStock'] : 0;
-            $exportStock = !empty($row['exportStock']) ? $row['exportStock'] : 0;
-            $remainStock = $initStock + $importStock - $exportStock;
-        ?>
-        <tr id="row-<?= $id ?>">
-            <td><?= $no ?></td>
-            <td><?= $this->escapeHtml($name) ?></td>
-            <td><?= $this->escapeHtml($unit) ?></td>
-            <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($sellingPrice - $purchasePrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($initStock)) ?></td>
-            <td><?= $this->escapeHtml(number_format($importStock)) ?></td>
-            <td><?= $this->escapeHtml(number_format($exportStock)) ?></td>
-            <td><?= $this->escapeHtml(number_format($remainStock)) ?></td>
-            <td>
-                <a href="/product/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
-                <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
-            </td>
-        </tr>
-        <?php $no++; endforeach; ?>
-        </tbody>
     </table>
 </div>
 <script>
     const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
-        columnDefs: [
-            {
-                searchable: false,
-                orderable: false,
-                targets: [0, -1]
-            }
-        ]
+        ajax: {
+            url: 'product/data-table-server-side',
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'productName', data: 'name' },
+            { name: 'unit', data: 'unit' },
+            { name: 'purchasePrice', data: 'purchasePrice', render: $.fn.dataTable.render.number( ',') },
+            { name: 'sellingPrice', data: 'sellingPrice', render: $.fn.dataTable.render.number( ',') },
+            { name: 'profit', data: 'profit', render: $.fn.dataTable.render.number( ',') },
+            { name: 'initStock', data: 'initStock' },
+            { name: 'importStock', data: 'importStock' },
+            { name: 'exportStock', data: 'exportStock' },
+            { name: 'remainStock', data: 'remainStock' },
+            { name: 'action', data: 'action' }
+        ],
+        processing: true,
+        serverSide: true
     });
 
     function remove(id) {
@@ -80,7 +61,7 @@
             data: JSON.stringify({ id: id }),
             success: function (response) {
                 if (response.success) {
-                    table.row(`#row-${id}`).remove().draw(false);
+                    table.draw(false);
                 } else {
                     alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
                 }

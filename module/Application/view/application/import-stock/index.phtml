@@ -26,39 +26,28 @@
             <th>Ghi chú</th>
             <th>Thao tác</th>
         </tr>
-        </thead>
-        <tbody>
-        <?php
-        $no = 1;
-        foreach ($this->importStockList as $id => $row):
-            if (empty($row['productId'])) {
-                continue;
-            }
-            $productId = $row['productId'];
-            $productName = $this->productList[$productId]['name'] ?? '-';
-            $date = !empty($row['date']) ? $row['date'] : '-';
-            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
-            $quantity = !empty($row['quantity']) ? $row['quantity'] : 1;
-            $note = $row['note'] ?? '-';
-        ?>
-        <tr id="row-<?= $id ?>">
-            <td><?= $no ?></td>
-            <td><?= $this->escapeHtml($date) ?></td>
-            <td><?= $this->escapeHtml($productName) ?></td>
-            <td><?= $this->escapeHtml(number_format($purchasePrice)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($quantity)) ?></td>
-            <td><?= $this->escapeHtml(number_format($purchasePrice*$quantity)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml($note) ?></td>
-            <td>
-                <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
-            </td>
-        </tr>
-        <?php $no++; endforeach; ?>
-        </tbody>
     </table>
 </div>
 <script>
-    const table = initDataTable();
+    const table = initDataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: {
+            url: 'import-stock/data-table-server-side',
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'date', data: 'date' },
+            { name: 'productName', data: 'productName' },
+            { name: 'purchasePrice', data: 'purchasePrice', render: $.fn.dataTable.render.number( ',') },
+            { name: 'quantity', data: 'quantity' },
+            { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
+            { name: 'note', data: 'note' },
+            { name: 'action', data: 'action' }
+        ],
+        processing: true,
+        serverSide: true
+    });
 
     function remove(id) {
         if (!confirm('Bạn có chắc chắn muốn xóa?')) {
@@ -71,7 +60,7 @@
             data: JSON.stringify({ id: id }),
             success: function (response) {
                 if (response.success) {
-                    table.row(`#row-${id}`).remove().draw(false);
+                    table.draw(false);
                 } else {
                     alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
                 }

@@ -16,6 +16,16 @@ class Product extends LeagueCsv
         parent::__construct(self::CSV_CONSTRUCT);
     }
 
+    public function doAdd($postData)
+    {
+        $this->addRow($postData);
+    }
+
+    public function doEdit($postData)
+    {
+        $this->updateRow($postData);
+    }
+
     public function getDataToView() {
         $importStockModel = new ImportStock();
         $importStock = $importStockModel->totalQuantityByProduct();
@@ -25,20 +35,21 @@ class Product extends LeagueCsv
 
         $productList = $this->getData();
         foreach ($productList as $productId => &$productData) {
+            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
+            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
+            $initStock = !empty($row['initStock']) ? $row['initStock'] : 0;
+
+            $productData['profit'] = $sellingPrice - $purchasePrice;
             $productData['importStock'] = $importStock[$productId] ?? 0;
             $productData['exportStock'] = $exportStock[$productId] ?? 0;
+            $productData['remainStock'] = $initStock + $productData['importStock'] - $productData['exportStock'];
+
+            $productData['action'] = sprintf('
+                <button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>
+                <a href="/product/edit/%s" class="btn btn-primary">Chỉnh sửa</a>
+                ', $productId, $productId);
         }
 
         return $productList;
-    }
-
-    public function doAdd($postData)
-    {
-        $this->addRow($postData);
-    }
-
-    public function doEdit($postData)
-    {
-        $this->updateRow($postData);
     }
 }

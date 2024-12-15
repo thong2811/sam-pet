@@ -6,6 +6,7 @@ namespace Application\Controller;
 
 use Application\Model\ImportStock;
 use Application\Model\Product;
+use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -87,6 +88,26 @@ class ImportStockController extends AbstractActionController
                 'success' => true,
                 'message' => 'Xóa thành công!',
             ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function dataTableServerSideAction()
+    {
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost();
+
+            $importStockModel = new ImportStock();
+            $data = $importStockModel->getDataToView();
+
+            $response = CommonService::dataTableServerSideProcessing($postData, $data);
+            return new JsonModel($response);
+
         } catch (\RuntimeException $e) {
             return new JsonModel([
                 'success' => false,
