@@ -31,7 +31,7 @@
     </table>
 </div>
 <script>
-    const table = new DataTable('#dataTable', {
+    const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
         ajax: {
             url: 'export-stock/data-table-server-side',
@@ -41,10 +41,10 @@
             { name: 'no', data: 'no' },
             { name: 'date', data: 'date' },
             { name: 'productName', data: 'productName' },
-            { name: 'purchasePrice', data: 'purchasePrice' },
-            { name: 'sellingPrice', data: 'sellingPrice' },
+            { name: 'purchasePrice', data: 'purchasePrice', render: $.fn.dataTable.render.number( ',') },
+            { name: 'sellingPrice', data: 'sellingPrice', render: $.fn.dataTable.render.number( ',') },
             { name: 'quantity', data: 'quantity' },
-            { name: 'total', data: 'total' },
+            { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
             { name: 'note', data: 'note' },
             { name: 'action', data: 'action' }
         ],
