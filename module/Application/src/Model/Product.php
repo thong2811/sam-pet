@@ -26,6 +26,17 @@ class Product extends LeagueCsv
         $this->updateRow($postData);
     }
 
+    public function getProductNameList() {
+        $productNameList = [];
+        $data = $this->getData();
+
+        foreach ($data as $id => $row) {
+            $productNameList[$id] = $row['name'] ?? '';
+        }
+
+        return $productNameList;
+    }
+
     public function getDataToView() {
         $importStockModel = new ImportStock();
         $importStock = $importStockModel->totalQuantityByProduct();

@@ -35,15 +35,22 @@ class CommonService
     public static function sortData($data, $orderColumn, $orderDirection) {
 
         uasort($data, function ($a, $b) use ($orderColumn, $orderDirection) {
+            $aValue = $a[$orderColumn] ?? '';
+            $bValue = $b[$orderColumn] ?? '';
+
             switch ($orderColumn) {
                 case 'date':
-                    return self::compareDate($a[$orderColumn], $b[$orderColumn]) * ($orderDirection === 'asc' ? 1 : -1);
+                    $compare = self::compareDate($aValue, $bValue);
+                    break;
                 default:
-                    if ($a[$orderColumn] == $b[$orderColumn]) {
-                        return 0;
+                    if (is_numeric($aValue) && is_numeric($bValue)) {
+                        $compare = (int) $aValue - (int) $bValue;
+                        break;
                     }
-                    return ($a[$orderColumn] < $b[$orderColumn] ? -1 : 1) * ($orderDirection === 'asc' ? 1 : -1);
+                    $compare = self::compareString($aValue, $bValue);
             }
+
+            return $compare * ($orderDirection === 'asc' ? 1 : -1);
         });
 
         return $data;
@@ -97,5 +104,10 @@ class CommonService
             return 0;
         }
         return ($dt1->getTimestamp() < $dt2->getTimestamp() ? -1 : 1);
+    }
+
+    public static function compareString($str1, $str2) {
+        $collator = new \Collator('vi_VN');
+        return $collator->compare($str1, $str2);
     }
 }

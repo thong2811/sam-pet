@@ -22,16 +22,16 @@ const DATA_TABLES_CONFIG = {
     ],
     iDisplayLength: 30,
 
-    order: [[1, 'desc']],
+    order: [['1', 'desc']],
     columnDefs: [
         {
             searchable: false,
             orderable: false,
-            targets: [0, -1]
+            targets: ['no:name', 'action:name']
         },
         {
             type: "date-eu",
-            targets: [1]
+            targets: ['date:name']
         }
     ]
 }

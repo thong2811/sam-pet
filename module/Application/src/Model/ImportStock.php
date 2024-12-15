@@ -24,6 +24,9 @@ class ImportStock extends LeagueCsv
         $noteList = $postData['note'] ?? [];
         $dateList = $postData['date'] ?? [];
 
+        $productModel = new Product();
+        $productNameList = $productModel->getProductNameList();
+
         $rows = [];
         foreach ($productIdList as $index => $productId) {
             if (empty($productId)) {
@@ -32,6 +35,7 @@ class ImportStock extends LeagueCsv
 
             $rows[] = [
                 'productId' => $productId,
+                'productName' => $productNameList[$productId] ?? '',
                 'quantity' => $quantityList[$index] ?? 1,
                 'purchasePrice' => $purchasePriceList[$index] ?? 0,
                 'note' => $noteList[$index] ?? '',
@@ -53,15 +57,20 @@ class ImportStock extends LeagueCsv
         $noteList = $postData['note'] ?? [];
         $dateList = $postData['date'] ?? [];
 
+        $productModel = new Product();
+        $productNameList = $productModel->getProductNameList();
+
         $rows = [];
         foreach ($importStockIdList as $index => $importStockId) {
             if (empty($importStockId)) {
                 continue;
             }
 
+            $productId = $productIdList[$index] ?? '';
             $rows[] = [
                 'id' => $importStockId,
-                'productId' => $productIdList[$index] ?? '',
+                'productId' => $productId,
+                'productName' => $productNameList[$productId] ?? '',
                 'quantity' => $quantityList[$index] ?? 1,
                 'purchasePrice' => $purchasePriceList[$index] ?? 0,
                 'note' => $noteList[$index] ?? '',
