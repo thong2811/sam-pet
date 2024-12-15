@@ -17,36 +17,33 @@
             <th>Ngày</th>
             <th>Tiền điều trị</th>
             <th>Tiền spa</th>
+            <th>Tổng</th>
             <th>Ghi chú</th>
             <th>Thao tác</th>
         </tr>
         </thead>
-        <tbody>
-        <?php
-        $no = 1;
-        foreach ($this->vetCareList as $id => $row):
-            $date = !empty($row['date']) ? $row['date'] : '-';
-            $treatmentAmount = !empty($row['treatmentAmount']) ? $row['treatmentAmount'] : 0;
-            $spaAmount = !empty($row['spaAmount']) ? $row['spaAmount'] : 0;
-            $note = $row['note'] ?? '-';
-        ?>
-        <tr id="row-<?= $id ?>">
-            <td><?= $no ?></td>
-            <td><?= $this->escapeHtml($date) ?></td>
-            <td><?= $this->escapeHtml(number_format($treatmentAmount)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml(number_format($spaAmount)) ?> VNĐ</td>
-            <td><?= $this->escapeHtml($note) ?></td>
-            <td>
-                <a href="/vet-care/edit/<?= $id ?>" class="btn btn-primary">Chỉnh sửa</a>
-                <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
-            </td>
-        </tr>
-        <?php $no++; endforeach; ?>
-        </tbody>
+
     </table>
 </div>
 <script>
-    const table = initDataTable();
+    const table = initDataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: {
+            url: 'vet-care/data-table-server-side',
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'date', data: 'date' },
+            { name: 'treatmentAmount', data: 'treatmentAmount', render: $.fn.dataTable.render.number( ',') },
+            { name: 'spaAmount', data: 'spaAmount', render: $.fn.dataTable.render.number( ',') },
+            { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
+            { name: 'note', data: 'note' },
+            { name: 'action', data: 'action' }
+        ],
+        processing: true,
+        serverSide: true
+    });
 
     function remove(id) {
         if (!confirm('Bạn có chắc chắn muốn xóa?')) {
@@ -59,7 +56,7 @@
             data: JSON.stringify({ id: id }),
             success: function (response) {
                 if (response.success) {
-                    table.row(`#row-${id}`).remove().draw(false);
+                    table.draw(false);
                 } else {
                     alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
                 }

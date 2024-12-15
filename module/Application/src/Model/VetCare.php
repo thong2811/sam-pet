@@ -11,7 +11,7 @@ class VetCare extends LeagueCsv
         'fileName' => 'vet-care.csv'
     ];
 
-    const TREATMENT_PROFIT_PERCENT = 0.4;
+    public const TREATMENT_PROFIT_PERCENT = 0.4;
 
     public function __construct()
     {
@@ -48,5 +48,18 @@ class VetCare extends LeagueCsv
         }
 
         return $total;
+    }
+
+    public function getDataToView() {
+        $data = $this->getData();
+
+        foreach ($data as $id => &$row) {
+            $treatmentAmount = $row['treatmentAmount'] ?? 0;
+            $spaAmount = $row['spaAmount'] ?? 0;
+            $row['total'] = (int) $treatmentAmount + (int) $spaAmount;
+            $row['action'] = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
+        }
+
+        return $data;
     }
 }

@@ -15,13 +15,7 @@ class ImportStockController extends AbstractActionController
 {
     public function indexAction()
     {
-        $importStockModel = new ImportStock();
-        $importStockList = $importStockModel->getData();
-
-        $productModel = new Product();
-        $productList = $productModel->getData();
-
-        return new ViewModel(['importStockList' => $importStockList, 'productList' => $productList]);
+        return new ViewModel();
     }
 
     public function addAction()

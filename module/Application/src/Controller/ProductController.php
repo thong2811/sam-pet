@@ -14,9 +14,7 @@ class ProductController extends AbstractActionController
 {
     public function indexAction()
     {
-        $productModel = new Product();
-        $productList = $productModel->getDataToView();
-        return new ViewModel(['productList' => $productList]);
+        return new ViewModel();
     }
 
     public function addAction()

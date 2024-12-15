@@ -15,13 +15,7 @@ class ExportStockController extends AbstractActionController
 {
     public function indexAction()
     {
-        $exportStockModel = new ExportStock();
-        $exportStockList = $exportStockModel->getData();
-
-        $productModel = new Product();
-        $productList = $productModel->getData();
-
-        return new ViewModel(['exportStockList' => $exportStockList, 'productList' => $productList]);
+        return new ViewModel();
     }
 
     public function addAction()

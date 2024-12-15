@@ -27,44 +27,32 @@
             <th>Thao tác</th>
         </tr>
         </thead>
-        <tbody>
-        <?php
-        $no = 1;
-        foreach ($this->reportList as $id => $row):
-            $date = !empty($row['date']) ? $row['date'] : '-';
-            $revenue = !empty($row['revenue']) ? $row['revenue'] : 0;
-            $petShopRevenue = !empty($row['petShopRevenue']) ? $row['petShopRevenue'] : 0;
-            $petShopProfit = !empty($row['petShopProfit']) ? $row['petShopProfit'] : 0;
-            $spaRevenue = !empty($row['spaRevenue']) ? $row['spaRevenue'] : 0;
-            $treatmentRevenue = !empty($row['treatmentRevenue']) ? $row['treatmentRevenue'] : 0;
-
-            $revenue = $petShopRevenue + $spaRevenue + $treatmentRevenue;
-            $expenses = !empty($row['expenses']) ? $row['expenses'] : 0;
-            $note = $row['note'] ?? '-';
-            ?>
-            <tr id="row-<?= $id ?>">
-                <td><?= $no ?></td>
-                <td><?= $this->escapeHtml($date) ?></td>
-                <td><?= $this->escapeHtml(number_format($petShopRevenue)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($petShopProfit)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($spaRevenue)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($treatmentRevenue)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($treatmentRevenue * \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($revenue)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($expenses)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml(number_format($revenue - $expenses)) ?> VNĐ</td>
-                <td><?= $this->escapeHtml($note) ?></td>
-                <td>
-<!--                    <a href="/report/edit/--><?//= $id ?><!--" class="btn btn-primary">Chỉnh sửa</a>-->
-                    <button class="btn btn-danger" onclick='remove("<?= $id ?>")'> Xóa </button>
-                </td>
-            </tr>
-            <?php $no++; endforeach; ?>
-        </tbody>
     </table>
 </div>
 <script>
-    const table = initDataTable();
+    const table = initDataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: {
+            url: 'report/data-table-server-side',
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'date', data: 'date' },
+            { name: 'petShopRevenue', data: 'petShopRevenue', render: $.fn.dataTable.render.number( ',') },
+            { name: 'petShopProfit', data: 'petShopProfit', render: $.fn.dataTable.render.number( ',') },
+            { name: 'spaRevenue', data: 'spaRevenue', render: $.fn.dataTable.render.number( ',') },
+            { name: 'treatmentRevenue', data: 'treatmentRevenue', render: $.fn.dataTable.render.number( ',') },
+            { name: 'treatmentProfit', data: 'treatmentProfit', render: $.fn.dataTable.render.number( ',') },
+            { name: 'revenue', data: 'revenue', render: $.fn.dataTable.render.number( ',') },
+            { name: 'expenses', data: 'expenses', render: $.fn.dataTable.render.number( ',') },
+            { name: 'remaining', data: 'remaining', render: $.fn.dataTable.render.number( ',') },
+            { name: 'note', data: 'note' },
+            { name: 'action', data: 'action' }
+        ],
+        processing: true,
+        serverSide: true
+    });
 
     function remove(id) {
         if (!confirm('Bạn có chắc chắn muốn xóa?')) {
@@ -77,7 +65,7 @@
             data: JSON.stringify({ id: id }),
             success: function (response) {
                 if (response.success) {
-                    table.row(``).remove().draw(false);
+                    table.draw(false);
                 } else {
                     alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
                 }

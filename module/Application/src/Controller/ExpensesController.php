@@ -14,10 +14,7 @@ class ExpensesController extends AbstractActionController
 {
     public function indexAction()
     {
-        $expensesModel = new Expenses();
-        $expensesList = $expensesModel->getData();
-
-        return new ViewModel(['expensesList' => $expensesList]);
+        return new ViewModel();
     }
 
     public function addAction()

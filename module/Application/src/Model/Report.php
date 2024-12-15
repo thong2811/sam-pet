@@ -25,4 +25,23 @@ class Report extends LeagueCsv
     {
         $this->updateRow($postData);
     }
+
+    public function getDataToView() {
+        $data = $this->getData();
+
+        foreach ($data as $id => &$row) {
+            $petShopRevenue = !empty($row['petShopRevenue']) ? $row['petShopRevenue'] : 0;
+            $spaRevenue = !empty($row['spaRevenue']) ? $row['spaRevenue'] : 0;
+            $treatmentRevenue = !empty($row['treatmentRevenue']) ? $row['treatmentRevenue'] : 0;
+            $expenses = !empty($row['expenses']) ? $row['expenses'] : 0;
+
+            $row['treatmentProfit'] = (int) $treatmentRevenue * VetCare::TREATMENT_PROFIT_PERCENT;
+            $row['revenue'] = (int) $petShopRevenue + (int) $spaRevenue + (int) $treatmentRevenue;
+            $row['revenue'] = (int) $petShopRevenue + (int) $spaRevenue + (int) $treatmentRevenue;
+            $row['remaining'] = $row['revenue'] - (int) $expenses;
+            $row['action'] = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
+        }
+
+        return $data;
+    }
 }

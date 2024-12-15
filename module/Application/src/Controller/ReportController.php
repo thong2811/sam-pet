@@ -8,6 +8,7 @@ use Application\Model\Expenses;
 use Application\Model\ExportStock;
 use Application\Model\Report;
 use Application\Model\VetCare;
+use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -16,9 +17,7 @@ class ReportController extends AbstractActionController
 {
     public function indexAction()
     {
-        $reportModel = new Report();
-        $reportList = $reportModel->getData();
-        return new ViewModel(['reportList' => $reportList]);
+        return new ViewModel();
     }
 
     public function addAction()
@@ -112,6 +111,26 @@ class ReportController extends AbstractActionController
                 'success' => true,
                 'message' => 'Xóa thành công!',
             ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function dataTableServerSideAction()
+    {
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost();
+
+            $reportModel = new Report();
+            $data = $reportModel->getDataToView();
+
+            $response = CommonService::dataTableServerSideProcessing($postData, $data);
+            return new JsonModel($response);
+
         } catch (\RuntimeException $e) {
             return new JsonModel([
                 'success' => false,

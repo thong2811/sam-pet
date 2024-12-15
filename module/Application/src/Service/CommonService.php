@@ -10,7 +10,7 @@ class CommonService
             'start' => isset($_POST['start']) ? intval($_POST['start']) : 0,
             'length' => isset($_POST['length']) ? intval($_POST['length']) : 10,
             'searchValue' => isset($_POST['search']['value']) ? $_POST['search']['value'] : '',
-            'orderColumnIndex' => isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0,
+            'orderColumnName' => isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0,
             'orderDirection' => isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : 'asc',
         ];
     }
@@ -32,8 +32,7 @@ class CommonService
         return $filteredData;
     }
 
-    public static function sortData($data, $columns, $orderColumnIndex, $orderDirection) {
-        $orderColumn = $columns[$orderColumnIndex] ?? $columns[0];
+    public static function sortData($data, $orderColumn, $orderDirection) {
 
         uasort($data, function ($a, $b) use ($orderColumn, $orderDirection) {
             switch ($orderColumn) {
@@ -70,15 +69,13 @@ class CommonService
             'start' => isset($postData['start']) ? intval($postData['start']) : 0,
             'length' => isset($postData['length']) ? intval($postData['length']) : 10,
             'searchValue' => $postData['search']['value'] ?? '',
-            'orderColumnIndex' => isset($postData['order'][0]['column']) ? intval($postData['order'][0]['column']) : 0,
+            'orderColumn' => $postData['order'][0]['name'] ?? '',
             'orderDirection' => $postData['order'][0]['dir'] ?? 'asc'
         ];
 
-        $columns = array_keys(reset($data));
-
         $filteredData = self::filterData($data, $params['searchValue']);
 
-        $sortedData = self::sortData($filteredData, $columns, $params['orderColumnIndex'], $params['orderDirection']);
+        $sortedData = self::sortData($filteredData, $params['orderColumn'], $params['orderDirection']);
         $sortedData = self::addNoNumberToRowData($sortedData);
 
         $paginatedData = self::paginateData($sortedData, $params['start'], $params['length']);
