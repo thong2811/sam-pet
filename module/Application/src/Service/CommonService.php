@@ -79,17 +79,16 @@ class CommonService
         $filteredData = self::filterData($data, $params['searchValue']);
 
         $sortedData = self::sortData($filteredData, $columns, $params['orderColumnIndex'], $params['orderDirection']);
+        $sortedData = self::addNoNumberToRowData($sortedData);
 
         $paginatedData = self::paginateData($sortedData, $params['start'], $params['length']);
-
-        $finalData = self::addNoNumberToRowData($paginatedData);
 
         // Trả về JSON cho DataTables
         return [
             "draw" => $params['draw'],
             "recordsTotal" => count($data),
             "recordsFiltered" => count($filteredData),
-            "data" => array_values($finalData),
+            "data" => array_values($paginatedData),
         ];
     }
 
