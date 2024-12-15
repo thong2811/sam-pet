@@ -71,7 +71,13 @@
     let productList = [];
     $(document).ready(function() {
         tableInputRowHtml = $('.table-form').find('tbody').html();
+
         initVariable();
+        $('.select2').select2();
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
     });
 
     $(document).keypress(event => {

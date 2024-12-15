@@ -57,6 +57,11 @@
     let tableInputRowHtml = ``;
     $(document).ready(function() {
         tableInputRowHtml = $('.table-form').find('tbody').html();
+
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
     });
 
     $(document).keypress(event => {

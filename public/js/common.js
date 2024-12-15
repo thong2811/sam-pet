@@ -1,15 +1,3 @@
-$(document).ready(function() {
-    autoInit();
-});
-
-function autoInit() {
-    $('.date-picker').datepicker({
-        format: 'dd-mm-yyyy',
-        autoclose:true
-    });
-    $('.select2').select2();
-}
-
 function convertToInt(value) {
     if (typeof value === 'number') {
         return value;
