@@ -5,6 +5,17 @@
 ?>
 <div class="container mt-5">
     <h1 class="mb-5"> Quản lý kho</h1>
+    <div class="container row" style="font-size: 10px">
+        <div class="alert alert-info p-2 col-2 float-start">Tổng tồn (giá nhập):
+            <span class="fw-bold" id="totalRemainStock_purchasePrice"></span>
+        </div>
+        <div class="alert alert-info p-2 col-2 float-start ms-2">Tổng tồn (giá bán):
+            <span class="fw-bold" id="totalRemainStock_sellingPrice"></span>
+        </div>
+        <div class="alert alert-info p-2 col-2 float-start ms-2">Lợi nhuận sau khi bán:
+            <span class="fw-bold" id="totalProfit"></span>
+        </div>
+    </div>
     <div class="my-2">
         <a href="/product/add" class="btn btn-primary">+ Thêm mới</a>
     </div>
@@ -31,7 +42,11 @@
         ...DATA_TABLES_CONFIG,
         ajax: {
             url: 'product/data-table-server-side',
-            type: 'POST'
+            type: 'POST',
+            dataSrc: (json) => {
+                reloadHeaderInfo(json);
+                return json.data || {};
+            }
         },
         columns: [
             { name: 'no', data: 'no' },
@@ -71,5 +86,15 @@
                 alert('Đã xảy ra lỗi khi xóa.');
             },
         });
+    }
+
+    function reloadHeaderInfo(json) {
+        const totalRemainStock_purchasePrice = json.totalRemainStock_purchasePrice || 0;
+        const totalRemainStock_sellingPrice = json.totalRemainStock_sellingPrice || 0;
+        const totalProfit = totalRemainStock_sellingPrice - totalRemainStock_purchasePrice;
+
+        $('#totalRemainStock_purchasePrice').html(formatNumber(totalRemainStock_purchasePrice) + ' VNĐ');
+        $('#totalRemainStock_sellingPrice').html(formatNumber(totalRemainStock_sellingPrice) + ' VNĐ');
+        $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ');
     }
 </script>

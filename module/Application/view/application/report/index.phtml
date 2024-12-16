@@ -6,10 +6,7 @@
 <div class="container mt-5">
     <h1 class="mb-5"> Báo cáo thu - chi </h1>
     <div class="container row" style="font-size: 10px">
-        <div class="alert alert-info p-2 col-2 float-start">Tổng tiền tồn:
-            <span class="fw-bold"></span>
-        </div>
-        <div class="alert alert-info p-2 col-2 float-start ms-2">Tổng thu:
+        <div class="alert alert-info p-2 col-2 float-start">Tổng thu:
             <span class="fw-bold" id="totalRevenue"></span>
         </div>
         <div class="alert alert-info p-2 col-2 float-start ms-2">Tổng chi:
@@ -53,8 +50,8 @@
         ajax: {
             url: 'report/data-table-server-side',
             type: 'POST',
-            dataSrc: function (json) {
-                reloadReportHeaderInfo(json);
+            dataSrc: (json) => {
+                reloadHeaderInfo(json);
                 return json.data || {};
             }
         },
@@ -99,15 +96,15 @@
         });
     }
 
-    function reloadReportHeaderInfo(json) {
+    function reloadHeaderInfo(json) {
         const totalRevenue = json.totalRevenue || 0;
         const totalExpenses = json.totalExpenses || 0;
         const totalMissingAmount = json.totalMissingAmount || 0;
         const totalProfit = totalRevenue - totalExpenses + totalMissingAmount;
 
-        $('#totalRevenue').html(formatNumber(totalRevenue) + ' VNĐ')
-        $('#totalExpenses').html(formatNumber(totalExpenses) + ' VNĐ')
-        $('#totalMissingAmount').html(formatNumber(totalMissingAmount) + ' VNĐ')
-        $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ')
+        $('#totalRevenue').html(formatNumber(totalRevenue) + ' VNĐ');
+        $('#totalExpenses').html(formatNumber(totalExpenses) + ' VNĐ');
+        $('#totalMissingAmount').html(formatNumber(totalMissingAmount) + ' VNĐ');
+        $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ');
     }
 </script>

@@ -23,6 +23,7 @@
 /*Datatable*/
 
 #dataTable_wrapper {
+    overflow: auto;
     font-size: 12px !important;
 }
 
@@ -44,10 +45,6 @@
     background: white;
     position: sticky;
     top: 18px;
-}
-
-.dt-layout-table {
-    overflow: auto;
 }
 
 .overlay-loading {

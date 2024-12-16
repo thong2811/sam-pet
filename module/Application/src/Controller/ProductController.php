@@ -95,10 +95,10 @@ class ProductController extends AbstractActionController
             $postData = $request->getPost();
 
             $productModel = new Product();
-            $data = $productModel->getDataToView();
+            list($totals, $data) = $productModel->getDataToView();
 
             $response = CommonService::dataTableServerSideProcessing($postData, $data);
-            return new JsonModel($response);
+            return new JsonModel(array_merge($totals, $response));
 
         } catch (\RuntimeException $e) {
             return new JsonModel([

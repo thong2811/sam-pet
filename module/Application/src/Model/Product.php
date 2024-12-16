@@ -44,23 +44,33 @@ class Product extends LeagueCsv
         $exportStockModel = new ExportStock();
         $exportStock = $exportStockModel->totalQuantityByProduct();
 
+        $totalRemainStock_purchasePrice = 0;
+        $totalRemainStock_sellingPrice = 0;
+
         $productList = $this->getData();
         foreach ($productList as $productId => &$productData) {
-            $sellingPrice = !empty($row['sellingPrice']) ? $row['sellingPrice'] : 0;
-            $purchasePrice = !empty($row['purchasePrice']) ? $row['purchasePrice'] : 0;
-            $initStock = !empty($row['initStock']) ? $row['initStock'] : 0;
+            $sellingPrice = !empty($productData['sellingPrice']) ? $productData['sellingPrice'] : 0;
+            $purchasePrice = !empty($productData['purchasePrice']) ? $productData['purchasePrice'] : 0;
+            $initStock = !empty($productData['initStock']) ? $productData['initStock'] : 0;
 
             $productData['profit'] = $sellingPrice - $purchasePrice;
             $productData['importStock'] = $importStock[$productId] ?? 0;
             $productData['exportStock'] = $exportStock[$productId] ?? 0;
             $productData['remainStock'] = $initStock + $productData['importStock'] - $productData['exportStock'];
-
             $productData['action'] = sprintf('
                 <button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>
                 <a href="/product/edit/%s" class="btn btn-primary">Chỉnh sửa</a>
                 ', $productId, $productId);
+
+            $totalRemainStock_purchasePrice += (int) $purchasePrice * $productData['remainStock'];
+            $totalRemainStock_sellingPrice += (int) $sellingPrice * $productData['remainStock'];
         }
 
-        return $productList;
+        $totals = [
+            'totalRemainStock_purchasePrice' => $totalRemainStock_purchasePrice,
+            'totalRemainStock_sellingPrice' => $totalRemainStock_sellingPrice
+        ];
+
+        return [$totals, $productList];
     }
 }
