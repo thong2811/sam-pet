@@ -5,6 +5,23 @@
 ?>
 <div class="container mt-5">
     <h1 class="mb-5"> Báo cáo thu - chi </h1>
+    <div class="container row" style="font-size: 10px">
+        <div class="alert alert-info p-2 col-2 float-start">Tổng tiền tồn:
+            <span class="fw-bold"></span>
+        </div>
+        <div class="alert alert-info p-2 col-2 float-start ms-2">Tổng thu:
+            <span class="fw-bold" id="totalRevenue"></span>
+        </div>
+        <div class="alert alert-info p-2 col-2 float-start ms-2">Tổng chi:
+            <span class="fw-bold" id="totalExpenses"></span>
+        </div>
+        <div class="alert alert-info p-2 col-2 float-start ms-2">Tiền dư/thiếu:
+            <span class="fw-bold" id="totalMissingAmount"></span>
+        </div>
+        <div class="alert alert-info p-2 col-2 float-start ms-2">Tiền còn lại:
+            <span class="fw-bold" id="totalProfit"></span>
+        </div>
+    </div>
     <div class="my-2">
         <div class="d-flex">
             <a href="/report/add" class="btn btn-primary"> Thêm mới +</a>
@@ -23,6 +40,7 @@
             <th>Tổng thu</th>
             <th>Tổng chi</th>
             <th>Còn lại</th>
+            <th>Tiền dư/thiếu</th>
             <th>Ghi chú</th>
             <th>Thao tác</th>
         </tr>
@@ -34,7 +52,11 @@
         ...DATA_TABLES_CONFIG,
         ajax: {
             url: 'report/data-table-server-side',
-            type: 'POST'
+            type: 'POST',
+            dataSrc: function (json) {
+                reloadReportHeaderInfo(json);
+                return json.data || {};
+            }
         },
         columns: [
             { name: 'no', data: 'no' },
@@ -47,10 +69,10 @@
             { name: 'revenue', data: 'revenue', render: $.fn.dataTable.render.number( ',') },
             { name: 'expenses', data: 'expenses', render: $.fn.dataTable.render.number( ',') },
             { name: 'remaining', data: 'remaining', render: $.fn.dataTable.render.number( ',') },
+            { name: 'missingAmount', data: 'missingAmount', render: $.fn.dataTable.render.number( ',') },
             { name: 'note', data: 'note' },
             { name: 'action', data: 'action' }
         ],
-        processing: true,
         serverSide: true
     });
 
@@ -75,5 +97,17 @@
                 alert('Đã xảy ra lỗi khi xóa.');
             },
         });
+    }
+
+    function reloadReportHeaderInfo(json) {
+        const totalRevenue = json.totalRevenue || 0;
+        const totalExpenses = json.totalExpenses || 0;
+        const totalMissingAmount = json.totalMissingAmount || 0;
+        const totalProfit = totalRevenue - totalExpenses + totalMissingAmount;
+
+        $('#totalRevenue').html(formatNumber(totalRevenue) + ' VNĐ')
+        $('#totalExpenses').html(formatNumber(totalExpenses) + ' VNĐ')
+        $('#totalMissingAmount').html(formatNumber(totalMissingAmount) + ' VNĐ')
+        $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ')
     }
 </script>

@@ -21,13 +21,8 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
             <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" onchange="reloadReportByDate()" required>
         </div>
         <div class="mb-3">
-            <label class="form-label">Ghi chú</label>
-            <textarea class="form-control" name="note"></textarea>
-        </div>
-
-        <div class="mb-3">
             <label class="form-label">Tính tiền (Tự động tính khi thay đổi ngày)</label>
-            <div class="card p-3 bg-info">
+            <div class="card p-3 bg-light">
                 <div class="col-12 float-start">
                     <label class="form-label col-12">Pet shop</label>
                     <div class="mb-3 col-5 float-start">
@@ -87,6 +82,17 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tiền dư/thiếu</label>
+            <div class="input-group">
+                <span class="input-group-text">VNĐ</span>
+                <input type="text" class="form-control" id="missingAmount" name="missingAmount">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ghi chú</label>
+            <textarea class="form-control" name="note"></textarea>
         </div>
 
         <div class="mb-3">

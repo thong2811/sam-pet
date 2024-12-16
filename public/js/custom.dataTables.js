@@ -46,6 +46,9 @@ function initDataTable(tableId = '#dataTable', config = DATA_TABLES_CONFIG) {
     table.on('deselect', function () {
         calculateSumAmountCells(table);
     });
+    table.on('processing.dt', function (e, settings, processing) {
+        $('.overlay-loading').css('display', processing ? 'block' : 'none');
+    })
 
     return table;
 }

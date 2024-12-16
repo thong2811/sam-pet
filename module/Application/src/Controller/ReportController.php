@@ -126,10 +126,10 @@ class ReportController extends AbstractActionController
             $postData = $request->getPost();
 
             $reportModel = new Report();
-            $data = $reportModel->getDataToView();
+            list($totals, $data) = $reportModel->getDataToView();
 
             $response = CommonService::dataTableServerSideProcessing($postData, $data);
-            return new JsonModel($response);
+            return new JsonModel(array_merge($totals, $response));
 
         } catch (\RuntimeException $e) {
             return new JsonModel([
