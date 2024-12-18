@@ -1,3 +1,10 @@
+$(document).ready(function() {
+    $('.date-picker').datepicker({
+        format: 'dd-mm-yyyy',
+        autoclose:true
+    });
+});
+
 function convertToInt(value) {
     if (typeof value === 'number') {
         return value;

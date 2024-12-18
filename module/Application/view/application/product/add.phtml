@@ -19,15 +19,19 @@
             <label class="form-label">Giá nhập</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="sellingPrice" required>
+                <input type="text" class="form-control" name="purchasePrice" required>
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">Giá bán</label>
             <div class="input-group">
                 <span class="input-group-text">VNĐ</span>
-                <input type="text" class="form-control" name="purchasePrice" required>
+                <input type="text" class="form-control" name="sellingPrice" required>
             </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tồn đầu kì</label>
+            <input type="number" class="form-control" name="initStock" required value="0">
         </div>
         <div class="mb-3">
             <button type="submit" class="btn btn-primary float-end">Tạo</button>

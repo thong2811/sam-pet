@@ -31,7 +31,7 @@ const DATA_TABLES_CONFIG = {
         },
         {
             type: "date-eu",
-            targets: ['date:name']
+            targets: ['date:name', 'updatedAt:name']
         }
     ]
 }

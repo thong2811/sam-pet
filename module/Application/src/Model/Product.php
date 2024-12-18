@@ -3,6 +3,7 @@
 namespace Application\Model;
 
 use Application\Library\LeagueCsv;
+use Laminas\Validator\Date;
 
 class Product extends LeagueCsv
 {
@@ -59,11 +60,15 @@ class Product extends LeagueCsv
             $productData['remainStock'] = $initStock + $productData['importStock'] - $productData['exportStock'];
             $productData['action'] = sprintf('
                 <button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>
-                <a href="/product/edit/%s" class="btn btn-primary">Chỉnh sửa</a>
+                <a href="/product/edit/%s" target="_blank" class="btn btn-primary">Chỉnh sửa</a>
                 ', $productId, $productId);
 
             $totalRemainStock_purchasePrice += (int) $purchasePrice * $productData['remainStock'];
             $totalRemainStock_sellingPrice += (int) $sellingPrice * $productData['remainStock'];
+
+            if (!empty($productData['updatedAt'])) {
+                $productData['updatedAt'] = (\date('d-m-Y H:i:s', $productData['updatedAt']));
+            }
         }
 
         $totals = [
