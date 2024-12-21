@@ -28,13 +28,16 @@ class VetCareController extends AbstractActionController
 
     public function doAddAction()
     {
+        $this->layout()->setTemplate(false);
+
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
         $vetCareModel = new VetCare();
         $vetCareModel->addRow($postData);
 
-        $this->redirect()->toRoute('vetCare');
+        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
+        return $this->redirect()->toRoute('vetCare');
     }
 
     public function editAction()
@@ -49,18 +52,22 @@ class VetCareController extends AbstractActionController
 
     public function doEditAction()
     {
+        $this->layout()->setTemplate(false);
+
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
-        $id = $postData['id'] ?? '';
 
         $vetCareModel = new VetCare();
         $vetCareModel->doEdit($postData);
 
-        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
+        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()
     {
+        $this->layout()->setTemplate(false);
+
         try {
             $request = $this->getRequest();
             $body = $request->getContent();
@@ -91,6 +98,8 @@ class VetCareController extends AbstractActionController
 
     public function dataTableServerSideAction()
     {
+        $this->layout()->setTemplate(false);
+
         try {
             $request = $this->getRequest();
             $postData = $request->getPost();

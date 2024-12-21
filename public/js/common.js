@@ -99,3 +99,7 @@ function clearModalForm(modalId)
     form.classList.remove('was-validated');
     form.reset();
 }
+
+function closeAlertMessage(elm) {
+    $(elm).closest('.alert').remove();
+}

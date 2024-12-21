@@ -3,6 +3,12 @@
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
+<?php
+$successMessages = $this->flashMessenger()->getSuccessMessages();
+$errorMessages = $this->flashMessenger()->getErrorMessages();
+$infoMessages = $this->flashMessenger()->getMessages();
+?>
+
 <?= $this->doctype() ?>
 <html lang="en">
     <head>
@@ -49,6 +55,31 @@
         ?>
     </head>
     <body>
+        <?php if (!empty($successMessages)): ?>
+            <?php foreach ($successMessages as $message): ?>
+                <div class="alert alert-success m-0 p-1">
+                    <?= $this->escapeHtml($message); ?>
+                    <button type="button" class="btn-close float-end" onclick="closeAlertMessage(this)"></button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        <?php if (!empty($errorMessages)): ?>
+            <?php foreach ($errorMessages as $message): ?>
+                <div class="alert alert-danger m-0 p-1">
+                    <?= $this->escapeHtml($message); ?>
+                    <button type="button" class="btn-close float-end" onclick="closeAlertMessage(this)"></button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        <?php if (!empty($infoMessages)): ?>
+            <?php foreach ($infoMessages as $message): ?>
+                <div class="alert alert-info m-0 p-1">
+                    <?= $this->escapeHtml($message); ?>
+                    <button type="button" class="btn-close float-end" onclick="closeAlertMessage(this)"></button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/product">Sam Pet - Dịch Vụ Thú Cưng</a>

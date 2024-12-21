@@ -33,7 +33,8 @@ class ExportStockController extends AbstractActionController
         $exportStockModel = new ExportStock();
         $exportStockModel->doAdd($postData);
 
-        $this->redirect()->toRoute('exportStock');
+        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
+        return $this->redirect()->toRoute('exportStock');
     }
 
     public function editAction()
@@ -57,7 +58,8 @@ class ExportStockController extends AbstractActionController
         $exportStockModel = new ExportStock();
         $exportStockModel->doEdit($postData);
 
-        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
+        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

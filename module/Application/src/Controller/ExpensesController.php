@@ -30,7 +30,8 @@ class ExpensesController extends AbstractActionController
         $expensesModel = new Expenses();
         $expensesModel->doAdd($postData);
 
-        $this->redirect()->toRoute('expenses');
+        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
+        return $this->redirect()->toRoute('expenses');
     }
 
     public function editAction()
@@ -51,7 +52,8 @@ class ExpensesController extends AbstractActionController
         $expensesModel = new Expenses();
         $expensesModel->doEdit($postData);
 
-        $this->redirect()->toRoute('expenses');
+        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
+        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

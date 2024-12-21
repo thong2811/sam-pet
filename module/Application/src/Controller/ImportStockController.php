@@ -33,7 +33,8 @@ class ImportStockController extends AbstractActionController
         $importStockModel = new ImportStock();
         $importStockModel->doAdd($postData);
 
-        $this->redirect()->toRoute('importStock');
+        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
+        return $this->redirect()->toRoute('importStock');
     }
 
     public function editAction()
@@ -57,7 +58,8 @@ class ImportStockController extends AbstractActionController
         $importStockModel = new ImportStock();
         $importStockModel->doEdit($postData);
 
-        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
+        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

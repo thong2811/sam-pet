@@ -47,7 +47,8 @@ class ReportController extends AbstractActionController
         $report = new Report();
         $report->doAdd($postData);
 
-        $this->redirect()->toRoute('report');
+        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
+        return $this->redirect()->toRoute('report');
     }
 
     public function editAction()
@@ -86,7 +87,8 @@ class ReportController extends AbstractActionController
         $report = new Report();
         $report->doEdit($postData);
 
-        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
+        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

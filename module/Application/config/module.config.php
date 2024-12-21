@@ -9,7 +9,6 @@ use Application\Service\CommonService;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 use Laminas\Session\Container;
-use Laminas\Session\SessionManager;
 use Laminas\Session\Storage\SessionArrayStorage;
 
 function createSegmentRoute($controller, $baseRoute, $childRoutes = [])
@@ -89,7 +88,6 @@ return [
     ],
     'controllers'     => [
         'factories' => [
-            Controller\IndexController::class       => InvokableFactory::class,
             Controller\ProductController::class     => InvokableFactory::class,
             Controller\ExportStockController::class => InvokableFactory::class,
             Controller\ImportStockController::class => InvokableFactory::class,
@@ -120,7 +118,7 @@ return [
     'service_manager' => [
         'factories' => [
             LeagueCsv::class => InvokableFactory::class,
-            CommonService::class => InvokableFactory::class
+            CommonService::class => InvokableFactory::class,
         ]
     ],
 
