@@ -29,7 +29,7 @@ function addMessageToDataTableInfo(id, message)
     if (messageElmSelector.length > 0) {
         messageElmSelector.remove();
     }
-    $("#dataTable_wrapper .dt-info").append(` < span id = "${id}" class = "ms-4" > ${message} < / span > `);
+    $("#dataTable_wrapper .dt-info").append(`<span id="${id}" class="ms-4">${message}</span>`);
 }
 
 function calculateSumAmountCells(table)
