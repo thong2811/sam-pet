@@ -57,7 +57,7 @@ class ExportStockController extends AbstractActionController
         $exportStockModel = new ExportStock();
         $exportStockModel->doEdit($postData);
 
-        $this->redirect()->toRoute('exportStock');
+        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

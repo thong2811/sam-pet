@@ -51,11 +51,12 @@ class VetCareController extends AbstractActionController
     {
         $request = $this->getRequest();
         $postData = $request->getPost()->toArray();
+        $id = $postData['id'] ?? '';
 
         $vetCareModel = new VetCare();
         $vetCareModel->doEdit($postData);
 
-        $this->redirect()->toRoute('vet-care');
+        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

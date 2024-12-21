@@ -57,7 +57,7 @@ class ImportStockController extends AbstractActionController
         $importStockModel = new ImportStock();
         $importStockModel->doEdit($postData);
 
-        $this->redirect()->toRoute('importStock');
+        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

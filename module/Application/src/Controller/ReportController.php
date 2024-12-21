@@ -86,7 +86,7 @@ class ReportController extends AbstractActionController
         $report = new Report();
         $report->doEdit($postData);
 
-        $this->redirect()->toRoute('report', ['action' => 'edit']);
+        $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
     }
 
     public function doDeleteAction()

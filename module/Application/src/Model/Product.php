@@ -3,7 +3,6 @@
 namespace Application\Model;
 
 use Application\Library\LeagueCsv;
-use Laminas\Validator\Date;
 
 class Product extends LeagueCsv
 {
