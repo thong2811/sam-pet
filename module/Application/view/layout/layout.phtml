@@ -79,6 +79,7 @@
                 </div>
             </div>
         </nav>
+
         <div class="container">
             <?= $this->content ?>
             <hr>
@@ -90,6 +91,20 @@
         </div>
         <div class="overlay-loading">
             <div class="spinner-border text-info"></div>
+        </div>
+
+        <div class="calculate-container">
+            <button class="btn btn-warning opacity-50" type="button" data-bs-toggle="collapse" data-bs-target="#calculate" aria-expanded="false" aria-controls="calculate">
+                Máy tính
+            </button>
+            <div class="collapse" id="calculate">
+                <div class="card card-body w-100">
+                    <input type="text" id="calculateExpression" oninput="loadResultCalculate()">
+                    <div>
+                        = <span id="calculateResult"></span>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

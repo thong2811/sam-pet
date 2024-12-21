@@ -72,3 +72,9 @@
 .select-product-custom .select2-results__options {
     max-height: 400px !important;
 }
+
+.calculate-container {
+    position: fixed;
+    bottom: 0;
+    width: 100vw;
+}

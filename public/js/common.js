@@ -1,11 +1,12 @@
-$(document).ready(function() {
+$(document).ready(function () {
     $('.date-picker').datepicker({
         format: 'dd-mm-yyyy',
         autoclose:true
     });
 });
 
-function convertToInt(value) {
+function convertToInt(value)
+{
     if (typeof value === 'number') {
         return value;
     }
@@ -17,19 +18,22 @@ function convertToInt(value) {
     return null;
 }
 
-function formatNumber(value) {
+function formatNumber(value)
+{
     return value.toLocaleString();
 }
 
-function addMessageToDataTableInfo(id, message) {
+function addMessageToDataTableInfo(id, message)
+{
     const messageElmSelector = $(`#dataTable_wrapper .dt-info #${id}`);
     if (messageElmSelector.length > 0) {
         messageElmSelector.remove();
     }
-    $("#dataTable_wrapper .dt-info").append(`<span id="${id}" class="ms-4">${message}</span>`);
+    $("#dataTable_wrapper .dt-info").append(` < span id = "${id}" class = "ms-4" > ${message} < / span > `);
 }
 
-function calculateSumAmountCells(table) {
+function calculateSumAmountCells(table)
+{
     try {
         const cells = table.cells({selected: true}).data().toArray();
         let sumAmount = 0;
@@ -56,4 +60,24 @@ function calculateSumAmountCells(table) {
 
         addMessageToDataTableInfo('sumAmount', "Tổng cộng: Không thể tính tổng các ô đã chọn !");
     }
+}
+
+function calculateExpression(expression)
+{
+    try {
+        return eval(expression);
+    } catch (error) {
+        return "Phép tính không hợp lệ !";
+    }
+}
+
+function loadResultCalculate()
+{
+    const expression = $('#calculateExpression').val();
+    let result = calculateExpression(expression);
+    if (! isNaN(result)) {
+        result = formatNumber(result);
+    }
+
+    $('#calculateResult').html(result);
 }
