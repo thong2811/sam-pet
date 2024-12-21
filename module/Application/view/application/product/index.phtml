@@ -17,7 +17,7 @@
         </div>
     </div>
     <div class="my-2">
-        <a href="/product/add" class="btn btn-primary">+ Thêm mới</a>
+        <button class="btn btn-primary" onclick="openAddModal()">Thêm mới +</button>
     </div>
     <table id="dataTable" class="table table-striped" style="width:100%">
         <thead>
@@ -38,7 +38,101 @@
         </thead>
     </table>
 </div>
+<div id="editProductModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    <div>
+                        <input type="hidden" id="productId" name="id">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tên</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Đơn vị</label>
+                        <input type="text" class="form-control" id="unit" name="unit" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giá nhập</label>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="sellingPrice" name="sellingPrice" required">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giá bán</label>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="purchasePrice" name="purchasePrice">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tồn đầu kì</label>
+                        <input type="number" class="form-control" id="initStock" name="initStock" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="doEdit()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="addProductModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Tên</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Đơn vị</label>
+                        <input type="text" class="form-control" id="unit" name="unit" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giá nhập</label>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="sellingPrice" name="sellingPrice" required">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giá bán</label>
+                        <div class="input-group">
+                            <span class="input-group-text">VNĐ</span>
+                            <input type="text" class="form-control" id="purchasePrice" name="purchasePrice">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tồn đầu kì</label>
+                        <input type="number" class="form-control" id="initStock" name="initStock" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="doAdd()">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
+    const controllerName = 'product';
+
     const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
         ajax: {
@@ -65,13 +159,114 @@
         ],
         serverSide: true
     });
+    const editModalId = '#editProductModal';
+    const editModal = initModal(editModalId);
+
+    const addModalId = '#addProductModal';
+    const addModal = initModal(addModalId);
+
+    function reloadHeaderInfo(json) {
+        const totalRemainStock_purchasePrice = json.totalRemainStock_purchasePrice || 0;
+        const totalRemainStock_sellingPrice = json.totalRemainStock_sellingPrice || 0;
+        const totalProfit = totalRemainStock_sellingPrice - totalRemainStock_purchasePrice;
+
+        $('#totalRemainStock_purchasePrice').html(formatNumber(totalRemainStock_purchasePrice) + ' VNĐ');
+        $('#totalRemainStock_sellingPrice').html(formatNumber(totalRemainStock_sellingPrice) + ' VNĐ');
+        $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ');
+    }
+
+    function openEditModal(id) {
+        clearModalForm(editModalId);
+        const data = getDataById(id);
+
+        loadEditModalData(data);
+        editModal.show();
+    }
+
+    function openAddModal() {
+        clearModalForm(addModalId);
+        addModal.show();
+    }
+
+    function getDataById(id) {
+        const data = table.data().toArray();
+
+        const row = data.find((row) => {
+            return row.id && row.id === id;
+        })
+
+        return row || {};
+    }
+
+    function loadEditModalData(data) {
+        const id = data.id || '';
+        const name = data.name || '';
+        const unit = data.unit || '';
+        const purchasePrice = data.purchasePrice || '';
+        const sellingPrice = data.sellingPrice || '';
+        const initStock = data.initStock || '';
+
+        $(editModalId).find('#productId').val(id);
+        $(editModalId).find('#name').val(name);
+        $(editModalId).find('#unit').val(unit);
+        $(editModalId).find('#purchasePrice').val(purchasePrice);
+        $(editModalId).find('#sellingPrice').val(sellingPrice);
+        $(editModalId).find('#initStock').val(initStock);
+    }
+
+    function doAdd() {
+        if (!validateModalForm(addModalId)) {
+            return;
+        }
+
+        $.ajax({
+            url: `/${controllerName}/do-add`,
+            type: 'POST',
+            data: $(addModalId).find('form').serialize(),
+            success: function (response) {
+                if (response.success) {
+                    table.draw(false);
+                    addModal.hide();
+                } else {
+                    alert(`Đã xảy ra lỗi khi thêm. ${response.message || 'error unknown'}`);
+                }
+            },
+            error: function (xhr, status, error) {
+                alert('Đã xảy ra lỗi khi thêm. ' + error);
+            },
+        });
+    }
+
+    function doEdit() {
+        if (!validateModalForm(editModalId)) {
+            return;
+        }
+
+        $.ajax({
+            url: `/${controllerName}/do-edit`,
+            type: 'POST',
+            data: $(editModalId).find('form').serialize(),
+            success: function (response) {
+                if (response.success) {
+                    table.draw(false);
+                    editModal.hide();
+                } else {
+                    alert(`Đã xảy ra lỗi khi chỉnh sửa. ${response.message || 'error unknown'}`);
+                }
+            },
+            error: function (xhr, status, error) {
+                alert('Đã xảy ra lỗi khi chỉnh sửa. ' + error);
+            },
+        });
+    }
 
     function remove(id) {
         if (!confirm('Bạn có chắc chắn muốn xóa?')) {
             return;
         }
+
         $.ajax({
-            url: '/product/do-delete',
+            url: `/${controllerName}/do-delete`,
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({ id: id }),
@@ -87,15 +282,5 @@
                 alert('Đã xảy ra lỗi khi xóa.');
             },
         });
-    }
-
-    function reloadHeaderInfo(json) {
-        const totalRemainStock_purchasePrice = json.totalRemainStock_purchasePrice || 0;
-        const totalRemainStock_sellingPrice = json.totalRemainStock_sellingPrice || 0;
-        const totalProfit = totalRemainStock_sellingPrice - totalRemainStock_purchasePrice;
-
-        $('#totalRemainStock_purchasePrice').html(formatNumber(totalRemainStock_purchasePrice) + ' VNĐ');
-        $('#totalRemainStock_sellingPrice').html(formatNumber(totalRemainStock_sellingPrice) + ' VNĐ');
-        $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ');
     }
 </script>

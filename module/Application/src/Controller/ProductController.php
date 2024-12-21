@@ -24,13 +24,23 @@ class ProductController extends AbstractActionController
 
     public function doAddAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doAdd($postData);
+            $product = new Product();
+            $product->doAdd($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'add']);
+            return new JsonModel([
+                'success' => true,
+                'message' => 'Thêm mới thành công!',
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function editAction()
@@ -49,13 +59,23 @@ class ProductController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $product = new Product();
-        $product->doEdit($postData);
+            $product = new Product();
+            $product->doEdit($postData);
 
-        $this->redirect()->toRoute('product', ['action' => 'edit']);
+            return new JsonModel([
+                'success' => true,
+                'message' => 'Cập nhật thành công!',
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function doDeleteAction()

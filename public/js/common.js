@@ -81,3 +81,21 @@ function loadResultCalculate()
 
     $('#calculateResult').html(result);
 }
+
+function validateModalForm(modalId)
+{
+    const form = $(modalId).find('form')[0];
+    if (form.checkValidity()) {
+        return true;
+    }
+
+    form.classList.add('was-validated')
+    return false;
+}
+
+function clearModalForm(modalId)
+{
+    const form = $(modalId).find('form')[0];
+    form.classList.remove('was-validated');
+    form.reset();
+}

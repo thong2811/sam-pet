@@ -52,3 +52,7 @@ function initDataTable(tableId = '#dataTable', config = DATA_TABLES_CONFIG) {
 
     return table;
 }
+
+function initModal(modalId) {
+    return new bootstrap.Modal(modalId, {});
+}

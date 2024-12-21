@@ -59,7 +59,7 @@ class Product extends LeagueCsv
             $productData['remainStock'] = $initStock + $productData['importStock'] - $productData['exportStock'];
             $productData['action'] = sprintf('
                 <button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>
-                <a href="/product/edit/%s" target="_blank" class="btn btn-primary">Chỉnh sửa</a>
+                <button class="btn btn-primary" onclick="openEditModal(\'%s\')">Chỉnh sửa</button>
                 ', $productId, $productId);
 
             $totalRemainStock_purchasePrice += (int) $purchasePrice * $productData['remainStock'];
