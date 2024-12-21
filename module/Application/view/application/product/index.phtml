@@ -227,13 +227,14 @@
                 if (response.success) {
                     table.draw(false);
                     addModal.hide();
+                    addFlashMessage(`Thêm thành công`);
                 } else {
-                    alert(`Đã xảy ra lỗi khi thêm. ${response.message || 'error unknown'}`);
+                    addFlashMessage(`Đã xảy ra lỗi khi thêm. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
                 }
             },
             error: function (xhr, status, error) {
-                alert('Đã xảy ra lỗi khi thêm. ' + error);
-            },
+                addFlashMessage('Đã xảy ra lỗi khi thêm: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
         });
     }
 
@@ -250,13 +251,14 @@
                 if (response.success) {
                     table.draw(false);
                     editModal.hide();
+                    addFlashMessage(`Cập nhật thành công`);
                 } else {
-                    alert(`Đã xảy ra lỗi khi chỉnh sửa. ${response.message || 'error unknown'}`);
+                    addFlashMessage(`Đã xảy ra lỗi khi cập nhật. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
                 }
             },
             error: function (xhr, status, error) {
-                alert('Đã xảy ra lỗi khi chỉnh sửa. ' + error);
-            },
+                addFlashMessage('Đã xảy ra lỗi khi cập nhật: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
         });
     }
 
@@ -273,14 +275,14 @@
             success: function (response) {
                 if (response.success) {
                     table.draw(false);
+                    addFlashMessage(`Xoá thành công`);
                 } else {
-                    alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
+                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
                 }
             },
             error: function (xhr, status, error) {
-                console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi xóa.');
-            },
+                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
         });
     }
 </script>

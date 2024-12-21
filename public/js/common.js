@@ -1,3 +1,7 @@
+const FLASH_MESSAGE_TYPE_ERROR = 0;
+const FLASH_MESSAGE_TYPE_SUCCESS = 1;
+const FLASH_MESSAGE_TYPE_INFO = 2;
+
 $(document).ready(function () {
     $('.date-picker').datepicker({
         format: 'dd-mm-yyyy',
@@ -100,6 +104,30 @@ function clearModalForm(modalId)
     form.reset();
 }
 
-function closeAlertMessage(elm) {
+function closeAlertMessage(elm)
+{
     $(elm).closest('.alert').remove();
+}
+
+function addFlashMessage(message, type = FLASH_MESSAGE_TYPE_SUCCESS)
+{
+    let alertClass = '';
+    switch (type) {
+        case FLASH_MESSAGE_TYPE_ERROR:
+            alertClass = 'alert-danger';
+            break;
+        case FLASH_MESSAGE_TYPE_SUCCESS:
+            alertClass = 'alert-success';
+            break;
+        case FLASH_MESSAGE_TYPE_INFO:
+            alertClass = 'alert-info';
+            break;
+    }
+
+    $('.flash-messages').append(`
+        <div class="alert ${alertClass} m-0 p-1">
+            ${message}
+            <button type="button" class="btn-close float-end" onclick="closeAlertMessage(this)"></button>
+        </div>
+    `);
 }

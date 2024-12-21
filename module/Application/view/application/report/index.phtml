@@ -85,14 +85,14 @@
             success: function (response) {
                 if (response.success) {
                     table.draw(false);
+                    addFlashMessage(`Xoá thành công`);
                 } else {
-                    alert(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`);
+                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
                 }
             },
             error: function (xhr, status, error) {
-                console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi xóa.');
-            },
+                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
         });
     }
 
