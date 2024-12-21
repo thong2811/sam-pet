@@ -13,9 +13,9 @@
                 <thead>
                 <tr>
                     <th style="width: 150px">Ngày</th>
-                    <th>Tên hàng hóa</th>
+                    <th style="min-width: 300px">Tên hàng hóa</th>
                     <th style="width: 150px">Giá nhập</th>
-                    <th style="width: 150px">Số lượng</th>
+                    <th style="width: 80px">Số lượng</th>
                     <th style="width: 400px">Ghi chú</th>
                     <th style="width: 100px">Thao tác</th>
                 </tr>
@@ -35,7 +35,6 @@
                     </td>
                     <td>
                         <div class="input-group">
-                            <span class="input-group-text">VNĐ</span>
                             <input type="text" class="form-control" id="purchasePrice" name="purchasePrice[]" required>
                         </div>
                     </td>
@@ -66,7 +65,9 @@
         tableInputRowHtml = $('.table-form').find('tbody').html();
 
         initVariable();
-        $('.select2').select2();
+        $('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
         $('.date-picker').datepicker({
             format: 'dd-mm-yyyy',
             autoclose:true
@@ -98,7 +99,9 @@
         if (value) {
             if ($('.select-product').last().val() !== '') {
                 tbodyElm.append(tableInputRowHtml);
-                tbodyElm.find('.select2').select2();
+                tbodyElm.find('.select2').select2({
+                    dropdownCssClass: 'select-product-custom'
+                });
                 const datePicker = tbodyElm.find('.date-picker');
                 datePicker.val();
                 datePicker.datepicker({

@@ -64,3 +64,11 @@
     top: 50%;
     left: 50%;
 }
+
+.select-product-custom {
+    width: 400px !important;
+}
+
+.select-product-custom .select2-results__options {
+    max-height: 400px !important;
+}
