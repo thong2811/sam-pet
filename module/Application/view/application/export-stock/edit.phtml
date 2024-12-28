@@ -37,7 +37,7 @@
                         <input class="form-control date-picker w-100" name="date[]" value="<?= $date ?>" autocomplete="off" required/>
                     </td>
                     <td>
-                        <select class="select-product form-control select2" name="productId[]" required>
+                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)" required>
                             <option value="">Chọn hàng hóa</option>
                             <?php
                             foreach ($this->productList as $productId => $productData):
@@ -83,6 +83,7 @@
     $(document).ready(function() {
         tableInputRowHtml = $('.table-form').find('tbody').html();
 
+        initVariable();
         $('.select2').select2({
             dropdownCssClass: 'select-product-custom'
         });
@@ -97,4 +98,23 @@
             event.preventDefault();
         }
     });
+
+    function initVariable() {
+        let data = $('#productList').val();
+        productList = JSON.parse(data);
+    }
+
+    function updateRowData(elm) {
+        let value = $(elm).val();
+        const trElm = $(elm).closest('tr');
+
+        const productData = productList[value] ?? {};
+
+        trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
+        trElm.find('#sellingPrice').val(productData.sellingPrice || 0);
+    }
+
+    function removeInputRow(elm) {
+        $(elm).closest('tr').remove();
+    }
 </script>
