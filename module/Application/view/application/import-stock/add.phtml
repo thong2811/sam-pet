@@ -26,7 +26,7 @@
                         <input class="form-control date-picker w-100" name="date[]" value="<?= date('d-m-Y') ?>" autocomplete="off" required/>
                     </td>
                     <td>
-                        <select class="select-product form-control select2" name="productId[]" onchange="addInputRow(this)" required>
+                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)" required>
                             <option value="">Chọn hàng hóa</option>
                             <?php foreach ($this->productList as $id => $product): ?>
                             <option value="<?= $id ?>"><?= $product['name'] ?? '' ?></option>
@@ -85,32 +85,37 @@
         productList = JSON.parse(data);
     }
 
-    function addInputRow(elm) {
+    function updateRowData(elm) {
         let value = $(elm).val();
         const tbodyElm = $(elm).closest('tbody');
         const trElm = $(elm).closest('tr');
 
         const productData = productList[value] ?? {};
-        const datePicked = trElm.find('.date-picker').val();
 
         trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
         trElm.find('#sellingPrice').val(productData.sellingPrice || 0);
 
         if (value) {
             if ($('.select-product').last().val() !== '') {
-                tbodyElm.append(tableInputRowHtml);
-                tbodyElm.find('.select2').select2({
-                    dropdownCssClass: 'select-product-custom'
-                });
-                const datePicker = tbodyElm.find('.date-picker');
-                datePicker.val();
-                datePicker.datepicker({
-                    format: 'dd-mm-yyyy',
-                    autoclose:true
-                });
-                datePicker.val(datePicked);
+                addInputRow(tbodyElm);
             }
         }
+    }
+
+    function addInputRow(tbodyElm) {
+        const date = tbodyElm.find('.date-picker').last().val();
+
+        tbodyElm.append(tableInputRowHtml);
+        tbodyElm.find('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
+        const datePicker = tbodyElm.find('.date-picker').last();
+        datePicker.val();
+        datePicker.datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+        datePicker.val(date);
     }
 
     function removeInputRow(elm) {
