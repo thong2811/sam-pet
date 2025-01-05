@@ -44,6 +44,7 @@ class Report extends LeagueCsv
             $row['revenue'] = (int) $petShopRevenue + (int) $spaRevenue + (int) $treatmentRevenue;
             $row['remaining'] = $row['revenue'] - (int) $expenses;
             $row['action'] = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
+            $row['action'] .= sprintf('<button class="btn btn-primary ms-2" onclick="openEditModal(\'%s\')"> Cập nhật </button>', $id);
 
             $totalRevenue += $row['revenue'];
             $totalExpenses += (int) $expenses;

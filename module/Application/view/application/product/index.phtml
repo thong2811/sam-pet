@@ -136,7 +136,7 @@
     const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
         ajax: {
-            url: 'product/data-table-server-side',
+            url: `${controllerName}/data-table-server-side'`,
             type: 'POST',
             dataSrc: (json) => {
                 reloadHeaderInfo(json);
@@ -159,11 +159,6 @@
         ],
         serverSide: true
     });
-    const editModalId = '#editProductModal';
-    const editModal = initModal(editModalId);
-
-    const addModalId = '#addProductModal';
-    const addModal = initModal(addModalId);
 
     function reloadHeaderInfo(json) {
         const totalRemainStock_purchasePrice = json.totalRemainStock_purchasePrice || 0;
@@ -174,6 +169,13 @@
         $('#totalRemainStock_sellingPrice').html(formatNumber(totalRemainStock_sellingPrice) + ' VNĐ');
         $('#totalProfit').html(formatNumber(totalProfit) + ' VNĐ');
     }
+
+
+    const editModalId = '#editProductModal';
+    const editModal = initModal(editModalId);
+
+    const addModalId = '#addProductModal';
+    const addModal = initModal(addModalId);
 
     function openEditModal(id) {
         clearModalForm(editModalId);

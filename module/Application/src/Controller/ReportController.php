@@ -17,11 +17,6 @@ class ReportController extends AbstractActionController
 {
     public function indexAction()
     {
-        return new ViewModel();
-    }
-
-    public function addAction()
-    {
         $exportStockModel = new ExportStock();
         $exportStockTotalAmountByDate = $exportStockModel->totalAmountByDate();
 
@@ -41,54 +36,44 @@ class ReportController extends AbstractActionController
 
     public function doAddAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $report = new Report();
-        $report->doAdd($postData);
+            $report = new Report();
+            $report->doAdd($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
-        return $this->redirect()->toRoute('report');
-    }
-
-    public function editAction()
-    {
-        $id = $this->params()->fromRoute('id', null);
-
-        if (is_null($id)) {
-            $this->redirect()->toRoute('report', ['action' => 'index']);
+            return new JsonModel([
+                'success' => true,
+                'message' => 'Thêm mới thành công!',
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
         }
-
-        $reportModel = new Report();
-        $reportData = $reportModel->getDataById($id);
-
-        $exportStockModel = new ExportStock();
-        $exportStockTotalAmountByDate = $exportStockModel->totalAmountByDate();
-
-        $vetCareModel = new VetCare();
-        $vetCareTotalAmountByDate = $vetCareModel->totalAmountByDate();
-
-        $expensesModel = new Expenses();
-        $expensesTotalAmountByDate = $expensesModel->totalAmountByDate();
-
-        return new ViewModel([
-            'reportData' => $reportData,
-            "exportStockTotalAmountByDate" => $exportStockTotalAmountByDate,
-            "vetCareTotalAmountByDate" => $vetCareTotalAmountByDate,
-            "expensesTotalAmountByDate" => $expensesTotalAmountByDate
-        ]);
     }
 
     public function doEditAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $report = new Report();
-        $report->doEdit($postData);
+            $report = new Report();
+            $report->doEdit($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+            return new JsonModel([
+                'success' => true,
+                'message' => 'Cập nhật thành công!',
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function doDeleteAction()
