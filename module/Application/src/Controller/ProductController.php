@@ -94,7 +94,7 @@ class ProductController extends AbstractActionController
 
             $id = $data['id'];
             $product = new Product();
-            $product->deleteDataById($id);
+            $product->deleteRow($id);
 
             return new JsonModel([
                 'success' => true,

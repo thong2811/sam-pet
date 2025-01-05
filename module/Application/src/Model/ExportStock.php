@@ -29,19 +29,21 @@ class ExportStock extends LeagueCsv
         $productNameList = $productModel->getProductNameList();
 
         $rows = [];
-        foreach ($productIdList as $index => $productId) {
+        foreach ($dateList as $index => $date) {
+            $productId = $productIdList[$index] ?? '';
+
             if (empty($productId)) {
                 continue;
             }
 
             $rows[] = [
+                'date' => $date,
                 'productId' => $productId,
                 'productName' => $productNameList[$productId] ?? '',
                 'quantity' => $quantityList[$index] ?? 1,
                 'purchasePrice' => $purchasePriceList[$index] ?? 0,
                 'sellingPrice' => $sellingPriceList[$index] ?? 0,
                 'note' => $noteList[$index] ?? '',
-                'date' => $dateList[$index] ?? '',
             ];
         }
 
@@ -52,26 +54,32 @@ class ExportStock extends LeagueCsv
 
     public function doEdit($postData)
     {
+        $dateList = $postData['date'] ?? [];
         $exportStockIdList = $postData['exportStockId'] ?? [];
         $productIdList = $postData['productId'] ?? [];
         $quantityList = $postData['quantity'] ?? [];
         $purchasePriceList = $postData['purchasePrice'] ?? [];
         $sellingPriceList = $postData['sellingPrice'] ?? [];
         $noteList = $postData['note'] ?? [];
-        $dateList = $postData['date'] ?? [];
 
         $productModel = new Product();
         $productNameList = $productModel->getProductNameList();
 
 
-        $rows = [];
-        foreach ($exportStockIdList as $index => $exportStockId) {
-            if (empty($exportStockId)) {
+        $rowsAdd = [];
+        $rowsUpdate = [];
+        $rowsDelete = [];
+        foreach ($dateList as $index => $date) {
+            $exportStockId = $exportStockIdList[$index] ?? null;
+            $productId = $productIdList[$index] ?? '';
+
+            if (empty($productId)) {
+                $rowsDelete[] = $exportStockId;
                 continue;
             }
 
-            $productId = $productIdList[$index] ?? '';
-            $rows[] = [
+            $row = [
+                'date' => $date ?? '',
                 'id' => $exportStockId,
                 'productId' => $productId,
                 'productName' => $productNameList[$productId] ?? '',
@@ -79,13 +87,27 @@ class ExportStock extends LeagueCsv
                 'purchasePrice' => $purchasePriceList[$index] ?? 0,
                 'sellingPrice' => $sellingPriceList[$index] ?? 0,
                 'note' => $noteList[$index] ?? '',
-                'date' => $dateList[$index] ?? '',
             ];
+
+            if (is_null($exportStockId)) {
+                $rowsAdd[] = $row;
+            } else {
+                $rowsUpdate[] = $row;
+            }
         }
 
-        if (count($rows)) {
-            $this->updateRows($rows);
+        if (count($rowsAdd)) {
+            $this->addRows($rowsAdd);
         }
+
+        if (count($rowsUpdate)) {
+            $this->updateRows($rowsUpdate);
+        }
+
+        if (count($rowsDelete)) {
+            $this->deleteRows($rowsDelete);
+        }
+
     }
 
     public function totalQuantityByProduct() {

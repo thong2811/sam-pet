@@ -82,7 +82,7 @@ class VetCareController extends AbstractActionController
 
             $id = $data['id'];
             $vetCareModel = new VetCare();
-            $vetCareModel->deleteDataById($id);
+            $vetCareModel->deleteRow($id);
 
             return new JsonModel([
                 'success' => true,

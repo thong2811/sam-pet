@@ -78,7 +78,7 @@ class ExportStockController extends AbstractActionController
 
             $id = $data['id'];
             $exportStockModel = new ExportStock();
-            $exportStockModel->deleteDataById($id);
+            $exportStockModel->deleteRow($id);
 
             return new JsonModel([
                 'success' => true,

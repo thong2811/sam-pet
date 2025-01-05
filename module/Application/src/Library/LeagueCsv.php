@@ -180,20 +180,28 @@ class LeagueCsv
         $this->saveData($data);
     }
 
+    public function deleteRows($listId) {
+        if (count($listId) > 0) {
+            $data = $this->getData();
+
+            foreach ($listId as $id) {
+                if (isset($data[$id])) {
+                    unset($data[$id]);
+                }
+            }
+
+            $this->saveData($data);
+        }
+    }
+
     public function updateRow($row)
     {
         $this->updateRows([$row]);
     }
 
-    public function deleteDataById($id)
+    public function deleteRow($id)
     {
-        $data = $this->getData();
-
-        if (isset($data[$id])) {
-            unset($data[$id]);
-
-            $this->saveData($data);
-        }
+        $this->deleteRows([$id]);
     }
 
     public function mappingDataWithHeaders($data)

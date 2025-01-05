@@ -92,7 +92,7 @@ class ReportController extends AbstractActionController
 
             $id = $data['id'];
             $report = new Report();
-            $report->deleteDataById($id);
+            $report->deleteRow($id);
 
             return new JsonModel([
                 'success' => true,

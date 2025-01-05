@@ -37,7 +37,7 @@
                         <input class="form-control date-picker w-100" name="date[]" value="<?= $date ?>" autocomplete="off" required/>
                     </td>
                     <td>
-                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)" required>
+                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)">
                             <option value="">Chọn hàng hóa</option>
                             <?php
                             foreach ($this->productList as $productId => $productData):
@@ -67,6 +67,38 @@
                     </td>
                 </tr>
                 <?php endforeach; ?>
+                <tr>
+                    <td>
+                        <input class="form-control date-picker w-100" name="date[]" value="<?= $this->date ?>" autocomplete="off" required/>
+                    </td>
+                    <td>
+                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)">
+                            <option value="">Chọn hàng hóa</option>
+                            <?php foreach ($this->productList as $id => $product): ?>
+                                <option value="<?= $id ?>"><?= $product['name'] ?? '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="purchasePrice" name="purchasePrice[]" value="0" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="sellingPrice" name="sellingPrice[]" value="0" required>
+                        </div>
+                    </td>
+                    <td>
+                        <input class="form-control" type="number" name="quantity[]" value="1" required>
+                    </td>
+                    <td>
+                        <textarea class="form-control" name="note[]" rows="1"></textarea>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" onclick="removeInputRow(this)"> Xóa </button>
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
@@ -81,7 +113,8 @@
     let tableInputRowHtml = ``;
     let productList = [];
     $(document).ready(function() {
-        tableInputRowHtml = $('.table-form').find('tbody').html();
+        tableInputRowHtml = `<tr>${$('.table-form').find('tbody tr').last().html()}</tr>`;
+        debugger
 
         initVariable();
         $('.select2').select2({
@@ -106,12 +139,35 @@
 
     function updateRowData(elm) {
         let value = $(elm).val();
+        const tbodyElm = $(elm).closest('tbody');
         const trElm = $(elm).closest('tr');
 
         const productData = productList[value] ?? {};
 
         trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
         trElm.find('#sellingPrice').val(productData.sellingPrice || 0);
+
+        if (value) {
+            if ($('.select-product').last().val() !== '') {
+                addInputRow(tbodyElm);
+            }
+        }
+    }
+
+    function addInputRow(tbodyElm) {
+        const date = tbodyElm.find('.date-picker').last().val();
+
+        tbodyElm.append(tableInputRowHtml);
+        tbodyElm.find('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
+        const datePicker = tbodyElm.find('.date-picker').last();
+        datePicker.val();
+        datePicker.datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+        datePicker.val(date);
     }
 
     function removeInputRow(elm) {

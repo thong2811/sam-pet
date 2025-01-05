@@ -78,7 +78,7 @@ class ImportStockController extends AbstractActionController
 
             $id = $data['id'];
             $importStockModel = new ImportStock();
-            $importStockModel->deleteDataById($id);
+            $importStockModel->deleteRow($id);
 
             return new JsonModel([
                 'success' => true,

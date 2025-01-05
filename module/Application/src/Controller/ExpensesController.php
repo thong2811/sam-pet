@@ -72,7 +72,7 @@ class ExpensesController extends AbstractActionController
 
             $id = $data['id'];
             $expensesModel = new Expenses();
-            $expensesModel->deleteDataById($id);
+            $expensesModel->deleteRow($id);
 
             return new JsonModel([
                 'success' => true,
