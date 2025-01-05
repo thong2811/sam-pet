@@ -3,6 +3,7 @@
 namespace Application\Model;
 
 use Application\Library\LeagueCsv;
+use Application\Service\CommonService;
 
 class Report extends LeagueCsv
 {
@@ -55,5 +56,45 @@ class Report extends LeagueCsv
             'totalMissingAmount' => $totalMissingAmount
         ];
         return [ $totals, $data];
+    }
+
+    public function getDataToViewChart() {
+        $data = $this->getData();
+        $data = CommonService::sortData($data, 'date', 'asc');
+        $totalRevenue = 0;
+        $totalExpenses = 0;
+        $totalMissingAmount = 0;
+
+        $chartData = [];
+        foreach ($data as $row) {
+            $date = $row['date'] ?? null;
+            $dateToMicroTime = is_null($date) ? 0 : strtotime($date) * 1000;
+            $petShopRevenue = !empty($row['petShopRevenue']) ? $row['petShopRevenue'] : 0;
+            $petShopProfit = !empty($row['petShopProfit']) ? $row['petShopProfit'] : 0;
+
+            $spaRevenue = !empty($row['spaRevenue']) ? $row['spaRevenue'] : 0;
+            $treatmentRevenue = !empty($row['treatmentRevenue']) ? $row['treatmentRevenue'] : 0;
+
+            $missingAmount = !empty($row['missingAmount']) ? $row['missingAmount'] : 0;
+
+            $revenue = (int) $petShopRevenue + (int) $spaRevenue + (int) $treatmentRevenue;
+
+
+            $totalRevenue += $revenue;
+            $totalMissingAmount += (int) $missingAmount;
+
+            $chartData['revenue'][] = [$dateToMicroTime, (int) $revenue];
+            $chartData['petShopRevenue'][] = [$dateToMicroTime, (int) $petShopRevenue];
+            $chartData['petShopProfit'][] = [$dateToMicroTime, (int) $petShopProfit];
+            $chartData['spaRevenue'][] = [$dateToMicroTime, (int) $spaRevenue];
+            $chartData['treatmentRevenue'][] = [$dateToMicroTime, (int) $treatmentRevenue];
+        }
+
+        $totals = [
+            'totalRevenue' => $totalRevenue,
+            'totalExpenses' => $totalExpenses,
+            'totalMissingAmount' => $totalMissingAmount
+        ];
+        return [$totals, $chartData];
     }
 }

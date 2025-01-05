@@ -1,0 +1,92 @@
+<?php
+$this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
+?>
+<div class="container">
+    <div id="dailyChart" class="chart"></div>
+    <div id="monthlyChart" class="chart"></div>
+</div>
+<script>
+    // Khởi tạo biểu đồ
+    // Khởi tạo biểu đồ
+
+    const data = JSON.parse(`<?= json_encode($this->data) ?>`);
+
+    $(function() {
+        renderChart('dailyChart');
+        renderChart('monthlyChart', true);
+    })
+
+    function aggregateByMonth(data) {
+        const result = {};
+
+        data.forEach(item => {
+            const date = new Date(item[0]);
+            const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+
+            if (!result[monthKey]) {
+                result[monthKey] = 0;
+            }
+            result[monthKey] += item[1];
+        });
+
+        return Object.keys(result).map(key => {
+            const [year, month] = key.split('-').map(Number);
+            return [Date.UTC(year, month, 1), result[key]];
+        });
+    }
+
+    function renderChart(id, isMonthly = false) {
+        const dateFormat = isMonthly ? '%m-%Y' : '%d-%m-%Y';
+        let option = {
+            title: {
+                text: 'Thống kê doanh thu' + (isMonthly ? ' (tháng)' : ' (ngày)')
+            },
+            xAxis: {
+                type: 'datetime',
+                title: {
+                    text: 'Thời gian'
+                },
+                labels: {
+                    format: `{value:${dateFormat}}`
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'VNĐ'
+                }
+            },
+            tooltip: {
+                xDateFormat: `${dateFormat}`,
+                shared: true
+            },
+            series: [
+                {
+                    name: 'Doanh thu',
+                    data: isMonthly ? aggregateByMonth(data.revenue) : data.revenue
+                },
+                {
+                    name: 'Thu pet shop',
+                    data: isMonthly ? aggregateByMonth(data.petShopRevenue) : data.petShopRevenue
+                },
+                {
+                    name: 'Lãi pet shop',
+                    data: isMonthly ? aggregateByMonth(data.petShopProfit) : data.petShopRevenue
+                },
+                {
+                    name: 'Thu spa',
+                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.petShopRevenue
+                },
+                {
+                    name: 'Thu điều trị',
+                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.petShopRevenue
+                }
+            ]
+        }
+        Highcharts.chart(id, option);
+    }
+
+    function showChart(id) {
+
+    }
+
+</script>

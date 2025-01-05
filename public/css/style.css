@@ -11,7 +11,7 @@
     border-color: var(--brand-color);
 }
 
-/* allows bootstrap to style Laminas Navigation generated menu items within the navbar */
+/* allows bootstrap to style Laminas Navigation generated overview items within the navbar */
 .navbar li.active a {
     color: var(--bs-navbar-active-color);
 }
@@ -76,4 +76,9 @@
     position: fixed;
     bottom: 0;
     width: 100vw;
+}
+
+.chart {
+    width: 100%;
+    height: 400px;
 }

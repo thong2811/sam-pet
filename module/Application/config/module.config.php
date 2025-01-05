@@ -59,7 +59,8 @@ function createChildRoute($action, $params = [], $constraints = [])
 return [
     'router'          => [
         'routes' => [
-            'default'     => createSegmentRoute(Controller\ProductController::class, '/'),
+            'default'     => createSegmentRoute(Controller\OverviewController::class, '/'),
+            'overview'     => createSegmentRoute(Controller\OverviewController::class, '/overview', []),
             'product'     => createSegmentRoute(Controller\ProductController::class, '/product', [
                 'edit'   => createChildRoute('edit', ['id']),
                 'delete' => createChildRoute('delete', ['id'])
@@ -88,6 +89,7 @@ return [
     ],
     'controllers'     => [
         'factories' => [
+            Controller\OverviewController::class     => InvokableFactory::class,
             Controller\ProductController::class     => InvokableFactory::class,
             Controller\ExportStockController::class => InvokableFactory::class,
             Controller\ImportStockController::class => InvokableFactory::class,
