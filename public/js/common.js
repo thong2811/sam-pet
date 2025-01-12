@@ -41,9 +41,11 @@ function calculateSumAmountCells(table)
     try {
         const cells = table.cells({selected: true}).data().toArray();
         let sumAmount = 0;
+        let avgAmount = 0;
 
         if (cells.length === 0) {
             addMessageToDataTableInfo('sumAmount', "");
+            addMessageToDataTableInfo('avgAmount', "");
             return;
         }
 
@@ -51,18 +53,21 @@ function calculateSumAmountCells(table)
             let amountInt = convertToInt(amount);
 
             if (amountInt === null) {
-                addMessageToDataTableInfo('sumAmount', "Tổng cộng: Không thể tính tổng các ô đã chọn !");
+                addMessageToDataTableInfo('sumAmount', "Tổng cộng: Lỗi: Chứa giá trị không phải số.");
+                addMessageToDataTableInfo('avgAmount', "Trung bình: Lỗi: Chứa giá trị không phải số.");
                 return;
             }
 
             sumAmount += amountInt;
         }
-
         addMessageToDataTableInfo('sumAmount', "Tổng cộng: " + formatNumber(sumAmount));
+
+        avgAmount = Math.round(sumAmount / cells.length);
+        addMessageToDataTableInfo('avgAmount', "Trung bình: " + formatNumber(avgAmount));
     } catch (e) {
         console.log(e);
-
-        addMessageToDataTableInfo('sumAmount', "Tổng cộng: Không thể tính tổng các ô đã chọn !");
+        addMessageToDataTableInfo('sumAmount', "Tổng cộng: Có lỗi xảy ra. Hãy xem log trong console.");
+        addMessageToDataTableInfo('avgAmount', "Trung bình: Có lỗi xảy ra. Hãy xem log trong console.");
     }
 }
 
