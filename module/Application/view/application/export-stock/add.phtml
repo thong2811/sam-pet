@@ -7,7 +7,7 @@
 <div class="row mt-5">
     <h1> Nhập hàng hóa </h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
-    <form method="post" action="/export-stock/do-add">
+    <form method="post" action="/export-stock/do-add" onchange="updateSumTotal()">
         <div class="container">
             <table class="table table-striped table-form mt-3">
                 <thead>
@@ -41,21 +41,22 @@
                     </td>
                     <td>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="sellingPrice" name="sellingPrice[]" value="0" required>
+                            <input type="text" class="form-control selling-price" id="sellingPrice" name="sellingPrice[]" value="0" required>
                         </div>
                     </td>
                     <td>
-                        <input class="form-control" type="number" name="quantity[]" value="1" required>
+                        <input class="form-control quantity" type="number" name="quantity[]" value="1" required>
                     </td>
                     <td>
                         <textarea class="form-control" name="note[]" rows="1"></textarea>
                     </td>
-                    <td>
-                        <button class="btn btn-danger" onclick="removeInputRow(this)"> Xóa </button>
-                    </td>
                 </tr>
                 </tbody>
             </table>
+
+            <div class="alert alert-info">Tổng cộng:
+                <span class="fw-bold" id="sumTotal"></span>
+            </div>
         </div>
         <div class="mb-3">
             <button type="submit" class="btn btn-primary float-end">Tạo</button>
@@ -69,6 +70,7 @@
     let productList = [];
     $(document).ready(function() {
         tableInputRowHtml = `<tr>${$('.table-form').find('tbody tr').last().html()}</tr>`;
+        updateSumTotal();
 
         initVariable();
         $('.select2').select2({
@@ -124,7 +126,25 @@
         datePicker.val(date);
     }
 
-    function removeInputRow(elm) {
-        $(elm).closest('tr').remove();
+    function updateSumTotal() {
+        let sumTotal = 0;
+        try {
+            let sellingPriceInputList = $('.selling-price');
+            let quantityInputList = $('.quantity');
+
+            sellingPriceInputList.each((index) => {
+                    const sellingPrice = sellingPriceInputList.eq(index).val();
+                    const quantity = quantityInputList.eq(index).val();
+                    sumTotal = sumTotal + sellingPrice * quantity;
+            })
+
+            sumTotal = sumTotal.toLocaleString() + ' VNĐ';
+        } catch (e) {
+            sumTotal = 'ERROR';
+            console.log("Không thể tính tổng giá trị xuất hàng : ", e);
+        }
+
+        $('#sumTotal').html(sumTotal);
+
     }
 </script>

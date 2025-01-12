@@ -261,7 +261,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
     const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
         ajax: {
-            url: `${controllerName}/data-table-server-side`,
+            url: `/${controllerName}/data-table-server-side`,
             type: 'POST',
             dataSrc: (json) => {
                 reloadHeaderInfo(json);
@@ -397,7 +397,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
             return;
         }
         $.ajax({
-            url: `${controllerName}/do-delete`,
+            url: `/${controllerName}/do-delete`,
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({ id: id }),

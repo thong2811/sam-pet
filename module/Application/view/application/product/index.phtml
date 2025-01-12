@@ -136,7 +136,7 @@
     const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
         ajax: {
-            url: `${controllerName}/data-table-server-side'`,
+            url: `/${controllerName}/data-table-server-side`,
             type: 'POST',
             dataSrc: (json) => {
                 reloadHeaderInfo(json);
