@@ -2,6 +2,9 @@
 
 namespace Application\Service;
 
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+
 class CommonService
 {
     public static function getDataTablesParameters() {
@@ -109,5 +112,13 @@ class CommonService
     public static function compareString($str1, $str2) {
         $collator = new \Collator('vi_VN');
         return $collator->compare($str1, $str2);
+    }
+
+    public static function logger() {
+        $logger = new Logger("app");
+        $logFilePath = __DIR__ . '/../../../../logs/app_' . date('Y-m-d') . '.log';
+        $logger->pushHandler(new StreamHandler($logFilePath));
+
+        return $logger;
     }
 }

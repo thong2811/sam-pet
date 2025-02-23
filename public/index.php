@@ -35,3 +35,5 @@ $container = require __DIR__ . '/../config/container.php';
 /** @var Application $app */
 $app = $container->get('Application');
 $app->run();
+
+require __DIR__ . '/function/backup_data.php';
