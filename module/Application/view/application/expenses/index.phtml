@@ -19,6 +19,7 @@
         <tr>
             <th>STT</th>
             <th>Ngày</th>
+            <th>Loại chi</th>
             <th>Lý do chi</th>
             <th>Số tiền</th>
             <th>Người chi</th>
@@ -38,6 +39,7 @@
         columns: [
             { name: 'no', data: 'no' },
             { name: 'date', data: 'date' },
+            { name: 'typeText', data: 'typeText' },
             { name: 'reason', data: 'reason' },
             { name: 'amount', data: 'amount', render: $.fn.dataTable.render.number( ',') },
             { name: 'person', data: 'person' },

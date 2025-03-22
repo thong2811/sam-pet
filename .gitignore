@@ -9,3 +9,4 @@ phpunit.xml
 composer.lock
 /data/
 /.idea/codeStyles/codeStyleConfig.xml
+/logs/

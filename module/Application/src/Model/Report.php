@@ -8,7 +8,7 @@ use Application\Service\CommonService;
 class Report extends LeagueCsv
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'date', 'petShopRevenue', 'petShopProfit', 'spaRevenue', 'treatmentRevenue', 'expenses', 'missingAmount', 'note'],
+        'header' => ['id', 'date', 'petShopRevenue', 'petShopProfit', 'spaRevenue', 'treatmentRevenue', 'expenses', 'savings', 'missingAmount', 'note'],
         'fileName' => 'report.csv'
     ];
 
@@ -70,25 +70,31 @@ class Report extends LeagueCsv
         foreach ($data as $row) {
             $date = $row['date'] ?? null;
             $dateToMicroTime = is_null($date) ? 0 : strtotime($date) * 1000;
+
             $petShopRevenue = !empty($row['petShopRevenue']) ? $row['petShopRevenue'] : 0;
             $petShopProfit = !empty($row['petShopProfit']) ? $row['petShopProfit'] : 0;
-
             $spaRevenue = !empty($row['spaRevenue']) ? $row['spaRevenue'] : 0;
             $treatmentRevenue = !empty($row['treatmentRevenue']) ? $row['treatmentRevenue'] : 0;
+            $revenue = (int) $petShopRevenue + (int) $spaRevenue + (int) $treatmentRevenue;
+            $totalRevenue += $revenue;
 
             $missingAmount = !empty($row['missingAmount']) ? $row['missingAmount'] : 0;
-
-            $revenue = (int) $petShopRevenue + (int) $spaRevenue + (int) $treatmentRevenue;
-
-
-            $totalRevenue += $revenue;
             $totalMissingAmount += (int) $missingAmount;
+
+            $expenses = !empty($row['expenses']) ? $row['expenses'] : 0;
+            $savings = !empty($row['savings']) ? $row['savings'] : 0;
+//            $expenses = $expenses - $savings;
+            $remaining = $revenue - $expenses + $savings;
 
             $chartData['revenue'][] = [$dateToMicroTime, (int) $revenue];
             $chartData['petShopRevenue'][] = [$dateToMicroTime, (int) $petShopRevenue];
             $chartData['petShopProfit'][] = [$dateToMicroTime, (int) $petShopProfit];
             $chartData['spaRevenue'][] = [$dateToMicroTime, (int) $spaRevenue];
             $chartData['treatmentRevenue'][] = [$dateToMicroTime, (int) $treatmentRevenue];
+
+            $chartData['expenses'][] = [$dateToMicroTime, (int) $expenses];
+            $chartData['savings'][] = [$dateToMicroTime, (int) $savings];
+            $chartData['remaining'][] = [$dateToMicroTime, (int) $remaining];
         }
 
         $totals = [

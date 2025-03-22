@@ -31,9 +31,29 @@ $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
             result[monthKey] += item[1];
         });
 
+        debugger
         return Object.keys(result).map(key => {
             const [year, month] = key.split('-').map(Number);
             return [Date.UTC(year, month, 1), result[key]];
+        });
+    }
+
+    function aggregateByQuarter(data) {
+        const result = {};
+
+        data.forEach(item => {
+            const date = new Date(item[0]);
+            const quarterInYear = Math.floor(date.getUTCMonth() / 3) + 1;
+            const quarterKey = `${date.getUTCFullYear()}-${quarterInYear}`;
+
+            if (!result[quarterKey]) {
+                result[quarterKey] = 0;
+            }
+            result[quarterKey] += item[1];
+        });debugger
+        return Object.keys(result).map(key => {
+            const [year, quarterInYear] = key.split('-').map(Number);
+            return [Date.UTC(year, quarterInYear * 3, 1), result[key]];
         });
     }
 
@@ -41,7 +61,7 @@ $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
         const dateFormat = isMonthly ? '%m-%Y' : '%d-%m-%Y';
         let option = {
             title: {
-                text: 'Thống kê doanh thu' + (isMonthly ? ' (tháng)' : ' (ngày)')
+                text: 'Thống kê thu/chi' + (isMonthly ? ' (tháng)' : ' (quý)')
             },
             xAxis: {
                 type: 'datetime',
@@ -64,24 +84,20 @@ $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
             series: [
                 {
                     name: 'Doanh thu',
-                    data: isMonthly ? aggregateByMonth(data.revenue) : data.revenue
+                    data: isMonthly ? aggregateByMonth(data.revenue) : aggregateByQuarter(data.revenue)
                 },
                 {
-                    name: 'Thu pet shop',
-                    data: isMonthly ? aggregateByMonth(data.petShopRevenue) : data.petShopRevenue
+                    name: 'Chi',
+                    data: isMonthly ? aggregateByMonth(data.expenses) : aggregateByQuarter(data.expenses)
                 },
                 {
-                    name: 'Lãi pet shop',
-                    data: isMonthly ? aggregateByMonth(data.petShopProfit) : data.petShopRevenue
+                    name: 'Chi - Rút tiết kiệm',
+                    data: isMonthly ? aggregateByMonth(data.savings) : aggregateByQuarter(data.savings)
                 },
                 {
-                    name: 'Thu spa',
-                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.petShopRevenue
+                    name: 'Còn lại',
+                    data: isMonthly ? aggregateByMonth(data.remaining) : aggregateByQuarter(data.remaining)
                 },
-                {
-                    name: 'Thu điều trị',
-                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.petShopRevenue
-                }
             ]
         }
         Highcharts.chart(id, option);

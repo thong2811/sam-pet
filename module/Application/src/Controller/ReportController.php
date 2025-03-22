@@ -25,12 +25,13 @@ class ReportController extends AbstractActionController
 
 
         $expensesModel = new Expenses();
-        $expensesTotalAmountByDate = $expensesModel->totalAmountByDate();
+        list($expensesTotalAmountByDate, $savingsTotalAmountByDate) = $expensesModel->totalAmountByDate();
 
         return new ViewModel([
             "exportStockTotalAmountByDate" => $exportStockTotalAmountByDate,
             "vetCareTotalAmountByDate" => $vetCareTotalAmountByDate,
-            "expensesTotalAmountByDate" => $expensesTotalAmountByDate
+            "expensesTotalAmountByDate" => $expensesTotalAmountByDate,
+            "savingsTotalAmountByDate" => $savingsTotalAmountByDate
         ]);
     }
 

@@ -2,6 +2,9 @@
 /**
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
+
+use Application\Model\Expenses;
+
 ?>
 
 <div class="row mt-5">
@@ -12,10 +15,11 @@
                 <thead>
                 <tr>
                     <th style="width: 150px">Ngày</th>
+                    <th style="width: 150px">Loại chi</th>
                     <th>Lý do chi</th>
                     <th style="width: 150px">Số tiền</th>
                     <th style="width: 150px">Người chi</th>
-                    <th style="width: 400px">Ghi chú</th>
+                    <th style="width: 300px">Ghi chú</th>
                     <th style="width: 100px">Thao tác</th>
                 </tr>
                 </thead>
@@ -25,7 +29,15 @@
                         <input class="form-control date-picker w-100" name="date[]" value="<?= date('d-m-Y') ?>" autocomplete="off" required/>
                     </td>
                     <td>
-                        <input type="text" class="form-control reason" id="reason" name="reason[]" required onchange="addInputRow(this)">
+                        <select class="form-control" name="type[]">
+                            <option value="<?= Expenses::TYPE_OTHER ?>">Khác</option>
+                            <option value="<?= Expenses::TYPE_SAVINGS ?>">Tiền tiết kiệm</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div>
+                            <input type="text" class="form-control reason" id="reason" name="reason[]" required onchange="addInputRow(this)">
+                        </div>
                     </td>
                     <td>
                         <div class="input-group">

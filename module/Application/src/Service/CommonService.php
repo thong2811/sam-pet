@@ -116,7 +116,7 @@ class CommonService
 
     public static function logger() {
         $logger = new Logger("app");
-        $logFilePath = __DIR__ . '/../../../../logs/app_' . date('Y-m-d') . '.log';
+        $logFilePath = __DIR__ . '/../../../../logs/app_' . date('Y-m') . '.log';
         $logger->pushHandler(new StreamHandler($logFilePath));
 
         return $logger;

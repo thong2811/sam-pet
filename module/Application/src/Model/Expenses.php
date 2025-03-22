@@ -3,13 +3,17 @@
 namespace Application\Model;
 
 use Application\Library\LeagueCsv;
+use phpDocumentor\Reflection\Type;
 
 class Expenses extends LeagueCsv
 {
     public const CSV_CONSTRUCT = [
-        'header' => ['id', 'date', 'reason', 'amount', 'person', 'note'],
+        'header' => ['id', 'date', 'type', 'reason', 'amount', 'person', 'note'],
         'fileName' => 'expenses.csv'
     ];
+
+    public const TYPE_OTHER = '0';
+    public const TYPE_SAVINGS = '1';
 
     public function __construct()
     {
@@ -19,6 +23,7 @@ class Expenses extends LeagueCsv
     public function doAdd($postData)
     {
         $dateList = $postData['date'] ?? [];
+        $typeList = $postData['type'] ?? [];
         $reasonList = $postData['reason'] ?? [];
         $amountList = $postData['amount'] ?? [];
         $personList = $postData['person'] ?? [];
@@ -32,6 +37,7 @@ class Expenses extends LeagueCsv
 
             $rows[] = [
                 'date' => $date,
+                'type' => $typeList[$index] ?? self::TYPE_OTHER,
                 'reason' => $reasonList[$index] ?? '',
                 'amount' => $amountList[$index] ?? 0,
                 'person' => $personList[$index] ?? '',
@@ -48,6 +54,7 @@ class Expenses extends LeagueCsv
     {
         $expensesIdList = $postData['expensesId'] ?? [];
         $dateList = $postData['date'] ?? [];
+        $typeList = $postData['type'] ?? [];
         $reasonList = $postData['reason'] ?? [];
         $amountList = $postData['amount'] ?? [];
         $personList = $postData['person'] ?? [];
@@ -62,6 +69,7 @@ class Expenses extends LeagueCsv
             $rows[] = [
                 'id' => $expensesId,
                 'date' => $dateList[$index] ?? '',
+                'type' => $typeList[$index] ?? self::TYPE_OTHER,
                 'reason' => $reasonList[$index] ?? '',
                 'amount' => $amountList[$index] ?? 0,
                 'person' => $personList[$index] ?? '',
@@ -78,24 +86,34 @@ class Expenses extends LeagueCsv
         $data = $this->getData();
 
         $total = [];
+        $totalSavings = [];
         foreach ($data as $row) {
             $date = $row['date'] ?? null;
             $amount = $row['amount'] ?? null;
             if (empty($date) || !is_numeric($amount)) {
                 continue;
             }
-
             $sum = $total[$date] ?? 0;
             $total[$date] = $sum + $amount;
+
+            $type = $row['type'] ?? '';
+            if ($type === self::TYPE_SAVINGS) {
+                $sumSavings = $totalSavings[$date] ?? 0;
+                $totalSavings[$date] = $sumSavings + $amount;
+            }
         }
 
-        return $total;
+        return [$total, $totalSavings];
     }
 
     public function getDataToView() {
         $data = $this->getData();
 
         foreach ($data as $id => &$row) {
+            $type = $row['type'] ?? self::TYPE_OTHER;
+            $row['typeText'] = $this->getTypeText($type);
+
+
             $sellingPrice = $row['sellingPrice'] ?? 0;
             $quantity = $row['quantity'] ?? 0;
             $row['total'] = (int) $sellingPrice * (int) $quantity;
@@ -103,5 +121,14 @@ class Expenses extends LeagueCsv
         }
 
         return $data;
+    }
+
+    public function getTypeText($type) {
+        switch ($type) {
+            case self::TYPE_SAVINGS:
+                return 'Tiền tiết kiệm';
+            default:
+                return 'Khác';
+        }
     }
 }

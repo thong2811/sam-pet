@@ -7,13 +7,15 @@ $treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
 $exportStockTotalAmountByDate = $this->exportStockTotalAmountByDate ?? [];
 $vetCareTotalAmountByDate = $this->vetCareTotalAmountByDate ?? [];
 $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
+$savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
 ?>
 <div>
     <input type="hidden" id="exportStockTotalAmountByDate" value='<?= json_encode($exportStockTotalAmountByDate) ?>'>
     <input type="hidden" id="vetCareTotalAmountByDate" value='<?= json_encode($vetCareTotalAmountByDate) ?>'>
     <input type="hidden" id="expensesTotalAmountByDate" value='<?= json_encode($expensesTotalAmountByDate) ?>'>
+    <input type="hidden" id="savingsTotalAmountByDate" value='<?= json_encode($savingsTotalAmountByDate) ?>'>
 </div>
-<div class="container mt-5">
+<div class="mt-5">
     <h1 class="mb-5"> Báo cáo thu - chi </h1>
     <div class="container row" style="font-size: 10px">
         <div class="alert alert-info p-2 col-2 float-start">Tổng thu:
@@ -36,7 +38,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
         <thead>
         <tr>
             <th>STT</th>
-            <th>Ngày</th>
+            <th style="width: 70px;">Ngày</th>
             <th>Thu pet shop</th>
             <th>Lãi pet shop</th>
             <th>Thu spa</th>
@@ -44,6 +46,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
             <th>Lãi điều trị</th>
             <th>Tổng thu</th>
             <th>Tổng chi</th>
+            <th>Rút tiền tiết kiệm</th>
             <th>Còn lại</th>
             <th>Tiền dư/thiếu</th>
             <th>Ghi chú</th>
@@ -129,6 +132,13 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
                                 <div class="input-group">
                                     <span class="input-group-text">VNĐ</span>
                                     <input type="text" class="form-control" id="expenses" name="expenses" required readonly>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Rút tiền tiết kiệm</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">VNĐ</span>
+                                    <input type="text" class="form-control" id="savings" name="savings" required readonly>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -230,6 +240,13 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
                                 </div>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">Rút tiền tiết kiệm</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">VNĐ</span>
+                                    <input type="text" class="form-control" id="savings" name="savings" required readonly>
+                                </div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Còn lại</label>
                                 <div class="input-group">
                                     <span class="input-group-text">VNĐ</span>
@@ -253,6 +270,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
     let exportStockTotalAmountByDate = [];
     let vetCareTotalAmountByDate = [];
     let expensesTotalAmountByDate = [];
+    let savingsTotalAmountByDate = [];
 
     $(function () {
         initVariable();
@@ -278,6 +296,7 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
             { name: 'treatmentProfit', data: 'treatmentProfit', render: $.fn.dataTable.render.number( ',') },
             { name: 'revenue', data: 'revenue', render: $.fn.dataTable.render.number( ',') },
             { name: 'expenses', data: 'expenses', render: $.fn.dataTable.render.number( ',') },
+            { name: 'savings', data: 'savings', render: $.fn.dataTable.render.number( ',') },
             { name: 'remaining', data: 'remaining', render: $.fn.dataTable.render.number( ',') },
             { name: 'missingAmount', data: 'missingAmount', render: $.fn.dataTable.render.number( ',') },
             { name: 'note', data: 'note' },
@@ -332,7 +351,6 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
         const date = data.date || '';
         const reportId = data.id || '';
         const missingAmount = data.missingAmount || '';
-        debugger
         const note = data.note || '';
 
         $(editModalId).find('#date').val(date);
@@ -420,19 +438,19 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
         exportStockTotalAmountByDate = JSON.parse($('#exportStockTotalAmountByDate').val() ?? '{}');
         vetCareTotalAmountByDate = JSON.parse($('#vetCareTotalAmountByDate').val() ?? '{}');
         expensesTotalAmountByDate = JSON.parse($('#expensesTotalAmountByDate').val() ?? '{}');
+        savingsTotalAmountByDate = JSON.parse($('#savingsTotalAmountByDate').val() ?? '{}');
     }
 
     function reloadReportByDate(formId, date = null) {
+        debugger
         if (date === null) {
             date = $(`${formId} #date`).val();
         }
         if (!exportStockTotalAmountByDate[date]) {
             alert("Không tìm thấy dữ liệu bán hàng !");
-            // resetReportForm()
             return;
-        } else if (!exportStockTotalAmountByDate[date]) {
+        } else if (!vetCareTotalAmountByDate[date]) {
             alert("Không tìm thấy dữ liệu điều trị, spa !");
-            // resetReportForm()
             return;
         }
 
@@ -454,21 +472,12 @@ $expensesTotalAmountByDate = $this->expensesTotalAmountByDate ?? [];
 
         const revenue = petShopRevenue + spaRevenue + treatmentRevenue;
         const expenses = expensesTotalAmountByDate[date] ?? 0;
+        const savings = savingsTotalAmountByDate[date] ?? 0;
         $(`${formId} #revenue`).val(revenue);
         $(`${formId} #expenses`).val(expenses);
+        $(`${formId} #savings`).val(savings);
 
         $(`${formId} #remaining`).val(revenue - expenses);
     }
-
-    // function resetReportForm() {
-    //     $('#petShopRevenue').val('');
-    //     $('#petShopProfit').val('');
-    //     $('#spaRevenue').val('');
-    //     $('#treatmentRevenue').val('');
-    //     $('#treatmentProfit').val('');
-    //     $('#revenue').val('');
-    //     $('#expenses').val('');
-    //     $('#remaining').val('');
-    // }
 
 </script>

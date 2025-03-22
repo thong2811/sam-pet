@@ -19,4 +19,14 @@ class OverviewController extends AbstractActionController
             'data' => $data,
         ]);
     }
+
+    public function expensesAction()
+    {
+        $reportModel = new Report();
+        list($totals, $data) = $reportModel->getDataToViewChart();
+
+        return new ViewModel([
+            'data' => $data,
+        ]);
+    }
 }
