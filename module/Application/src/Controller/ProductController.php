@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Application\Controller;
 
 use Application\Model\Product;
+use Application\Model\RepackageHistory;
 use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
@@ -126,5 +127,26 @@ class ProductController extends AbstractActionController
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function repackageAction() {
+        $productModel = new Product();
+        list($totals, $productList) = $productModel->getDataToView();
+
+        $repackageHistoryModel = new RepackageHistory();
+        $repackageHistoryList = $repackageHistoryModel->getDataToView(20);
+
+        return new ViewModel(['productList' => $productList, 'repackageHistoryList' => $repackageHistoryList]);
+    }
+
+    public function doRepackageAction() {
+        $request = $this->getRequest();
+        $postData = $request->getPost()->toArray();
+
+        $productModel = new Product();
+        $productModel->doRepackage($postData);
+
+        $this->flashMessenger()->addSuccessMessage('Chiết hàng thành công.');
+        return $this->redirect()->toUrl('/product/repackage');
     }
 }

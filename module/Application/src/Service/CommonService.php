@@ -114,9 +114,11 @@ class CommonService
         return $collator->compare($str1, $str2);
     }
 
-    public static function logger() {
+    public static function logger($logFilePath = null) {
+        if (is_null($logFilePath)) {
+            $logFilePath = __DIR__ . '/../../../../logs/app_' . date('Y-m') . '.log';
+        }
         $logger = new Logger("app");
-        $logFilePath = __DIR__ . '/../../../../logs/app_' . date('Y-m') . '.log';
         $logger->pushHandler(new StreamHandler($logFilePath));
 
         return $logger;

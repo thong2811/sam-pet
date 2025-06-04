@@ -367,6 +367,11 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
             return;
         }
 
+        if ($(addModalId + " #petShopRevenue").val() === "") {
+            alert("Lỗi: Doanh thu pet shop đang rỗng !")
+            return;
+        }
+
         $.ajax({
             url: `/${controllerName}/do-add`,
             type: 'POST',
@@ -388,6 +393,11 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
 
     function doEdit() {
         if (!validateModalForm(editModalId)) {
+            return;
+        }
+
+        if ($(editModalId + " #petShopRevenue").val() === "") {
+            alert("Lỗi: Doanh thu pet shop đang rỗng !")
             return;
         }
 
@@ -442,15 +452,14 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
     }
 
     function reloadReportByDate(formId, date = null) {
-        debugger
         if (date === null) {
             date = $(`${formId} #date`).val();
         }
         if (!exportStockTotalAmountByDate[date]) {
-            alert("Không tìm thấy dữ liệu bán hàng !");
+            alert("Không tìm thấy dữ liệu bán hàng để tính tự động !");
             return;
         } else if (!vetCareTotalAmountByDate[date]) {
-            alert("Không tìm thấy dữ liệu điều trị, spa !");
+            alert("Không tìm thấy dữ liệu điều trị, spa để tính tự động !");
             return;
         }
 

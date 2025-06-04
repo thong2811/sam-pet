@@ -17,6 +17,7 @@
         </div>
     </div>
     <div class="my-2">
+        <a href="/product/repackage" class="btn btn-primary"> Chiết hàng</a>
         <button class="btn btn-primary" onclick="openAddModal()">Thêm mới +</button>
     </div>
     <table id="dataTable" class="table table-striped" style="width:100%">
@@ -31,6 +32,7 @@
             <th>Tồn đầu kỳ</th>
             <th>Nhập</th>
             <th>Xuất</th>
+            <th>Chiết</th>
             <th>Còn lại</th>
             <th>Cập nhật</th>
             <th>Thao tác</th>
@@ -153,6 +155,7 @@
             { name: 'initStock', data: 'initStock' },
             { name: 'importStock', data: 'importStock' },
             { name: 'exportStock', data: 'exportStock' },
+            { name: 'repackageStock', data: 'repackageStock' },
             { name: 'remainStock', data: 'remainStock' },
             { name: 'updatedAt', data: 'updatedAt' },
             { name: 'action', data: 'action' }

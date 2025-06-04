@@ -1,0 +1,154 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+
+<div class="row mt-5">
+    <h1> Chiết hàng </h1>
+    <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
+    <form method="post" action="/product/do-repackage">
+        <div class="container">
+            <div>
+                <label class="form-label" for="date">Ngày chiết hàng</label>
+                <input class="form-control date-picker w-100" name="date" value="" autocomplete="off" required/>
+            </div>
+            <div class="border border-2 p-3 mt-3">
+                <h3>Chọn hàng chiết</h3>
+                <table class="table table-striped table-form">
+                    <thead>
+                    <tr>
+                        <th>Tên hàng hóa</th>
+                        <th style="width: 300px">Tồn kho hiện tại</th>
+                        <th style="width: 300px">Số lượng chiết</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <select class="select-product form-control select2" name="productId_big" onchange="updateRowData(this)">
+                                <option value="">Chọn hàng hóa</option>
+                                <?php foreach ($this->productList as $id => $product): ?>
+                                    <option value="<?= $id ?>"><?= $product['name'] ?? '' ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td>
+                            <input id="remainStock" class="form-control" type="number" name="remainStock_big" readonly value="">
+                        </td>
+                        <td>
+                            <input class="form-control quantity" type="number" name="quantity_big" value="1" required>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border border-2 p-3 mt-3">
+                <h3>Chiết thành</h3>
+                <table class="table table-striped table-form">
+                    <thead>
+                    <tr>
+                        <th>Tên hàng hóa</th>
+                        <th style="width: 300px">Tồn kho hiện tại</th>
+                        <th style="width: 300px">Số lượng chiết</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <select class="select-product form-control select2" name="productId_small[]" onchange="updateRowData(this)">
+                                <option value="">Chọn hàng hóa</option>
+                                <?php foreach ($this->productList as $id => $product): ?>
+                                    <option value="<?= $id ?>"><?= $product['name'] ?? '' ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td>
+                            <input id="remainStock" class="form-control" type="number" name="remainStock_small[]" readonly value="">
+                        </td>
+                        <td>
+                            <input class="form-control quantity" type="number" name="quantity_small[]" value="1" required>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        <div class="my-3">
+            <button type="submit" class="btn btn-primary float-end">Lưu</button>
+            <a href="/product" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+<div class="row mt-5">
+    <div class="bg-dark text-light">
+        <h1>Lịch sử chiết hàng:</h1>
+        <div>
+            <?php foreach ($this->repackageHistoryList as $id => $repackageHistoryData): ?>
+                <div class="bg-light text-dark ps-1"><?= date("d-m-Y H:i:s", $repackageHistoryData['createdAt']) ?></div>
+                <pre class="text-info"><?= $repackageHistoryData['content'] ?></pre>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+
+<script>
+    let tableInputRowHtml = ``;
+    let productList = [];
+    $(document).ready(function() {
+        tableInputRowHtml = `<tr>${$('.table-form').find('tbody tr').last().html()}</tr>`;
+        initVariable();
+        $('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+    });
+
+    $(document).keypress(event => {
+        if (event.which == '13') {
+            event.preventDefault();
+        }
+    });
+
+    function initVariable() {
+        let data = $('#productList').val();
+        productList = JSON.parse(data);
+    }
+
+    function updateRowData(elm) {
+        let value = $(elm).val();
+        const tbodyElm = $(elm).closest('tbody');
+        const trElm = $(elm).closest('tr');
+
+        const productData = productList[value] ?? {};
+
+        trElm.find('#remainStock').val(productData.remainStock || 0);
+
+        if (value) {
+            if ($('.select-product').last().val() !== '') {
+                addInputRow(tbodyElm);
+            }
+        }
+    }
+
+    function addInputRow(tbodyElm) {
+        const date = tbodyElm.find('.date-picker').last().val();
+
+        tbodyElm.append(tableInputRowHtml);
+        tbodyElm.find('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
+        const datePicker = tbodyElm.find('.date-picker').last();
+        datePicker.val();
+        datePicker.datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+        datePicker.val(date);
+    }
+</script>

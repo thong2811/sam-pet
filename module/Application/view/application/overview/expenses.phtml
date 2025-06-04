@@ -31,7 +31,6 @@ $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
             result[monthKey] += item[1];
         });
 
-        debugger
         return Object.keys(result).map(key => {
             const [year, month] = key.split('-').map(Number);
             return [Date.UTC(year, month, 1), result[key]];
@@ -50,7 +49,8 @@ $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
                 result[quarterKey] = 0;
             }
             result[quarterKey] += item[1];
-        });debugger
+        });
+
         return Object.keys(result).map(key => {
             const [year, quarterInYear] = key.split('-').map(Number);
             return [Date.UTC(year, quarterInYear * 3, 1), result[key]];

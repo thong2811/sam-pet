@@ -72,15 +72,15 @@ $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
                 },
                 {
                     name: 'Lãi pet shop',
-                    data: isMonthly ? aggregateByMonth(data.petShopProfit) : data.petShopRevenue
+                    data: isMonthly ? aggregateByMonth(data.petShopProfit) : data.petShopProfit
                 },
                 {
                     name: 'Thu spa',
-                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.petShopRevenue
+                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.spaRevenue
                 },
                 {
                     name: 'Thu điều trị',
-                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.petShopRevenue
+                    data: isMonthly ? aggregateByMonth(data.treatmentRevenue) : data.treatmentRevenue
                 }
             ]
         }
