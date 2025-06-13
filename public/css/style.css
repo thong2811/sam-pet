@@ -96,3 +96,17 @@
 .flash-messages .alert {
     border-radius: 0;
 }
+
+.table-headers-sticky thead tr th {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    background: white;
+}
+
+.table-footers-sticky tfoot tr td {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 0;
+    background: white;
+}

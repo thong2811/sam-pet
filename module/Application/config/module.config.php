@@ -60,11 +60,12 @@ return [
     'router'          => [
         'routes' => [
             'default'     => createSegmentRoute(Controller\OverviewController::class, '/'),
-            'overview'     => createSegmentRoute(Controller\OverviewController::class, '/overview', []),
+            'overview'    => createSegmentRoute(Controller\OverviewController::class, '/overview', []),
             'product'     => createSegmentRoute(Controller\ProductController::class, '/product', [
                 'edit'   => createChildRoute('edit', ['id']),
                 'delete' => createChildRoute('delete', ['id'])
             ]),
+            'stocktaking' => createSegmentRoute(Controller\StocktakingController::class, '/stocktaking', []),
             'exportStock' => createSegmentRoute(Controller\ExportStockController::class, '/export-stock', [
                 'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
                 'delete' => createChildRoute('delete', ['id'])
@@ -91,6 +92,7 @@ return [
         'factories' => [
             Controller\OverviewController::class     => InvokableFactory::class,
             Controller\ProductController::class     => InvokableFactory::class,
+            Controller\StocktakingController::class     => InvokableFactory::class,
             Controller\ExportStockController::class => InvokableFactory::class,
             Controller\ImportStockController::class => InvokableFactory::class,
             Controller\VetCareController::class     => InvokableFactory::class,

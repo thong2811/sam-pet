@@ -1,0 +1,72 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<div class="container mt-5">
+    <h1 class="mb-5"> Kiểm hàng</h1>
+    <div class="my-2">
+        <a href="/product" class="btn btn-primary"> Quản lý kho</a>
+        <a href="/product/repackage" class="btn btn-primary"> Chiết hàng</a>
+        <button onclick="renewWarehouse()" class="btn btn-danger"> Chốt kho</button>
+    </div>
+    <form method="post" action="/stocktaking/do-edit">
+        <table id="dataTable" class="table table-striped table-headers-sticky table-footers-sticky" style="width:100%">
+            <thead>
+            <tr style="position:sticky;background: white">
+                <th>STT</th>
+                <th>Tên</th>
+                <th>Tồn đầu kỳ</th>
+                <th>Nhập</th>
+                <th>Xuất</th>
+                <th>Chiết</th>
+                <th>Còn lại</th>
+                <th>Tồn kiểm kê</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php
+            $i = 1;
+            foreach ($this->productList as $id => $product):
+                $stocktakingData = $this->stocktakingList[$id] ?? [];
+                $stocktaking = $stocktakingData["stocktaking"] ?? "";
+                $isNotEq = $stocktaking !== "" && $product['remainStock'] !== (int) $stocktaking;
+                ?>
+                <tr style="background: <?= $isNotEq ? "red" : "white" ?>">
+                    <td><?= $i ?></td>
+                    <td><?= $product['name'] ?? "NO NAME" ?></td>
+                    <td><?= $product['initStock'] ?? "Không có" ?></td>
+                    <td><?= $product['importStock'] ?? "Không có" ?></td>
+                    <td><?= $product['exportStock'] ?? "Không có" ?></td>
+                    <td><?= $product['repackageStock'] ?? "Không có" ?></td>
+                    <td><?= $product['remainStock'] ?? "Không có" ?></td>
+                    <td>
+                        <input type="hidden" name="productId[]" value="<?= $id ?>">
+                        <input class="form-control" type="number" name="stocktaking[]" value="<?= $stocktaking ?>">
+                    </td>
+                </tr>
+                <?php
+                $i++;
+            endforeach; ?>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="8" style="z-index: 999">
+                        <button class="form-control bg-primary text-white" type="submit" >Cập nhật</button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </form>
+</div>
+
+<script>
+    function renewWarehouse() {
+        let confirm = prompt('Bạn có chắc chắn muốn chốt kho?\nDữ liệu nhập, xuất sẽ bị mất. Nhập vào "Xác nhận" để chốt kho !');
+        if (confirm === "Xác nhận") {
+            window.location = "/stocktaking/renew-warehouse";
+        } else {
+            alert("Xác nhận sai !")
+        }
+    }
+</script>

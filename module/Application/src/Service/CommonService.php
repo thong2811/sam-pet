@@ -4,6 +4,9 @@ namespace Application\Service;
 
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use ZipArchive;
 
 class CommonService
 {
@@ -122,5 +125,70 @@ class CommonService
         $logger->pushHandler(new StreamHandler($logFilePath));
 
         return $logger;
+    }
+
+    public static function loggerException() {
+        $logFilePath = __DIR__ . '/../../../../logs/exception_' . date('Y-m') . '.log';
+        $logger = new Logger("app");
+        $logger->pushHandler(new StreamHandler($logFilePath));
+
+        return $logger;
+    }
+
+    public static function executeCommand($command)
+    {
+        $output = [];
+        $return_var = 0;
+        $result = exec($command, $output, $return_var);
+        if ($result === false) {
+            $phpError = error_get_last();
+            $msg = $phpError ? $phpError['message'] : 'No PHP error in this script';
+            self::loggerException()->error($msg);
+        }
+
+        if ($return_var === 0) {
+            return true;
+        } else {
+            self::loggerException()->error("Error executing script, return code: $return_var");
+            return false;
+        }
+    }
+
+    public static function backupDataToStocktaking() {
+        $backupFileName = 'backup_data_stocktaking_' . time() . '.zip';
+        $sourceFolder = realpath('./data');
+        $backupFolder = "$sourceFolder/backup_stocktaking";
+
+        if (!is_dir($backupFolder)) {
+            mkdir($backupFolder, 0777, true);
+        }
+
+        $backupFilePath = $backupFolder . DIRECTORY_SEPARATOR . $backupFileName;
+        if (file_exists($backupFilePath)) {
+            return false;
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($backupFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+            // Get list of files in source folder
+            $files = scandir($sourceFolder);
+
+            foreach ($files as $file) {
+                // Skip . and .. directories
+                if ($file !== '.' && $file !== '..') {
+                    $filePath = $sourceFolder . DIRECTORY_SEPARATOR . $file;
+
+                    // Check if it's a file and has .csv extension
+                    if (is_file($filePath) && pathinfo($filePath, PATHINFO_EXTENSION) === 'csv') {
+                        $zip->addFile($filePath, $file);
+                    }
+                }
+            }
+
+            $zip->close();
+            return true;
+        }
+
+        return false;
     }
 }
