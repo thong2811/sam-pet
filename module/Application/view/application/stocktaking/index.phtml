@@ -32,7 +32,7 @@
                 $stocktaking = $stocktakingData["stocktaking"] ?? "";
                 $isNotEq = $stocktaking !== "" && $product['remainStock'] !== (int) $stocktaking;
                 ?>
-                <tr style="background: <?= $isNotEq ? "red" : "white" ?>">
+                <tr class="stocktaking-row" style="background: <?= $isNotEq ? "red" : "white" ?>">
                     <td><?= $i ?></td>
                     <td><?= $product['name'] ?? "NO NAME" ?></td>
                     <td><?= $product['initStock'] ?? "Không có" ?></td>
@@ -42,7 +42,7 @@
                     <td><?= $product['remainStock'] ?? "Không có" ?></td>
                     <td>
                         <input type="hidden" name="productId[]" value="<?= $id ?>">
-                        <input class="form-control" type="number" name="stocktaking[]" value="<?= $stocktaking ?>">
+                        <input class="form-control stocktaking-input" type="number" name="stocktaking[]" value="<?= $stocktaking ?>">
                     </td>
                 </tr>
                 <?php

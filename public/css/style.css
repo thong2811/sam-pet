@@ -110,3 +110,7 @@
     bottom: 0;
     background: white;
 }
+
+.stocktaking-row:has(.stocktaking-input:focus)  {
+    background: greenyellow !important;
+}
