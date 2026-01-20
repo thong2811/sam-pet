@@ -6,8 +6,11 @@ use Application\Library\LeagueCsv;
 
 class Product extends LeagueCsv
 {
+    const INVOICE_CHECK_TRUE = "1";
+    const INVOICE_CHECK_FALSE = "0";
+
     public const CSV_CONSTRUCT = [
-        'header'   => ['id', 'name', 'unit', 'sellingPrice', 'purchasePrice', 'initStock', 'repackageStock'],
+        'header'   => ['id', 'name', 'unit', 'sellingPrice', 'purchasePrice', 'initStock', 'repackageStock', 'invoiceCheck'],
         'fileName' => 'product.csv'
     ];
 
@@ -128,5 +131,16 @@ class Product extends LeagueCsv
 
         $repackageHistoryModel = new RepackageHistory();
         $repackageHistoryModel->addRow(['date' => $date, 'content' => $content]);
+    }
+
+    public function doAddInvoiceCheck($postData) {
+        $invoiceCheckList = $postData['invoiceCheckList'] ?? [];
+        $productData = $this->getData();
+        foreach ($invoiceCheckList as $id => $value) {
+            if (isset($productData[$id])) {
+                $productData[$id]['invoiceCheck'] = $value;
+            }
+        }
+        $this->saveData($productData);
     }
 }

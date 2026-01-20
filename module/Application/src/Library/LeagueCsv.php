@@ -13,6 +13,7 @@ class LeagueCsv
 {
     private $filePath;
     private $headers;
+    private $primaryKey;
 
     public const DEFAULT_HEADERS = ['createdAt', 'updatedAt'];
     public const DEFAULT_PRIMARY_KEY = 'id';
@@ -118,14 +119,6 @@ class LeagueCsv
     {
         $csv = Writer::createFromPath($this->filePath, 'w');
         $csv->insertOne($this->headers);
-
-        // TODO convert date format. (delete in future)
-        foreach ($data as &$row) {
-            if (isset($row['date'])) {
-                $row['date'] = (new \DateTime($row['date']))->format('d-m-Y');
-            }
-        }
-
         $csv->insertAll($data);
     }
 

@@ -2,6 +2,7 @@
 
 namespace Application\Service;
 
+use Collator;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use RecursiveDirectoryIterator;
@@ -190,5 +191,14 @@ class CommonService
         }
 
         return false;
+    }
+
+    public static function sortDataByVietnamese(&$data, $key) {
+        $coll = new Collator('vi_VN');
+        usort($data, function ($a, $b) use ($key, $coll) {
+            if (!isset($b[$key])) return 1;
+            if (!isset($a[$key])) return -1;
+            return $coll->compare($a[$key], $b[$key]);
+        });
     }
 }

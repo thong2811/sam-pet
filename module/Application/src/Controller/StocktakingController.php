@@ -6,6 +6,7 @@ namespace Application\Controller;
 
 use Application\Model\Product;
 use Application\Model\Stocktaking;
+use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 
@@ -14,7 +15,7 @@ class StocktakingController extends AbstractActionController
     public function indexAction() {
         $productModel = new Product();
         list($totals, $productList) = $productModel->getDataToView();
-
+        CommonService::sortDataByVietnamese($productList, 'name');
         $stocktakingModel = new Stocktaking();
         $stocktakingList = $stocktakingModel->getData();
         return new ViewModel(['productList' => $productList, 'stocktakingList' => $stocktakingList]);

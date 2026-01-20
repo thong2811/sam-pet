@@ -3,7 +3,6 @@
 namespace Application\Model;
 
 use Application\Library\LeagueCsv;
-use phpDocumentor\Reflection\Type;
 
 class Expenses extends LeagueCsv
 {

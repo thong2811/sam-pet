@@ -149,4 +149,25 @@ class ProductController extends AbstractActionController
         $this->flashMessenger()->addSuccessMessage('Chiết hàng thành công.');
         return $this->redirect()->toUrl('/product/repackage');
     }
+
+    public function addInvoiceCheckAction()
+    {
+        $productModel = new Product();
+        list($totals, $productList) = $productModel->getDataToView();
+        CommonService::sortDataByVietnamese($productList, 'name');
+
+        return new ViewModel(['productList' => $productList]);
+    }
+
+    public function doAddInvoiceCheckAction()
+    {
+        $request = $this->getRequest();
+        $postData = $request->getPost()->toArray();
+
+        $productModel = new Product();
+        $productModel->doAddInvoiceCheck($postData);
+
+        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công.');
+        return $this->redirect()->toUrl('/product/add-invoice-check');
+    }
 }
