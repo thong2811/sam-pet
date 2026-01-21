@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  sam-pet:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    container_name: sam-pet
+    volumes:
+      - ../../sam-pet:/var/www/html
+      - ./apache/vhost.conf:/etc/apache2/sites-available/000-default.conf
+      - ./php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+    ports:
+      - "8080:80"
+    environment:
+      APP_ENV: development

@@ -21,7 +21,8 @@
         "laminas/laminas-session": "^2.22",
         "laminas/laminas-skeleton-installer": "^1.3.0",
         "league/csv": "^9.18",
-        "monolog/monolog": "^3.8"
+        "monolog/monolog": "^3.8",
+        "setasign/fpdf": "^1.8"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
