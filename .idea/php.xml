@@ -92,6 +92,11 @@
       <path value="$PROJECT_DIR$/vendor/symfony/filesystem" />
       <path value="$PROJECT_DIR$/vendor/monolog/monolog" />
       <path value="$PROJECT_DIR$/vendor/setasign/fpdf" />
+      <path value="$PROJECT_DIR$/vendor/paragonie/random_compat" />
+      <path value="$PROJECT_DIR$/vendor/setasign/fpdi" />
+      <path value="$PROJECT_DIR$/vendor/mpdf/mpdf" />
+      <path value="$PROJECT_DIR$/vendor/mpdf/psr-http-message-shim" />
+      <path value="$PROJECT_DIR$/vendor/mpdf/psr-log-aware-trait" />
     </include_path>
   </component>
   <component name="PhpInterpreters">

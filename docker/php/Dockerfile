@@ -9,11 +9,20 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     libicu-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
     && docker-php-ext-install \
-    intl \
-    pdo \
-    pdo_mysql \
-    zip
+        intl \
+        pdo \
+        pdo_mysql \
+        zip \
+        gd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Xdebug
 RUN pecl install xdebug \

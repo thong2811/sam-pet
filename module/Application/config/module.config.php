@@ -86,6 +86,7 @@ return [
                 'edit'   => createChildRoute('edit', ['id']),
                 'delete' => createChildRoute('delete', ['id'])
             ]),
+            'pdf'      => createSegmentRoute(Controller\PdfController::class, '/pdf', []),
         ],
     ],
     'controllers'     => [
@@ -98,6 +99,7 @@ return [
             Controller\VetCareController::class     => InvokableFactory::class,
             Controller\ExpensesController::class    => InvokableFactory::class,
             Controller\ReportController::class      => InvokableFactory::class,
+            Controller\PdfController::class      => InvokableFactory::class,
         ],
     ],
     'view_manager'    => [
