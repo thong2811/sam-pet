@@ -1,0 +1,85 @@
+5<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<div class="container mt-5">
+    <h1 class="mb-5"> Xuất hàng </h1>
+    <div class="my-2">
+        <div class="d-flex">
+            <a href="/export-stock/add" class="btn btn-primary"> Thêm mới +</a>
+            <div class="input-group w-50 ms-3">
+                <button class="btn btn-primary" onclick="editByDate()"> Chỉnh sửa </button>
+                <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="Nhập ngày chỉnh sửa..." required/>
+            </div>
+        </div>
+    </div>
+    <table id="dataTable" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>STT</th>
+            <th>Ngày</th>
+            <th>Tên hàng hóa</th>
+            <th>Giá nhập</th>
+            <th>Giá bán</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+            <th>Ghi chú</th>
+            <th>Thao tác</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+<script>
+    const table = initDataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: {
+            url: 'export-stock/data-table-server-side',
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'date', data: 'date' },
+            { name: 'productName', data: 'productName' },
+            { name: 'purchasePrice', data: 'purchasePrice', render: $.fn.dataTable.render.number( ',') },
+            { name: 'sellingPrice', data: 'sellingPrice', render: $.fn.dataTable.render.number( ',') },
+            { name: 'quantity', data: 'quantity' },
+            { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
+            { name: 'note', data: 'note' },
+            { name: 'action', data: 'action' }
+        ],
+        serverSide: true
+    });
+
+    function remove(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
+            return;
+        }
+        $.ajax({
+            url: '/export-stock/do-delete',
+            type: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: id }),
+            success: function (response) {
+                if (response.success) {
+                    table.draw(false);
+                    addFlashMessage(`Xoá thành công`);
+                } else {
+                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, error) {
+                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
+    }
+
+    function editByDate() {
+        const date = $('#editDate').val();
+        if (!date) {
+            alert("Hãy nhập ngày chỉnh sửa !");
+            return;
+        }
+        location.href = `/export-stock/edit/${date}`;
+    }
+</script>

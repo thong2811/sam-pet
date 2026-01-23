@@ -70,6 +70,9 @@ return [
                 'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
                 'delete' => createChildRoute('delete', ['id'])
             ]),
+            'exportInvoice' => createSegmentRoute(Controller\ExportInvoiceController::class, '/export-invoice', [
+                'add'   => createChildRoute('add', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+            ]),
             'importStock' => createSegmentRoute(Controller\ImportStockController::class, '/import-stock', [
                 'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
                 'delete' => createChildRoute('delete', ['id'])
@@ -91,15 +94,16 @@ return [
     ],
     'controllers'     => [
         'factories' => [
-            Controller\OverviewController::class     => InvokableFactory::class,
-            Controller\ProductController::class     => InvokableFactory::class,
+            Controller\OverviewController::class        => InvokableFactory::class,
+            Controller\ProductController::class         => InvokableFactory::class,
             Controller\StocktakingController::class     => InvokableFactory::class,
-            Controller\ExportStockController::class => InvokableFactory::class,
-            Controller\ImportStockController::class => InvokableFactory::class,
-            Controller\VetCareController::class     => InvokableFactory::class,
-            Controller\ExpensesController::class    => InvokableFactory::class,
-            Controller\ReportController::class      => InvokableFactory::class,
-            Controller\PdfController::class      => InvokableFactory::class,
+            Controller\ExportStockController::class     => InvokableFactory::class,
+            Controller\ImportStockController::class     => InvokableFactory::class,
+            Controller\VetCareController::class         => InvokableFactory::class,
+            Controller\ExpensesController::class        => InvokableFactory::class,
+            Controller\ReportController::class          => InvokableFactory::class,
+            Controller\PdfController::class             => InvokableFactory::class,
+            Controller\ExportInvoiceController::class   => InvokableFactory::class,
         ],
     ],
     'view_manager'    => [

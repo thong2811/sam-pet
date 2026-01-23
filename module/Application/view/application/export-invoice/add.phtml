@@ -1,0 +1,215 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+
+<div class="row mt-5">
+    <h1> Xuất hóa đơn ngày <?= $this->date ?></h1>
+    <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
+    <form method="post" action="/export-invoice/do-add" onchange="updateSumTotal()">
+        <div class="container">
+            <div>
+                <label class="form-label">Doanh thu Spa - Grooming:</label>
+                <table class="table table-striped table-form">
+                    <tr>
+                        <td width="70%">
+                            <textarea rows="1" class="form-control" name="spaDesc" placeholder="Diễn giải...">Doanh thu Spa - Grooming</textarea>
+                        </td>
+                        <td width="30%">
+                            <input type="text" class="form-control" id="spaAmount" value="" name="spaAmount" placeholder="Tổng tiền" required>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="mt-2">
+                <label class="form-label">Doanh thu khám, chữa bệnh:</label>
+                <table class="table table-striped table-form">
+                    <tr>
+                        <td width="70%">
+                            <textarea rows="1" class="form-control" name="treatmentDesc" placeholder="Diễn giải...">Doanh thu khám, chữa bệnh</textarea>
+                        </td>
+                        <td width="30%">
+                            <input type="text" class="form-control" id="treatmentAmount" value="" name="treatmentAmount" placeholder="Tổng tiền" required>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <table class="table table-striped table-form mt-3">
+                <thead>
+                <tr>
+                    <th style="min-width: 300px">Tên hàng hóa</th>
+                    <th style="width: 150px">Giá nhập</th>
+                    <th style="width: 150px">Giá bán</th>
+                    <th style="width: 80px">Số lượng</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+                foreach ($this->exportProductList as $exportProductId => $exportStockData):
+                    $quantity = $exportStockData['quantity'] ?? 0;
+                    $sellingPrice = $exportStockData['sellingPrice'] ?? 0;
+                    $purchasePrice = $exportStockData['purchasePrice'] ?? 0;
+                    $exportProductName = $exportStockData['productName'] ?? '';
+                    ?>
+                    <tr>
+                        <div>
+                            <input type="hidden" name="productId[]" value="<?= $exportProductId ?>">
+                        </div>
+                        <td>
+                            <textarea id="desc" rows="1" class="form-control mb-2 fw-bold" style="width: 100%" placeholder="Diễn giải..." name="desc[]">Doanh thu bán lẻ <?= $exportProductName ?></textarea>
+                            <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)">
+                                <option value="">Chọn hàng hóa</option>
+                                <?php
+                                foreach ($this->productList as $productId => $productData):
+                                    $isSelected = $exportProductId == $productId;
+                                    $selected = $isSelected ? 'selected' : '';
+                                    $productName = $productData['name'] ?? '-';
+                                    ?>
+                                    <option value="<?= $productId ?>" <?= $selected ?> > <?= $productName ?> </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="purchasePrice" value="<?= $purchasePrice ?>" name="purchasePrice[]" required>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <input type="text" class="form-control selling-price" id="sellingPrice" value="<?= $sellingPrice ?>" name="sellingPrice[]" required>
+                            </div>
+                        </td>
+                        <td>
+                            <input class="form-control quantity" type="number" name="quantity[]" value="<?= $quantity ?>" required>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <tr>
+                    <td>
+                        <textarea id="desc" rows="1" class="form-control mb-2 fw-bold" style="width: 100%" placeholder="Diễn giải..." name="desc[]"></textarea>
+                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)">
+                            <option value="">Chọn hàng hóa</option>
+                            <?php foreach ($this->productList as $id => $product): ?>
+                                <option value="<?= $id ?>"><?= $product['name'] ?? '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="purchasePrice" name="purchasePrice[]" value="0" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <input type="text" class="form-control selling-price" id="sellingPrice" name="sellingPrice[]" value="0" required>
+                        </div>
+                    </td>
+                    <td>
+                        <input class="form-control quantity" type="number" name="quantity[]" value="1" required>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-info">Tổng cộng:
+                <span class="fw-bold" id="sumTotal"></span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Lưu</button>
+            <a href="/export-invoice" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    let tableInputRowHtml = ``;
+    let productList = [];
+    $(document).ready(function() {
+        tableInputRowHtml = `<tr>${$('.table-form').find('tbody tr').last().html()}</tr>`;
+        updateSumTotal();
+
+        initVariable();
+        $('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
+        $('.date-picker').datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+    });
+
+    $(document).keypress(event => {
+        if (event.which == '13') {
+            event.preventDefault();
+        }
+    });
+
+    function initVariable() {
+        let data = $('#productList').val();
+        productList = JSON.parse(data);
+    }
+
+    function updateRowData(elm) {
+        let value = $(elm).val();
+        const tbodyElm = $(elm).closest('tbody');
+        const trElm = $(elm).closest('tr');
+
+        const productData = productList[value] ?? {};
+
+        trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
+        trElm.find('#sellingPrice').val(productData.sellingPrice || 0);
+        trElm.find('#desc').val(`Doanh thu bán lẻ ${productData.name}`);
+
+        if (value) {
+            if ($('.select-product').last().val() !== '') {
+                addInputRow(tbodyElm);
+            }
+        }
+    }
+
+    function addInputRow(tbodyElm) {
+        const date = tbodyElm.find('.date-picker').last().val();
+
+        tbodyElm.append(tableInputRowHtml);
+        tbodyElm.find('.select2').select2({
+            dropdownCssClass: 'select-product-custom'
+        });
+        const datePicker = tbodyElm.find('.date-picker').last();
+        datePicker.val();
+        datePicker.datepicker({
+            format: 'dd-mm-yyyy',
+            autoclose:true
+        });
+        datePicker.val(date);
+    }
+
+    function updateSumTotal() {
+        let sumTotal = 0;
+        try {
+            let sellingPriceInputList = $('.selling-price');
+            let quantityInputList = $('.quantity');
+
+            sellingPriceInputList.each((index) => {
+                const sellingPrice = sellingPriceInputList.eq(index).val();
+                const quantity = quantityInputList.eq(index).val();
+                sumTotal = sumTotal + sellingPrice * quantity;
+            })
+
+            let treatmentAmount = $("#treatmentAmount").val();
+            treatmentAmount = treatmentAmount === '' ? 0 : treatmentAmount;
+            let spaAmount = $("#spaAmount").val();
+            spaAmount = spaAmount === '' ? 0 : spaAmount;
+            sumTotal = sumTotal + parseInt(treatmentAmount) + parseInt(spaAmount);
+
+            sumTotal = sumTotal.toLocaleString() + ' VNĐ';
+        } catch (e) {
+            sumTotal = 'ERROR';
+            console.log("Không thể tính tổng giá trị xuất hàng : ", e);
+        }
+
+        $('#sumTotal').html(sumTotal);
+
+    }
+</script>

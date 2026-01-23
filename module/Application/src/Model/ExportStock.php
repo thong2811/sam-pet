@@ -166,4 +166,25 @@ class ExportStock extends LeagueCsv
 
         return $data;
     }
+
+    public function mergeExportStockByItem($exportStockList) {
+        $data = [];
+        foreach ($exportStockList as $exportStockData) {
+            $productId = $exportStockData['productId'] ?? '';
+            $sellingPrice = $exportStockData['sellingPrice'] ?? 0;
+            if (empty($productId)) continue;
+
+            if (isset($data[$productId]) && $data[$productId]['sellingPrice'] == $sellingPrice) {
+                $data[$productId]['quantity'] += $exportStockData['quantity'] ?? 0;
+            } else {
+                $data[$productId] = [
+                    'productName' => $exportStockData['productName'] ?? '',
+                    'quantity' => $exportStockData['quantity'] ?? 0,
+                    'purchasePrice' => $exportStockData['purchasePrice'] ?? 0,
+                    'sellingPrice' => $exportStockData['sellingPrice'] ?? 0
+                ];
+            }
+        }
+        return $data;
+    }
 }
