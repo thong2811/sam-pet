@@ -63,19 +63,19 @@ class PdfGenerator
         </style>
 
         <div class="header">
-            <div class="text-left" style="font-size:11px;width: 450px;float: left">
+            <div class="text-left" style="font-size:11px;width: 430px;float: left">
                 <strong>HỘ KINH DOANH:</strong> NGUYỄN THỊ ANH THƯ<br>
                 <strong>Địa chỉ:</strong> '. $address .' <br>
                 <strong>Mã số thuế: '. $mst .'</strong> 
             </div>
-            <div class="text-center" style="font-size:9px;width: 230px;float: right">
+            <div class="text-center" style="font-size:9px;width: 230px;float: right;border: 1px solid black;padding: 2px">
                 <strong>Mẫu số S1a-HKD</strong><br>
                 <i>(Ban hành kèm theo Thông tư số 152/2025/TT-BTC<br>
                 ngày 31 tháng 12 năm 2025 của Bộ trưởng<br>Bộ Tài chính)</i>
             </div>
         </div>
 
-        <div style="width: 600px;margin: 0 auto">
+        <div style="width: 600px;margin: 5px auto 0 auto">
             <h2>SỔ CHI TIẾT DOANH THU BÁN HÀNG HÓA, DỊCH VỤ</h2>
             <div style="margin-left: 25px">
                 Địa điểm kinh doanh: '. $address .'<br>
@@ -102,7 +102,7 @@ class PdfGenerator
             <tr>
                 <td>'.$row['date'].'</td>
                 <td>'.$row['desc'].'</td>
-                <td class="right-text">'.number_format($row['total']).'</td>
+                <td class="text-right">'.number_format($row['total']).'</td>
             </tr>';
             $total += $row['total'];
         }
@@ -110,7 +110,7 @@ class PdfGenerator
         $html .= '
             <tr>
                 <td colspan="2" class="center"><strong>Tổng cộng</strong></td>
-                <td class="right-text"><strong>'.number_format($total).'</strong></td>
+                <td class="text-right"><strong>'.number_format($total).'</strong></td>
             </tr>
         </table>
 

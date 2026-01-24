@@ -5,7 +5,7 @@
 ?>
 
 <div class="row mt-5">
-    <h1> Xuất hóa đơn ngày <?= $this->date ?></h1>
+    <h1> Phiếu doanh thu ngày <?= $this->date ?></h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
     <form method="post" action="/export-invoice/do-add" onchange="updateSumTotal()">
         <input type="hidden" name="date" value='<?= $this->date ?>'>
