@@ -72,7 +72,7 @@ return [
             ]),
             'exportInvoice' => createSegmentRoute(Controller\ExportInvoiceController::class, '/export-invoice', [
                 'add'   => createChildRoute('add', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
-                'pdf'   => createChildRoute('pdf', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'pdf'   => createChildRoute('pdf', ['id']),
             ]),
             'importStock' => createSegmentRoute(Controller\ImportStockController::class, '/import-stock', [
                 'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),

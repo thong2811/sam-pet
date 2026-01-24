@@ -18,7 +18,7 @@
                             <textarea rows="1" class="form-control" name="spaDesc" placeholder="Diễn giải...">Doanh thu Spa - Grooming</textarea>
                         </td>
                         <td width="30%">
-                            <input type="text" class="form-control" id="spaAmount" value="" name="spaAmount" placeholder="Tổng tiền" required>
+                            <input type="text" class="form-control" id="spaTotal" value="" name="spaTotal" placeholder="Tổng tiền" required>
                         </td>
                     </tr>
                 </table>
@@ -31,7 +31,7 @@
                             <textarea rows="1" class="form-control" name="treatmentDesc" placeholder="Diễn giải...">Doanh thu khám, chữa bệnh</textarea>
                         </td>
                         <td width="30%">
-                            <input type="text" class="form-control" id="treatmentAmount" value="" name="treatmentAmount" placeholder="Tổng tiền" required>
+                            <input type="text" class="form-control" id="treatmentTotal" value="" name="treatmentTotal" placeholder="Tổng tiền" required>
                         </td>
                     </tr>
                 </table>
@@ -195,11 +195,11 @@
                 sumTotal = sumTotal + sellingPrice * quantity;
             })
 
-            let treatmentAmount = $("#treatmentAmount").val();
-            treatmentAmount = treatmentAmount === '' ? 0 : treatmentAmount;
-            let spaAmount = $("#spaAmount").val();
-            spaAmount = spaAmount === '' ? 0 : spaAmount;
-            sumTotal = sumTotal + parseInt(treatmentAmount) + parseInt(spaAmount);
+            let treatmentTotal = $("#treatmentTotal").val();
+            treatmentTotal = treatmentTotal === '' ? 0 : treatmentTotal;
+            let spaTotal = $("#spaTotal").val();
+            spaTotal = spaTotal === '' ? 0 : spaTotal;
+            sumTotal = sumTotal + parseInt(treatmentTotal) + parseInt(spaTotal);
 
             sumTotal = sumTotal.toLocaleString() + ' VNĐ';
         } catch (e) {

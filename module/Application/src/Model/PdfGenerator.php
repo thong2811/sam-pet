@@ -102,9 +102,9 @@ class PdfGenerator
             <tr>
                 <td>'.$row['date'].'</td>
                 <td>'.$row['desc'].'</td>
-                <td class="right-text">'.number_format($row['amount']).'</td>
+                <td class="right-text">'.number_format($row['total']).'</td>
             </tr>';
-            $total += $row['amount'];
+            $total += $row['total'];
         }
 
         $html .= '
