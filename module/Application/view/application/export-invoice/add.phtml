@@ -8,6 +8,7 @@
     <h1> Xuất hóa đơn ngày <?= $this->date ?></h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
     <form method="post" action="/export-invoice/do-add" onchange="updateSumTotal()">
+        <input type="hidden" name="date" value='<?= $this->date ?>'>
         <div class="container">
             <div>
                 <label class="form-label">Doanh thu Spa - Grooming:</label>
@@ -53,9 +54,6 @@
                     $exportProductName = $exportStockData['productName'] ?? '';
                     ?>
                     <tr>
-                        <div>
-                            <input type="hidden" name="productId[]" value="<?= $exportProductId ?>">
-                        </div>
                         <td>
                             <textarea id="desc" rows="1" class="form-control mb-2 fw-bold" style="width: 100%" placeholder="Diễn giải..." name="desc[]">Doanh thu bán lẻ <?= $exportProductName ?></textarea>
                             <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)">

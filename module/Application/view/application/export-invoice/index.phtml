@@ -4,13 +4,13 @@
  */
 ?>
 <div class="container mt-5">
-    <h1 class="mb-5"> Xuất hàng </h1>
+    <h1 class="mb-5"> Danh sách hóa đơn </h1>
     <div class="my-2">
         <div class="d-flex">
-            <a href="/export-stock/add" class="btn btn-primary"> Thêm mới +</a>
             <div class="input-group w-50 ms-3">
-                <button class="btn btn-primary" onclick="editByDate()"> Chỉnh sửa </button>
-                <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="Nhập ngày chỉnh sửa..." required/>
+                <input class="form-control date-picker" id="date" name="date" autocomplete="off" placeholder="Nhập ngày..." required/>
+                <button class="btn btn-primary" onclick="addByDate()"> Thêm mới </button>
+                <button class="btn btn-success" onclick="editByDate()"> Chỉnh sửa </button>
             </div>
         </div>
     </div>
@@ -19,12 +19,7 @@
         <tr>
             <th>STT</th>
             <th>Ngày</th>
-            <th>Tên hàng hóa</th>
-            <th>Giá nhập</th>
-            <th>Giá bán</th>
-            <th>Số lượng</th>
-            <th>Thành tiền</th>
-            <th>Ghi chú</th>
+            <th>Tổng cộng</th>
             <th>Thao tác</th>
         </tr>
         </thead>
@@ -34,18 +29,13 @@
     const table = initDataTable('#dataTable', {
         ...DATA_TABLES_CONFIG,
         ajax: {
-            url: 'export-stock/data-table-server-side',
+            url: 'export-invoice/data-table-server-side',
             type: 'POST'
         },
         columns: [
             { name: 'no', data: 'no' },
             { name: 'date', data: 'date' },
-            { name: 'productName', data: 'productName' },
-            { name: 'purchasePrice', data: 'purchasePrice', render: $.fn.dataTable.render.number( ',') },
-            { name: 'sellingPrice', data: 'sellingPrice', render: $.fn.dataTable.render.number( ',') },
-            { name: 'quantity', data: 'quantity' },
             { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
-            { name: 'note', data: 'note' },
             { name: 'action', data: 'action' }
         ],
         serverSide: true
@@ -56,7 +46,7 @@
             return;
         }
         $.ajax({
-            url: '/export-stock/do-delete',
+            url: '/export-invoice/do-delete',
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({ id: id }),
@@ -74,12 +64,29 @@
         });
     }
 
+    function reviewPdf(id) {
+        if (!id) {
+            alert("ID null !");
+            return;
+        }
+        window.open(`/export-invoice/pdf/${id}`, "_blank");
+    }
+
+    function addByDate() {
+        const date = $('#date').val();
+        if (!date) {
+            alert("Hãy nhập ngày thêm mới !");
+            return;
+        }
+        location.href = `/export-invoice/add/${date}`;
+    }
+
     function editByDate() {
-        const date = $('#editDate').val();
+        const date = $('#date').val();
         if (!date) {
             alert("Hãy nhập ngày chỉnh sửa !");
             return;
         }
-        location.href = `/export-stock/edit/${date}`;
+        location.href = `/export-invoice/edit/${date}`;
     }
 </script>
