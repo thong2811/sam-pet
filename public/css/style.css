@@ -114,3 +114,12 @@
 .stocktaking-row:has(.stocktaking-input:focus)  {
     background: greenyellow !important;
 }
+
+.bottom-sticky {
+    position: sticky;
+    background-color: white;
+    height: 155px;
+    bottom: 0;
+    width: 100%;
+
+}

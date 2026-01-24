@@ -22,13 +22,13 @@ class ExportInvoiceController extends AbstractActionController
     public function addAction()
     {
         $date = $this->params()->fromRoute('date', '');
+        $productModel = new Product();
+        $productList = $productModel->getData();
 
         $exportStockModel = new ExportStock();
         $exportStockList = $exportStockModel->getDataByKeyTypeDate('date', $date);
-        $exportProductList = $exportStockModel->mergeExportStockByItem($exportStockList);
+        $exportProductList = $exportStockModel->mergeExportStockByItem($exportStockList, $productList);
 
-        $productModel = new Product();
-        $productList = $productModel->getData();
 
         return new ViewModel(['date' => $date, 'exportProductList' => $exportProductList, 'productList' => $productList]);
     }

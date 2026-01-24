@@ -35,7 +35,8 @@
             $invoiceCheckTrue = \Application\Model\Product::INVOICE_CHECK_TRUE;
             $invoiceCheckFalse = \Application\Model\Product::INVOICE_CHECK_FALSE;
             $i = 1;
-            foreach ($this->productList as $id => $product):
+            foreach ($this->productList as $product):
+                $id = $product['id'] ?? '';
                 $invoiceCheck = $product['invoiceCheck'] ?? $invoiceCheckFalse;
                 $isInvoiceCheckTrue = $invoiceCheck === $invoiceCheckTrue;
                 $isInvoiceCheckFalse = $invoiceCheck === $invoiceCheckFalse;

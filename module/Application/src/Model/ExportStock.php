@@ -167,10 +167,15 @@ class ExportStock extends LeagueCsv
         return $data;
     }
 
-    public function mergeExportStockByItem($exportStockList) {
+    public function mergeExportStockByItem($exportStockList, $productList, $skipProductInvoiceCheckFalse = true) {
         $data = [];
         foreach ($exportStockList as $exportStockData) {
             $productId = $exportStockData['productId'] ?? '';
+            $isInvoiceCheckFalse = isset($productList[$productId]['invoiceCheck']) && $productList[$productId]['invoiceCheck'] === Product::INVOICE_CHECK_FALSE;
+            if ($skipProductInvoiceCheckFalse && $isInvoiceCheckFalse) {
+                continue;
+            }
+
             $sellingPrice = $exportStockData['sellingPrice'] ?? 0;
             if (empty($productId)) continue;
 
