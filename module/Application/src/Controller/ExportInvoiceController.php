@@ -44,6 +44,33 @@ class ExportInvoiceController extends AbstractActionController
         return $this->redirect()->toRoute('exportInvoice');
     }
 
+    public function editAction()
+    {
+        $id = $this->params()->fromRoute('id', '');
+
+        $exportInvoiceModel = new ExportInvoice();
+        $data = $exportInvoiceModel->getDataById($id);
+        $date = $data['date'] ?? '';
+        $content = $data['content'] ?? '';
+        $content = json_decode($content, true);
+
+        $productModel = new Product();
+        $productList = $productModel->getData();
+
+        return new ViewModel(['id' => $id, 'date' => $date, 'content' => $content, 'productList' => $productList]);
+    }
+
+    public function doEditAction() {
+        $request = $this->getRequest();
+        $postData = $request->getPost()->toArray();
+
+        $exportInvoiceModel = new ExportInvoice();
+        $exportInvoiceModel->doEdit($postData);
+
+        $this->flashMessenger()->addSuccessMessage('Sửa thành công');
+        return $this->redirect()->toRoute('exportInvoice');
+    }
+
     public function doDeleteAction()
     {
         try {
