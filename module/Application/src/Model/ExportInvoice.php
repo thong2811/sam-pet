@@ -27,16 +27,16 @@ class ExportInvoice extends LeagueCsv
         $spaContent = $content['spa'] ?? [];
 
         $pdfData = [
-            ['date' => $date, 'desc' => $spaContent['desc'], 'total' => $spaContent['total']],
-            ['date' => $date, 'desc' => $treatmentContent['desc'], 'total' => $treatmentContent['total']],
+            ['desc' => $spaContent['desc'], 'total' => $spaContent['total']],
+            ['desc' => $treatmentContent['desc'], 'total' => $treatmentContent['total']],
         ];
 
         foreach ($productContent as $productData) {
-            $pdfData[] = ['date' => $date, 'desc' => $productData['desc'], 'total' => $productData['total']];
+            $pdfData[] = ['desc' => $productData['desc'], 'total' => $productData['total']];
         }
 
         $pdfGeneratorModel = new PdfGenerator();
-        return $pdfGeneratorModel->generate($pdfData);
+        return $pdfGeneratorModel->generate($date, $pdfData);
     }
 
     public function doAdd($postData)

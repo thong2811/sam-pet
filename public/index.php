@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Dotenv\Dotenv;
 use Laminas\Mvc\Application;
 
 /**
@@ -21,6 +22,10 @@ if (php_sapi_name() === 'cli-server') {
 
 // Composer autoloading
 include __DIR__ . '/../vendor/autoload.php';
+
+// Load env
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
 
 if (! class_exists(Application::class)) {
     throw new RuntimeException(

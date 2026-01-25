@@ -25,11 +25,14 @@ class PdfGenerator
     /**
      * @throws \Mpdf\MpdfException
      */
-    public function generate(array $rows): string
+    public function generate($date, array $rows): string
     {
-        $address = "số 105, Phan Văn Năm, Phường Cái Vồn, Tỉnh Vĩnh Long";
-        $mst = ".....................................";
-        $year = "2026";
+        $address = $_ENV['ADDRESS'];
+        $mstCode = $_ENV['MST_CODE'];
+        $mstName = $_ENV['MST_NAME'];
+
+        $dateTime = \DateTime::createFromFormat("d-m-Y", $date);
+        $year = $dateTime->format("Y");
 
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
@@ -38,7 +41,6 @@ class PdfGenerator
             'margin_left' => 15,
             'margin_right' => 15,
             'tempDir' => '/var/www/html/data/mpdf',
-//            'orientation' => 'L',
         ]);
 
         $html = '
@@ -64,9 +66,9 @@ class PdfGenerator
 
         <div class="header">
             <div class="text-left" style="font-size:11px;width: 430px;float: left">
-                <strong>HỘ KINH DOANH:</strong> NGUYỄN THỊ ANH THƯ<br>
+                <strong>HỘ KINH DOANH:</strong> '. $mstName .'<br>
                 <strong>Địa chỉ:</strong> '. $address .' <br>
-                <strong>Mã số thuế: '. $mst .'</strong> 
+                <strong>Mã số thuế:</strong> '. $mstCode .'
             </div>
             <div class="text-center" style="font-size:9px;width: 230px;float: right;border: 1px solid black;padding: 2px">
                 <strong>Mẫu số S1a-HKD</strong><br>
@@ -100,7 +102,7 @@ class PdfGenerator
         foreach ($rows as $row) {
             $html .= '
             <tr>
-                <td>'.$row['date'].'</td>
+                <td>'.$date.'</td>
                 <td>'.$row['desc'].'</td>
                 <td class="text-right">'.number_format($row['total']).'</td>
             </tr>';
