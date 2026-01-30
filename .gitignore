@@ -11,3 +11,4 @@ composer.lock
 /.idea/codeStyles/codeStyleConfig.xml
 /logs/
 /.env
+/.idea
