@@ -1,0 +1,125 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$petId = $this->petId ?? '';
+$petData = $this->petData ?? [];
+$history = $this->history ?? [];
+$petList = $this->petList ?? [];
+?>
+<div class="container mt-5">
+    <h1>Thêm lần khám</h1>
+
+    <?php if ($petData): ?>
+        <div class="alert alert-info">
+            <strong><?= $this->escapeHtml($petData['pet_name'] ?? '') ?></strong>
+            (<?= $this->escapeHtml($petData['species'] ?? '') ?> - <?= $this->escapeHtml($petData['breed'] ?? '') ?>)
+            — Chủ: <?= $this->escapeHtml($petData['owner_name'] ?? '') ?>
+            — SĐT: <?= $this->escapeHtml($petData['phone'] ?? '') ?>
+        </div>
+    <?php endif; ?>
+
+    <form method="post" action="/medical-record/do-add">
+        <div class="mb-3">
+            <label class="form-label">Vật nuôi</label>
+            <select class="form-control select2" name="pet_id" id="petSelect" required>
+                <option value="">-- Chọn vật nuôi --</option>
+                <?php foreach ($petList as $id => $pet): ?>
+                    <option value="<?= $id ?>" <?= $id === $petId ? 'selected' : '' ?>>
+                        <?= $this->escapeHtml($pet['pet_name']) ?> - <?= $this->escapeHtml($pet['owner_name']) ?> (<?= $this->escapeHtml($pet['phone']) ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ngày khám</label>
+            <input type="text" class="form-control date-picker" name="visit_date" autocomplete="off" value="<?= date('d-m-Y') ?>" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Triệu chứng</label>
+            <textarea class="form-control" name="symptoms" rows="2" id="symptomsInput"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Chẩn đoán</label>
+            <textarea class="form-control" name="diagnosis" rows="2" id="diagnosisInput"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Toa thuốc</label>
+            <textarea class="form-control" name="prescription" rows="3" id="prescriptionInput" placeholder="VD: Amoxicillin 250mg 2 lần/ngày; Smecta 1 gói/ngày"></textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ngày bắt đầu dùng thuốc</label>
+                <input type="text" class="form-control date-picker" name="start_date" autocomplete="off" value="<?= date('d-m-Y') ?>">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ngày kết thúc dùng thuốc</label>
+                <input type="text" class="form-control date-picker" name="end_date" autocomplete="off">
+            </div>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Lưu</button>
+            <a href="/medical-record" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+
+    <?php if (!empty($history)): ?>
+        <hr>
+        <h4>Lịch sử khám trước đó</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+                <thead>
+                <tr>
+                    <th>Ngày khám</th>
+                    <th>Triệu chứng</th>
+                    <th>Chẩn đoán</th>
+                    <th>Toa thuốc</th>
+                    <th>Dùng thuốc</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($history as $record): ?>
+                    <tr>
+                        <td><?= $this->escapeHtml($record['visit_date'] ?? '') ?></td>
+                        <td><?= $this->escapeHtml($record['symptoms'] ?? '') ?></td>
+                        <td><?= $this->escapeHtml($record['diagnosis'] ?? '') ?></td>
+                        <td><?= nl2br($this->escapeHtml($record['prescription'] ?? '')) ?></td>
+                        <td><?= $this->escapeHtml($record['start_date'] ?? '') ?> → <?= $this->escapeHtml($record['end_date'] ?? '') ?></td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    onclick="copyPrescription(this)"
+                                    data-symptoms="<?= $this->escapeHtmlAttr($record['symptoms'] ?? '') ?>"
+                                    data-diagnosis="<?= $this->escapeHtmlAttr($record['diagnosis'] ?? '') ?>"
+                                    data-prescription="<?= $this->escapeHtmlAttr($record['prescription'] ?? '') ?>">
+                                Copy toa
+                            </button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
+        $('.select2').select2();
+
+        $('#petSelect').on('change', function() {
+            const petId = $(this).val();
+            if (petId) {
+                window.location.href = '/medical-record/add/' + petId;
+            }
+        });
+    });
+
+    function copyPrescription(btn) {
+        $('#symptomsInput').val($(btn).data('symptoms'));
+        $('#diagnosisInput').val($(btn).data('diagnosis'));
+        $('#prescriptionInput').val($(btn).data('prescription'));
+        addFlashMessage('Đã copy toa thuốc');
+    }
+</script>

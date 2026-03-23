@@ -1,0 +1,60 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$record = $this->recordData ?? [];
+$petData = $this->petData ?? [];
+$id = $record['id'] ?? '';
+$petId = $record['pet_id'] ?? '';
+?>
+<div class="container mt-5">
+    <h1>Chỉnh sửa lần khám</h1>
+
+    <?php if ($petData): ?>
+        <div class="alert alert-info">
+            <strong><?= $this->escapeHtml($petData['pet_name'] ?? '') ?></strong>
+            (<?= $this->escapeHtml($petData['species'] ?? '') ?> - <?= $this->escapeHtml($petData['breed'] ?? '') ?>)
+            — Chủ: <?= $this->escapeHtml($petData['owner_name'] ?? '') ?>
+        </div>
+    <?php endif; ?>
+
+    <form method="post" action="/medical-record/do-edit">
+        <input type="hidden" name="id" value="<?= $id ?>">
+        <input type="hidden" name="pet_id" value="<?= $petId ?>">
+        <div class="mb-3">
+            <label class="form-label">Ngày khám</label>
+            <input type="text" class="form-control date-picker" name="visit_date" autocomplete="off" value="<?= $this->escapeHtml($record['visit_date'] ?? '') ?>" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Triệu chứng</label>
+            <textarea class="form-control" name="symptoms" rows="2"><?= $this->escapeHtml($record['symptoms'] ?? '') ?></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Chẩn đoán</label>
+            <textarea class="form-control" name="diagnosis" rows="2"><?= $this->escapeHtml($record['diagnosis'] ?? '') ?></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Toa thuốc</label>
+            <textarea class="form-control" name="prescription" rows="3"><?= $this->escapeHtml($record['prescription'] ?? '') ?></textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ngày bắt đầu dùng thuốc</label>
+                <input type="text" class="form-control date-picker" name="start_date" autocomplete="off" value="<?= $this->escapeHtml($record['start_date'] ?? '') ?>">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ngày kết thúc dùng thuốc</label>
+                <input type="text" class="form-control date-picker" name="end_date" autocomplete="off" value="<?= $this->escapeHtml($record['end_date'] ?? '') ?>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary float-end">Lưu</button>
+            <a href="/medical-record/history/<?= $petId ?>" class="btn btn-danger float-end mx-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function() {
+        $('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
+    });
+</script>

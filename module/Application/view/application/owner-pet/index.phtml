@@ -1,0 +1,249 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<div class="container mt-5">
+    <h1 class="mb-5">Quản lý chủ & vật nuôi</h1>
+    <div class="my-2">
+        <button class="btn btn-primary" onclick="openAddModal()">Thêm mới +</button>
+    </div>
+    <table id="dataTable" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>STT</th>
+            <th>Chủ</th>
+            <th>SĐT</th>
+            <th>Tên thú</th>
+            <th>Loài</th>
+            <th>Giống</th>
+            <th>Giới tính</th>
+            <th>Tuổi</th>
+            <th>Ghi chú</th>
+            <th>Thao tác</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+
+<div id="editModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    <input type="hidden" id="editId" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Tên chủ</label>
+                        <input type="text" class="form-control" id="editOwnerName" name="owner_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">SĐT</label>
+                        <input type="text" class="form-control" id="editPhone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tên thú</label>
+                        <input type="text" class="form-control" id="editPetName" name="pet_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Loài</label>
+                        <input type="text" class="form-control" id="editSpecies" name="species">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giống</label>
+                        <input type="text" class="form-control" id="editBreed" name="breed">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giới tính</label>
+                        <select class="form-control" id="editGender" name="gender">
+                            <option value="Đực">Đực</option>
+                            <option value="Cái">Cái</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tuổi</label>
+                        <input type="text" class="form-control" id="editAge" name="age">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="editNote" name="note"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="doEdit()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="addModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm chủ & vật nuôi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Tên chủ</label>
+                        <input type="text" class="form-control" name="owner_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">SĐT</label>
+                        <input type="text" class="form-control" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tên thú</label>
+                        <input type="text" class="form-control" name="pet_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Loài</label>
+                        <input type="text" class="form-control" name="species" placeholder="Chó, Mèo...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giống</label>
+                        <input type="text" class="form-control" name="breed">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giới tính</label>
+                        <select class="form-control" name="gender">
+                            <option value="Đực">Đực</option>
+                            <option value="Cái">Cái</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tuổi</label>
+                        <input type="text" class="form-control" name="age">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" name="note"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="doAdd()">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const controllerName = 'owner-pet';
+
+    const table = initDataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: {
+            url: `/${controllerName}/data-table-server-side`,
+            type: 'POST'
+        },
+        columns: [
+            { name: 'no', data: 'no' },
+            { name: 'owner_name', data: 'owner_name' },
+            { name: 'phone', data: 'phone' },
+            { name: 'pet_name', data: 'pet_name' },
+            { name: 'species', data: 'species' },
+            { name: 'breed', data: 'breed' },
+            { name: 'gender', data: 'gender' },
+            { name: 'age', data: 'age' },
+            { name: 'note', data: 'note' },
+            { name: 'action', data: 'action' }
+        ],
+        serverSide: true
+    });
+
+    const editModalEl = '#editModal';
+    const editModal = initModal(editModalEl);
+    const addModalEl = '#addModal';
+    const addModal = initModal(addModalEl);
+
+    function openEditModal(id) {
+        clearModalForm(editModalEl);
+        const data = table.data().toArray().find(r => r.id === id) || {};
+        $(editModalEl).find('#editId').val(data.id || '');
+        $(editModalEl).find('#editOwnerName').val(data.owner_name || '');
+        $(editModalEl).find('#editPhone').val(data.phone || '');
+        $(editModalEl).find('#editPetName').val(data.pet_name || '');
+        $(editModalEl).find('#editSpecies').val(data.species || '');
+        $(editModalEl).find('#editBreed').val(data.breed || '');
+        $(editModalEl).find('#editGender').val(data.gender || 'Đực');
+        $(editModalEl).find('#editAge').val(data.age || '');
+        $(editModalEl).find('#editNote').val(data.note || '');
+        editModal.show();
+    }
+
+    function openAddModal() {
+        clearModalForm(addModalEl);
+        addModal.show();
+    }
+
+    function doAdd() {
+        if (!validateModalForm(addModalEl)) return;
+        $.ajax({
+            url: `/${controllerName}/do-add`,
+            type: 'POST',
+            data: $(addModalEl).find('form').serialize(),
+            success: function (response) {
+                if (response.success) {
+                    table.draw(false);
+                    addModal.hide();
+                    addFlashMessage('Thêm thành công');
+                } else {
+                    addFlashMessage('Lỗi: ' + (response.message || ''), FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, error) {
+                addFlashMessage('Lỗi: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
+    }
+
+    function doEdit() {
+        if (!validateModalForm(editModalEl)) return;
+        $.ajax({
+            url: `/${controllerName}/do-edit`,
+            type: 'POST',
+            data: $(editModalEl).find('form').serialize(),
+            success: function (response) {
+                if (response.success) {
+                    table.draw(false);
+                    editModal.hide();
+                    addFlashMessage('Cập nhật thành công');
+                } else {
+                    addFlashMessage('Lỗi: ' + (response.message || ''), FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, error) {
+                addFlashMessage('Lỗi: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
+    }
+
+    function remove(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa?')) return;
+        $.ajax({
+            url: `/${controllerName}/do-delete`,
+            type: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: id }),
+            success: function (response) {
+                if (response.success) {
+                    table.draw(false);
+                    addFlashMessage('Xoá thành công');
+                } else {
+                    addFlashMessage('Lỗi: ' + (response.message || ''), FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, error) {
+                addFlashMessage('Lỗi: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
+    }
+</script>

@@ -1,0 +1,82 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$petId = $this->petId ?? '';
+$petData = $this->petData ?? [];
+$history = $this->history ?? [];
+?>
+<div class="container mt-5">
+    <h1>Lịch sử khám bệnh</h1>
+
+    <?php if ($petData): ?>
+        <div class="alert alert-info">
+            <strong><?= $this->escapeHtml($petData['pet_name'] ?? '') ?></strong>
+            (<?= $this->escapeHtml($petData['species'] ?? '') ?> - <?= $this->escapeHtml($petData['breed'] ?? '') ?>,
+            <?= $this->escapeHtml($petData['gender'] ?? '') ?>, <?= $this->escapeHtml($petData['age'] ?? '') ?> tuổi)
+            — Chủ: <?= $this->escapeHtml($petData['owner_name'] ?? '') ?>
+            — SĐT: <?= $this->escapeHtml($petData['phone'] ?? '') ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="my-2">
+        <a href="/medical-record/add/<?= $petId ?>" class="btn btn-primary">Thêm lần khám mới +</a>
+        <a href="/owner-pet" class="btn btn-secondary">Quay lại DS vật nuôi</a>
+    </div>
+
+    <?php if (empty($history)): ?>
+        <div class="alert alert-warning">Chưa có lịch sử khám bệnh.</div>
+    <?php else: ?>
+        <?php foreach ($history as $record): ?>
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Ngày khám: <?= $this->escapeHtml($record['visit_date'] ?? '') ?></strong>
+                    <div>
+                        <a href="/medical-record/edit/<?= $record['id'] ?? '' ?>" class="btn btn-sm btn-primary">Sửa</a>
+                        <button class="btn btn-sm btn-danger" onclick="remove('<?= $record['id'] ?? '' ?>')">Xóa</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Triệu chứng:</strong><br>
+                            <?= nl2br($this->escapeHtml($record['symptoms'] ?? '')) ?>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Chẩn đoán:</strong><br>
+                            <?= nl2br($this->escapeHtml($record['diagnosis'] ?? '')) ?>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Toa thuốc:</strong><br>
+                            <?= nl2br($this->escapeHtml($record['prescription'] ?? '')) ?>
+                            <?php if (!empty($record['start_date'])): ?>
+                                <br><small class="text-muted">Dùng: <?= $this->escapeHtml($record['start_date']) ?> → <?= $this->escapeHtml($record['end_date'] ?? '') ?></small>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
+<script>
+    function remove(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa lần khám này?')) return;
+        $.ajax({
+            url: '/medical-record/do-delete',
+            type: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: id }),
+            success: function (response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    addFlashMessage('Lỗi: ' + (response.message || ''), FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, error) {
+                addFlashMessage('Lỗi: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
+    }
+</script>

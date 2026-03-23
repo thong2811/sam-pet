@@ -14,13 +14,11 @@
         "ext-intl": "*",
         "ext-json": "*",
         "ext-zip": "*",
-        "google/apiclient": "^2.15",
         "laminas/laminas-component-installer": "^3.4.0",
         "laminas/laminas-development-mode": "^3.12.0",
         "laminas/laminas-mvc": "^3.7.0",
         "laminas/laminas-mvc-plugin-flashmessenger": "^1.11",
         "laminas/laminas-session": "^2.22",
-        "laminas/laminas-skeleton-installer": "^1.3.0",
         "league/csv": "^9.18",
         "monolog/monolog": "^3.8",
         "mpdf/mpdf": "^8.2",
@@ -81,7 +79,6 @@
         "sort-packages": true,
         "allow-plugins": {
             "laminas/laminas-component-installer": true,
-            "laminas/laminas-skeleton-installer": true,
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
     }

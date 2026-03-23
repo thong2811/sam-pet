@@ -92,6 +92,15 @@ return [
                 'delete' => createChildRoute('delete', ['id'])
             ]),
             'pdf'      => createSegmentRoute(Controller\PdfController::class, '/pdf', []),
+            'ownerPet' => createSegmentRoute(Controller\OwnerPetController::class, '/owner-pet', [
+                'edit'   => createChildRoute('edit', ['id']),
+                'delete' => createChildRoute('delete', ['id'])
+            ]),
+            'medicalRecord' => createSegmentRoute(Controller\MedicalRecordController::class, '/medical-record', [
+                'add'     => createChildRoute('add', ['petId']),
+                'edit'    => createChildRoute('edit', ['id']),
+                'history' => createChildRoute('history', ['petId']),
+            ]),
         ],
     ],
     'controllers'     => [
@@ -106,6 +115,8 @@ return [
             Controller\ReportController::class          => InvokableFactory::class,
             Controller\PdfController::class             => InvokableFactory::class,
             Controller\ExportInvoiceController::class   => InvokableFactory::class,
+            Controller\OwnerPetController::class        => InvokableFactory::class,
+            Controller\MedicalRecordController::class   => InvokableFactory::class,
         ],
     ],
     'view_manager'    => [
