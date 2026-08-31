@@ -10,6 +10,7 @@ use Application\Model\Report;
 use Application\Model\VetCare;
 use Application\Service\BackupService;
 use Application\Service\CommonService;
+use Application\Service\CsrfService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
@@ -48,10 +49,12 @@ class ReportController extends AbstractActionController
             $request  = $this->getRequest();
             $postData = $request->getPost()->toArray();
 
+            // Validate CSRF
+            CsrfService::validateOrFail(CsrfService::getTokenFromRequest($request));
+
             $report = new Report();
             $report->doAdd($postData);
 
-            // Gửi response về client trước, backup chạy sau
             $this->triggerBackupAfterResponse();
 
             return new JsonModel([
@@ -72,10 +75,12 @@ class ReportController extends AbstractActionController
             $request  = $this->getRequest();
             $postData = $request->getPost()->toArray();
 
+            // Validate CSRF
+            CsrfService::validateOrFail(CsrfService::getTokenFromRequest($request));
+
             $report = new Report();
             $report->doEdit($postData);
 
-            // Gửi response về client trước, backup chạy sau
             $this->triggerBackupAfterResponse();
 
             return new JsonModel([

@@ -140,13 +140,27 @@ class ProductController extends AbstractActionController
     }
 
     public function doRepackageAction() {
-        $request = $this->getRequest();
+        $request  = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        $productModel = new Product();
-        $productModel->doRepackage($postData);
+        // Validate CSRF
+        try {
+            \Application\Service\CsrfService::validateOrFail(
+                \Application\Service\CsrfService::getTokenFromRequest($request)
+            );
+        } catch (\RuntimeException $e) {
+            $this->flashMessenger()->addErrorMessage($e->getMessage());
+            return $this->redirect()->toUrl('/product/repackage');
+        }
 
-        $this->flashMessenger()->addSuccessMessage('Chiết hàng thành công.');
+        try {
+            $productModel = new Product();
+            $productModel->doRepackage($postData);
+            $this->flashMessenger()->addSuccessMessage('Chiết hàng thành công.');
+        } catch (\Exception $e) {
+            $this->flashMessenger()->addErrorMessage($e->getMessage());
+        }
+
         return $this->redirect()->toUrl('/product/repackage');
     }
 

@@ -2,10 +2,28 @@ const FLASH_MESSAGE_TYPE_ERROR = 0;
 const FLASH_MESSAGE_TYPE_SUCCESS = 1;
 const FLASH_MESSAGE_TYPE_INFO = 2;
 
+/**
+ * Lấy CSRF token từ meta tag trong layout.
+ * Token được inject bởi CsrfService::getToken() phía server.
+ */
+function getCsrfToken()
+{
+    return $('meta[name="csrf-token"]').attr('content') || '';
+}
+
 $(document).ready(function () {
     $('.date-picker').datepicker({
         format: 'dd-mm-yyyy',
         autoclose:true
+    });
+
+    // Tự động gửi CSRF token trong mọi AJAX POST request
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (settings.type && settings.type.toUpperCase() === 'POST') {
+                xhr.setRequestHeader('X-CSRF-Token', getCsrfToken());
+            }
+        }
     });
 });
 

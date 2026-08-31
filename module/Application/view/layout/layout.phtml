@@ -2,17 +2,21 @@
 /**
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
+
+use Application\Service\CsrfService;
 ?>
 <?php
 $successMessages = $this->flashMessenger()->getSuccessMessages();
 $errorMessages = $this->flashMessenger()->getErrorMessages();
 $infoMessages = $this->flashMessenger()->getMessages();
+$csrfToken = CsrfService::getToken();
 ?>
 
 <?= $this->doctype() ?>
 <html lang="en">
     <head>
         <meta charset="utf-8">
+        <meta name="csrf-token" content="<?= $this->escapeHtmlAttr($csrfToken) ?>">
         <?= $this->headTitle('Laminas MVC Skeleton')->setSeparator(' - ')->setAutoEscape(false) ?>
 
         <?= $this->headMeta()

@@ -30,6 +30,23 @@ class StocktakingController extends AbstractActionController
     }
 
     public function renewWarehouseAction() {
+        $request = $this->getRequest();
+
+        // Validate CSRF
+        try {
+            \Application\Service\CsrfService::validateOrFail(
+                \Application\Service\CsrfService::getTokenFromRequest($request)
+            );
+        } catch (\RuntimeException $e) {
+            $this->flashMessenger()->addErrorMessage($e->getMessage());
+            return $this->redirect()->toUrl('/stocktaking');
+        }
+
+        // Chỉ chấp nhận POST
+        if (!$request->isPost()) {
+            return $this->redirect()->toUrl('/stocktaking');
+        }
+
         $stocktakingModel = new Stocktaking();
         $stocktakingList = $stocktakingModel->getData();
         foreach ($stocktakingList as $stocktakingData) {
@@ -41,7 +58,7 @@ class StocktakingController extends AbstractActionController
 
         $result = $stocktakingModel->renewWarehouse();
         if (!$result) {
-            $this->flashMessenger()->addErrorMessage('Có lỗi xảy ra, thử lại sau.');
+            $this->flashMessenger()->addErrorMessage('Có lỗi xảy ra khi chốt kho. Dữ liệu đã được khôi phục, thử lại sau.');
             return $this->redirect()->toUrl('/stocktaking');
         }
 

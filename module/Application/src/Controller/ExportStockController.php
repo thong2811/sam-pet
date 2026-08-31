@@ -53,14 +53,22 @@ class ExportStockController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request = $this->getRequest();
+        $request  = $this->getRequest();
         $postData = $request->getPost()->toArray();
+
+        $date = $postData['date'] ?? '';
 
         $exportStockModel = new ExportStock();
         $exportStockModel->doEdit($postData);
 
         $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+
+        // Redirect về trang edit của ngày vừa sửa, không phụ thuộc Referer header
+        if (!empty($date)) {
+            return $this->redirect()->toRoute('exportStock', ['action' => 'edit', 'date' => $date]);
+        }
+
+        return $this->redirect()->toRoute('exportStock');
     }
 
     public function doDeleteAction()

@@ -82,51 +82,92 @@ class Product extends LeagueCsv
         return [$totals, $productList];
     }
 
+    /**
+     * Tính remainStock của một sản phẩm dựa trên dữ liệu server-side.
+     * Không tin vào giá trị client gửi lên.
+     */
+    public function calcRemainStock(string $productId, array $productData): float
+    {
+        $initStock      = (float) ($productData['initStock']      ?? 0);
+        $repackageStock = (float) ($productData['repackageStock'] ?? 0);
+
+        $importStockModel = new ImportStock();
+        $importStock      = $importStockModel->totalQuantityByProduct();
+
+        $exportStockModel = new ExportStock();
+        $exportStock      = $exportStockModel->totalQuantityByProduct();
+
+        return $initStock + $repackageStock
+            + (float) ($importStock[$productId] ?? 0)
+            - (float) ($exportStock[$productId] ?? 0);
+    }
+
     public function doRepackage($postData)
     {
-        $date = $postData['date'] ?? date('d-m-Y');
-        $content = "Nhập chiết hàng cho ngày $date.\nChi tiết:";
+        $date        = $postData['date'] ?? date('d-m-Y');
+        $content     = "Nhập chiết hàng cho ngày $date.\nChi tiết:";
         $productData = $this->getData();
 
-        $productIdBig = $postData['productId_big'] ?? null;
-        $quantityBig = $postData['quantity_big'] ?? null;
-        $remainStockBig = $postData['remainStock_big'] ?? null;
-        $productBig = $productData[$productIdBig] ?? null;
+        $productIdBig  = $postData['productId_big'] ?? null;
+        $quantityBig   = (float) ($postData['quantity_big'] ?? 0);
+
+        $productBig     = $productData[$productIdBig] ?? null;
         $productNameBig = $productBig['name'] ?? $productIdBig;
+
         if (is_null($productBig)) {
             throw new \Exception("Không thể chiết hàng do không tìm thấy sản phẩm chiết: $productIdBig");
         }
-        $repackageStockBig = empty($productBig['repackageStock']) ? 0 : $productBig['repackageStock'];
+
+        // Tính remainStock server-side, không dùng giá trị client gửi lên
+        $remainStockBig = $this->calcRemainStock($productIdBig, $productBig);
+
+        if ($remainStockBig < $quantityBig) {
+            throw new \Exception(
+                "Tồn kho không đủ để chiết. Hiện còn: $remainStockBig {$productBig['unit']}."
+            );
+        }
+
+        $repackageStockBig      = (float) ($productBig['repackageStock'] ?? 0);
         $repackageStockBigAfter = $repackageStockBig - $quantityBig;
-        $remainStockBigAfter = $remainStockBig - $quantityBig;
+        $remainStockBigAfter    = $remainStockBig - $quantityBig;
+
         $productData[$productIdBig]['repackageStock'] = $repackageStockBigAfter;
+
         $content .= "\n\t-$quantityBig $productNameBig";
         $content .= " (Tồn hiện tại: $remainStockBig, Tồn sau khi chiết: $remainStockBigAfter,";
         $content .= " SL chiết hiện tại: $repackageStockBig, SL chiết cuối: $repackageStockBigAfter)";
 
-        $productIdSmallList = $postData['productId_small'] ?? [];
-        $quantitySmallList = $postData['quantity_small'] ?? [];
-        $remainStockSmallList = $postData['remainStock_small'] ?? [];
+        $productIdSmallList  = $postData['productId_small'] ?? [];
+        $quantitySmallList   = $postData['quantity_small'] ?? [];
+
         foreach ($productIdSmallList as $index => $productIdSmall) {
-            $quantitySmall = $quantitySmallList[$index] ?? 0;
-            $remainStockSmall = $remainStockSmallList[$index] ?? 0;
-            if (empty($productIdSmall) || empty($quantitySmall)) {
+            $quantitySmall = (float) ($quantitySmallList[$index] ?? 0);
+
+            if (empty($productIdSmall) || $quantitySmall <= 0) {
                 continue;
             }
 
-            $productSmall = $productData[$productIdSmall] ?? null;
-            $productNameSmall = $productSmall['name'] ?? $productIdBig;
+            $productSmall     = $productData[$productIdSmall] ?? null;
+            $productNameSmall = $productSmall['name'] ?? $productIdSmall;
+
             if (is_null($productSmall)) {
                 throw new \Exception("Không thể chiết hàng do không tìm thấy sản phẩm được chiết: $productIdSmall");
             }
-            $repackageStockSmall = empty($productSmall['repackageStock']) ? 0 : $productSmall['repackageStock'];
+
+            // Tính remainStock server-side cho sản phẩm đích
+            $remainStockSmall = $this->calcRemainStock($productIdSmall, $productSmall);
+
+            $repackageStockSmall      = (float) ($productSmall['repackageStock'] ?? 0);
             $repackageStockSmallAfter = $repackageStockSmall + $quantitySmall;
-            $remainStockSmallAfter = $remainStockSmall + $quantitySmall;
+            $remainStockSmallAfter    = $remainStockSmall + $quantitySmall;
+
             $productData[$productIdSmall]['repackageStock'] = $repackageStockSmallAfter;
+
             $content .= "\n\t+$quantitySmall $productNameSmall";
             $content .= " (Tồn hiện tại: $remainStockSmall, Tồn sau khi chiết: $remainStockSmallAfter,";
             $content .= " SL chiết hiện tại: $repackageStockSmall, SL chiết cuối: $repackageStockSmallAfter)";
         }
+
         $this->saveData($productData);
 
         $repackageHistoryModel = new RepackageHistory();

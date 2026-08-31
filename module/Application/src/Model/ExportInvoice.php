@@ -18,21 +18,53 @@ class ExportInvoice extends LeagueCsv
 
     public function generatePdf($id) {
         $data = $this->getDataById($id);
-        $date = $data['date'] ?? '';
-        $content = $data['content'] ?? '';
-        $content = json_decode($content, true);
+        if (empty($data)) {
+            throw new \RuntimeException("Không tìm thấy hóa đơn với id: $id");
+        }
 
-        $productContent = $content['product'] ?? [];
+        $date    = $data['date'] ?? '';
+        $content = json_decode($data['content'] ?? '{}', true);
+
+        $productContent   = $content['product']   ?? [];
         $treatmentContent = $content['treatment'] ?? [];
-        $spaContent = $content['spa'] ?? [];
+        $spaContent       = $content['spa']       ?? [];
 
-        $pdfData = [
-            ['desc' => $spaContent['desc'], 'total' => $spaContent['total']],
-            ['desc' => $treatmentContent['desc'], 'total' => $treatmentContent['total']],
-        ];
+        $pdfData = [];
 
-        foreach ($productContent as $productData) {
-            $pdfData[] = ['desc' => $productData['desc'], 'total' => $productData['total']];
+        // Spa — có thể lưu 'desc' hoặc không có desc thì bỏ qua
+        $spaTotal = (float) ($spaContent['total'] ?? 0);
+        if ($spaTotal > 0) {
+            $pdfData[] = [
+                'desc'  => $spaContent['desc'] ?? 'Dịch vụ Spa',
+                'total' => $spaTotal,
+            ];
+        }
+
+        // Điều trị
+        $treatmentTotal = (float) ($treatmentContent['total'] ?? 0);
+        if ($treatmentTotal > 0) {
+            $pdfData[] = [
+                'desc'  => $treatmentContent['desc'] ?? 'Dịch vụ Điều trị',
+                'total' => $treatmentTotal,
+            ];
+        }
+
+        // Sản phẩm — key lưu là 'productName', 'quantity', 'sellingPrice', 'total'
+        foreach ($productContent as $item) {
+            $itemTotal = (float) ($item['total'] ?? ((float)($item['sellingPrice'] ?? 0) * (float)($item['quantity'] ?? 0)));
+            if ($itemTotal <= 0) {
+                continue;
+            }
+
+            // Dùng 'desc' nếu có, fallback về productName + quantity + unit
+            $desc = !empty($item['desc'])
+                ? $item['desc']
+                : ($item['productName'] ?? '');
+
+            $pdfData[] = [
+                'desc'  => $desc,
+                'total' => $itemTotal,
+            ];
         }
 
         $pdfGeneratorModel = new PdfGenerator();

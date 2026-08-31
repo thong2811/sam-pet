@@ -62,11 +62,21 @@
 
 <script>
     function renewWarehouse() {
-        let confirm = prompt('Bạn có chắc chắn muốn chốt kho?\nDữ liệu nhập, xuất sẽ bị mất. Nhập vào "Xác nhận" để chốt kho !');
-        if (confirm === "Xác nhận") {
-            window.location = "/stocktaking/renew-warehouse";
-        } else {
-            alert("Xác nhận sai !")
-        }
+        const confirmed = confirm('Bạn có chắc chắn muốn chốt kho?\nDữ liệu nhập, xuất sẽ bị mất sau khi chốt.');
+        if (!confirmed) return;
+
+        // Gửi POST thay vì GET để CSRF token được kiểm tra
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/stocktaking/renew-warehouse';
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type  = 'hidden';
+        csrfInput.name  = '_csrf';
+        csrfInput.value = getCsrfToken();
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
     }
 </script>
