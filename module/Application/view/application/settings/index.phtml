@@ -1,0 +1,38 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<div class="mt-5">
+    <h1 class="mb-4">Cài đặt</h1>
+
+    <div class="card mb-4" style="max-width: 600px;">
+        <div class="card-header fw-bold">
+            Backup &amp; Restore dữ liệu
+        </div>
+        <div class="card-body">
+
+            <h6 class="card-subtitle mb-2 text-muted">Backup tự động</h6>
+            <p class="card-text mb-3">
+                Hệ thống sẽ tự động backup toàn bộ dữ liệu lên <strong>GitHub Releases</strong>
+                mỗi khi bạn thêm hoặc cập nhật báo cáo thu - chi.
+                Backup chạy ngầm sau khi lưu, không ảnh hưởng đến tốc độ thao tác.
+            </p>
+
+            <hr>
+
+            <h6 class="card-subtitle mb-2 text-muted">Khôi phục dữ liệu</h6>
+            <p class="card-text">
+                Bấm nút bên dưới để tải bản backup mới nhất từ GitHub Releases về
+                và khôi phục toàn bộ dữ liệu. <strong class="text-danger">Thao tác này sẽ ghi đè dữ liệu hiện tại.</strong>
+            </p>
+
+            <form method="post" action="/settings/do-restore"
+                  onsubmit="return confirm('Bạn chắc chắn muốn khôi phục dữ liệu từ backup?\nThao tác này sẽ ghi đè dữ liệu hiện tại và không thể hoàn tác.');">
+                <button type="submit" class="btn btn-warning">
+                    ⬇ Khôi phục dữ liệu từ backup
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

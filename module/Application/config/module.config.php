@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Application;
 
+use Application\Controller\ReportController;
+use Application\Controller\SettingsController;
 use Application\Library\LeagueCsv;
+use Application\Service\BackupService;
 use Application\Service\CommonService;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
+use Psr\Container\ContainerInterface;
 use Laminas\Session\Container;
 use Laminas\Session\Storage\SessionArrayStorage;
 
@@ -115,6 +119,15 @@ return [
                 'edit'    => createChildRoute('edit', ['id']),
                 'history' => createChildRoute('history', ['petId']),
             ]),
+            'settings'      => createSegmentRoute(Controller\SettingsController::class, '/settings', [
+                'doRestore' => [
+                    'type'    => Segment::class,
+                    'options' => [
+                        'route'    => '/do-restore',
+                        'defaults' => ['action' => 'doRestore'],
+                    ],
+                ],
+            ]),
         ],
     ],
     'controllers'     => [
@@ -126,11 +139,16 @@ return [
             Controller\ImportStockController::class     => InvokableFactory::class,
             Controller\VetCareController::class         => InvokableFactory::class,
             Controller\ExpensesController::class        => InvokableFactory::class,
-            Controller\ReportController::class          => InvokableFactory::class,
+            Controller\ReportController::class          => static function (ContainerInterface $container): ReportController {
+                return new ReportController($container->get(BackupService::class));
+            },
             Controller\PdfController::class             => InvokableFactory::class,
             Controller\ExportInvoiceController::class   => InvokableFactory::class,
             Controller\OwnerPetController::class        => InvokableFactory::class,
             Controller\MedicalRecordController::class   => InvokableFactory::class,
+            Controller\SettingsController::class        => static function (ContainerInterface $container): SettingsController {
+                return new SettingsController($container->get(BackupService::class));
+            },
         ],
     ],
     'view_manager'    => [
@@ -154,8 +172,9 @@ return [
 // Service
     'service_manager' => [
         'factories' => [
-            LeagueCsv::class => InvokableFactory::class,
+            LeagueCsv::class    => InvokableFactory::class,
             CommonService::class => InvokableFactory::class,
+            BackupService::class => InvokableFactory::class,
         ]
     ],
 

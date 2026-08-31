@@ -5,12 +5,12 @@ services:
     build:
       context: .
       dockerfile: php/Dockerfile
-    container_name: sam-pet
+    container_name: sam-pet-${APP_ENV:-dev}
     volumes:
       - ../../sam-pet:/var/www/html
       - ./apache/vhost.conf:/etc/apache2/sites-available/000-default.conf
       - ./php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
     ports:
       - "8080:80"
-    environment:
-      APP_ENV: development
+    env_file:
+      - ../.env

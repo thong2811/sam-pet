@@ -376,6 +376,9 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
             url: `/${controllerName}/do-add`,
             type: 'POST',
             data: $(addModalId).find('form').serialize(),
+            beforeSend: function () {
+                $('.overlay-loading').css('display', 'flex');
+            },
             success: function (response) {
                 if (response.success) {
                     table.draw(false);
@@ -387,6 +390,9 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
             },
             error: function (xhr, status, error) {
                 addFlashMessage('Đã xảy ra lỗi khi thêm: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: function () {
+                $('.overlay-loading').hide();
             }
         });
     }
@@ -405,6 +411,9 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
             url: `/${controllerName}/do-edit`,
             type: 'POST',
             data: $(editModalId).find('form').serialize(),
+            beforeSend: function () {
+                $('.overlay-loading').css('display', 'flex');
+            },
             success: function (response) {
                 if (response.success) {
                     table.draw(false);
@@ -416,6 +425,9 @@ $savingsTotalAmountByDate = $this->savingsTotalAmountByDate ?? [];
             },
             error: function (xhr, status, error) {
                 addFlashMessage('Đã xảy ra lỗi khi cập nhật: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: function () {
+                $('.overlay-loading').hide();
             }
         });
     }

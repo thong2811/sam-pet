@@ -8,6 +8,7 @@ use Application\Model\Expenses;
 use Application\Model\ExportStock;
 use Application\Model\Report;
 use Application\Model\VetCare;
+use Application\Service\BackupService;
 use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
@@ -15,6 +16,13 @@ use Laminas\View\Model\ViewModel;
 
 class ReportController extends AbstractActionController
 {
+    private BackupService $backupService;
+
+    public function __construct(BackupService $backupService)
+    {
+        $this->backupService = $backupService;
+    }
+
     public function indexAction()
     {
         $exportStockModel = new ExportStock();
@@ -23,26 +31,28 @@ class ReportController extends AbstractActionController
         $vetCareModel = new VetCare();
         $vetCareTotalAmountByDate = $vetCareModel->totalAmountByDate();
 
-
         $expensesModel = new Expenses();
         list($expensesTotalAmountByDate, $savingsTotalAmountByDate) = $expensesModel->totalAmountByDate();
 
         return new ViewModel([
             "exportStockTotalAmountByDate" => $exportStockTotalAmountByDate,
-            "vetCareTotalAmountByDate" => $vetCareTotalAmountByDate,
-            "expensesTotalAmountByDate" => $expensesTotalAmountByDate,
-            "savingsTotalAmountByDate" => $savingsTotalAmountByDate
+            "vetCareTotalAmountByDate"     => $vetCareTotalAmountByDate,
+            "expensesTotalAmountByDate"    => $expensesTotalAmountByDate,
+            "savingsTotalAmountByDate"     => $savingsTotalAmountByDate,
         ]);
     }
 
     public function doAddAction()
     {
         try {
-            $request = $this->getRequest();
+            $request  = $this->getRequest();
             $postData = $request->getPost()->toArray();
 
             $report = new Report();
             $report->doAdd($postData);
+
+            // Gửi response về client trước, backup chạy sau
+            $this->triggerBackupAfterResponse();
 
             return new JsonModel([
                 'success' => true,
@@ -59,11 +69,14 @@ class ReportController extends AbstractActionController
     public function doEditAction()
     {
         try {
-            $request = $this->getRequest();
+            $request  = $this->getRequest();
             $postData = $request->getPost()->toArray();
 
             $report = new Report();
             $report->doEdit($postData);
+
+            // Gửi response về client trước, backup chạy sau
+            $this->triggerBackupAfterResponse();
 
             return new JsonModel([
                 'success' => true,
@@ -81,8 +94,8 @@ class ReportController extends AbstractActionController
     {
         try {
             $request = $this->getRequest();
-            $body = $request->getContent();
-            $data = json_decode($body, true);
+            $body    = $request->getContent();
+            $data    = json_decode($body, true);
 
             if (!isset($data['id'])) {
                 return new JsonModel([
@@ -91,7 +104,7 @@ class ReportController extends AbstractActionController
                 ]);
             }
 
-            $id = $data['id'];
+            $id     = $data['id'];
             $report = new Report();
             $report->deleteRow($id);
 
@@ -110,7 +123,7 @@ class ReportController extends AbstractActionController
     public function dataTableServerSideAction()
     {
         try {
-            $request = $this->getRequest();
+            $request  = $this->getRequest();
             $postData = $request->getPost();
 
             $reportModel = new Report();
@@ -118,12 +131,34 @@ class ReportController extends AbstractActionController
 
             $response = CommonService::dataTableServerSideProcessing($postData, $data);
             return new JsonModel(array_merge($totals, $response));
-
         } catch (\RuntimeException $e) {
             return new JsonModel([
                 'success' => false,
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Đăng ký callback chạy backup SAU KHI response đã được gửi về client.
+     * Dùng register_shutdown_function để đảm bảo chạy sau toàn bộ output.
+     * ignore_user_abort(true) giữ PHP tiếp tục dù browser đã đóng kết nối.
+     */
+    private function triggerBackupAfterResponse(): void
+    {
+        $backupService = $this->backupService;
+
+        ignore_user_abort(true);
+
+        register_shutdown_function(function () use ($backupService): void {
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            $backupService->backup();
+        });
     }
 }
