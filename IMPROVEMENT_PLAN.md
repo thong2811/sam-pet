@@ -1,6 +1,6 @@
 # Sam Pet — Kế hoạch cải thiện
 
-> Cập nhật lần cuối: 2026-08-31 (Nhóm 1 hoàn thành)
+> Cập nhật lần cuối: 2026-08-31 (Nhóm 1 ✅ | Nhóm 2 🔄 đang làm, chưa commit)
 > Nguyên tắc: chỉnh từng nhóm nhỏ, kiểm tra kỹ trước khi sang nhóm tiếp theo.
 > Trạng thái: ⬜ Chưa làm · 🔄 Đang làm · ✅ Hoàn thành · ⏸ Tạm bỏ
 
@@ -19,16 +19,16 @@
 
 ---
 
-## Nhóm 2 — Business logic (sửa công thức và tính nhất quán)
+## Nhóm 2 — Business logic 🔄 ĐANG LÀM (chưa commit)
 
 | # | Hạng mục | Trạng thái | Ghi chú |
 |---|----------|-----------|---------|
-| 2.1 | Thống nhất công thức `remaining` trong `Report`: `getDataToView()` và `getDataToViewChart()` đang tính khác nhau | ⬜ | Chart và bảng hiển thị số khác nhau |
-| 2.2 | `VetCare::totalAmountByDate()`: thêm `treatmentProfit` vào kết quả trả về | ⬜ | Caller phải tự tính lại, dễ nhầm hằng số |
-| 2.3 | `Expenses::doEdit()`: đổi sang replace-all strategy cho nhất quán với ImportStock / ExportStock | ⬜ | Hiện không thể thêm/xóa row trong cùng thao tác edit |
-| 2.4 | Extract logic build invoice content thành method riêng, bỏ code clone giữa `doAdd` và `doEdit` trong `ExportInvoice` | ⬜ | Hiện 2 method gần như giống hệt nhau |
+| 2.1 | Thống nhất công thức `remaining` trong `Report`: `getDataToView()` và `getDataToViewChart()` đang tính khác nhau | ✅ | `remaining = revenue - expenses`, thêm `calcRemaining()` private, bỏ dòng comment-out |
+| 2.2 | `VetCare::totalAmountByDate()`: thêm `treatmentProfit` vào kết quả trả về | ✅ | Caller không cần tự tính lại hằng số |
+| 2.3 | `Expenses::doEdit()`: đổi sang replace-all strategy cho nhất quán với ImportStock / ExportStock | ✅ | Xóa hết rows theo ngày → insert lại. Fix thêm Referer header trong `ExpensesController` |
+| 2.4 | Extract logic build invoice content thành method riêng, bỏ code clone giữa `doAdd` và `doEdit` trong `ExportInvoice` | ✅ | `buildInvoiceContent()` private dùng chung |
 | 2.5 | Validate repackage âm: server tự tính `remainStock` trước khi cho phép chiết (liên quan 1.2) | ✅ | Đã xử lý trong task 1.2 |
-| 2.6 | `Report`: thêm endpoint AJAX `GET /report/data-by-date` để auto-fill form từ data thực tế thay vì nhập tay | ⬜ | Giảm sai số báo cáo |
+| 2.6 | `Report`: thêm endpoint AJAX `GET /report/data-by-date` để auto-fill form từ data thực tế thay vì nhập tay | 🔄 | `Report::getDataByDate()` đã viết, còn thiếu: route + `dataByDateAction` trong controller + cập nhật view form |
 
 ---
 
