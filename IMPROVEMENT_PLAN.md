@@ -1,21 +1,21 @@
 # Sam Pet — Kế hoạch cải thiện
 
-> Cập nhật lần cuối: 2026-08-31
+> Cập nhật lần cuối: 2026-08-31 (Nhóm 1 hoàn thành)
 > Nguyên tắc: chỉnh từng nhóm nhỏ, kiểm tra kỹ trước khi sang nhóm tiếp theo.
 > Trạng thái: ⬜ Chưa làm · 🔄 Đang làm · ✅ Hoàn thành · ⏸ Tạm bỏ
 
 ---
 
-## Nhóm 1 — Sửa lỗi nghiêm trọng (làm trước, rủi ro cao nếu để)
+## Nhóm 1 — Sửa lỗi nghiêm trọng ✅ HOÀN THÀNH
 
 | # | Hạng mục | Trạng thái | Ghi chú |
 |---|----------|-----------|---------|
-| 1.1 | `renewWarehouse`: thêm transaction / rollback để tránh partial update khi chốt kho | ⬜ | Hiện tại nếu lỗi giữa chừng sẽ mất dữ liệu không phục hồi |
-| 1.2 | `Product::doRepackage()`: tính lại `remainStock` phía server, không trust giá trị client gửi lên | ⬜ | Client có thể gửi sai số tồn kho |
-| 1.3 | `Stocktaking::doEdit()`: chuyển sang upsert (INSERT OR REPLACE) thay vì updateRows silent no-op | ⬜ | Sản phẩm chưa có row kiểm kê sẽ bị bỏ qua không báo lỗi |
-| 1.4 | Fix `ExportInvoice::generatePdf()` — key JSON không khớp giữa `doAdd/doEdit` và `generatePdf` | ⬜ | PDF có thể render thiếu dữ liệu |
-| 1.5 | `ExportStockController::doEditAction`: bỏ dependency vào `Referer` header, dùng route cố định | ⬜ | Crash nếu header vắng mặt |
-| 1.6 | Thêm CSRF token cho các POST action quan trọng: doRepackage, renewWarehouse, doAdd/doEdit report | ⬜ | Hiện tại có thể bị CSRF attack |
+| 1.1 | `renewWarehouse`: thêm transaction / rollback để tránh partial update khi chốt kho | ✅ | Snapshot + try/catch + rollback về state trước khi lỗi |
+| 1.2 | `Product::doRepackage()`: tính lại `remainStock` phía server, không trust giá trị client gửi lên | ✅ | `calcRemainStock()` server-side + validate âm trước khi chiết |
+| 1.3 | `Stocktaking::doEdit()`: chuyển sang upsert (INSERT OR REPLACE) thay vì updateRows silent no-op | ✅ | Tự tạo row mới nếu sản phẩm chưa có trong stocktaking |
+| 1.4 | Fix `ExportInvoice::generatePdf()` — key JSON không khớp giữa `doAdd/doEdit` và `generatePdf` | ✅ | Map đúng `productName`/`total`, fallback an toàn cho key thiếu |
+| 1.5 | `ExportStockController::doEditAction`: bỏ dependency vào `Referer` header, dùng route cố định | ✅ | Redirect về `exportStock/edit/:date` hoặc `exportStock` index |
+| 1.6 | Thêm CSRF token cho các POST action quan trọng: doRepackage, renewWarehouse, doAdd/doEdit report | ✅ | `CsrfService`, meta tag layout, jQuery ajaxSetup, POST thay GET cho renewWarehouse |
 
 ---
 
@@ -27,7 +27,7 @@
 | 2.2 | `VetCare::totalAmountByDate()`: thêm `treatmentProfit` vào kết quả trả về | ⬜ | Caller phải tự tính lại, dễ nhầm hằng số |
 | 2.3 | `Expenses::doEdit()`: đổi sang replace-all strategy cho nhất quán với ImportStock / ExportStock | ⬜ | Hiện không thể thêm/xóa row trong cùng thao tác edit |
 | 2.4 | Extract logic build invoice content thành method riêng, bỏ code clone giữa `doAdd` và `doEdit` trong `ExportInvoice` | ⬜ | Hiện 2 method gần như giống hệt nhau |
-| 2.5 | Validate repackage âm: server tự tính `remainStock` trước khi cho phép chiết (liên quan 1.2) | ⬜ | Yêu cầu v2 spec |
+| 2.5 | Validate repackage âm: server tự tính `remainStock` trước khi cho phép chiết (liên quan 1.2) | ✅ | Đã xử lý trong task 1.2 |
 | 2.6 | `Report`: thêm endpoint AJAX `GET /report/data-by-date` để auto-fill form từ data thực tế thay vì nhập tay | ⬜ | Giảm sai số báo cáo |
 
 ---
