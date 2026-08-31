@@ -6,11 +6,17 @@
 <div class="container mt-5">
     <h1 class="mb-5"> Xuất hàng </h1>
     <div class="my-2">
-        <div class="d-flex">
+        <div class="d-flex flex-wrap gap-2">
             <a href="/export-stock/add" class="btn btn-primary"> Thêm mới +</a>
-            <div class="input-group w-50 ms-3">
+            <div class="input-group w-auto">
                 <button class="btn btn-primary" onclick="editByDate()"> Chỉnh sửa </button>
-                <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="Nhập ngày chỉnh sửa..." required/>
+                <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="Nhập ngày chỉnh sửa..." style="width:180px"/>
+            </div>
+            <div class="input-group w-auto ms-2">
+                <button class="btn btn-success" onclick="syncPreview()">
+                    &#8595; Đồng bộ từ Google Sheets
+                </button>
+                <input class="form-control date-picker" id="syncDate" name="syncDate" autocomplete="off" placeholder="Theo ngày (tuỳ chọn)..." style="width:200px"/>
             </div>
         </div>
     </div>
@@ -81,5 +87,189 @@
             return;
         }
         location.href = `/export-stock/edit/${date}`;
+    }
+</script>
+
+<!-- Modal đồng bộ Google Sheets -->
+<div class="modal fade" id="syncPreviewModal" tabindex="-1" aria-labelledby="syncPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="syncPreviewModalLabel">&#8595; Đồng bộ từ Google Sheets</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tóm tắt -->
+                <div id="syncSummary" class="mb-3"></div>
+
+                <!-- Bảng preview -->
+                <div id="syncTableWrapper" class="d-none">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>STT</th>
+                                <th>Ngày</th>
+                                <th>Tên hàng hóa</th>
+                                <th class="text-end">Giá nhập</th>
+                                <th class="text-end">Giá bán</th>
+                                <th class="text-end">Số lượng</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="syncPreviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success d-none" id="btnConfirmSync" onclick="doSync()">
+                    &#10003; Xác nhận đồng bộ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let _syncRows = [];
+
+    const syncModal = new bootstrap.Modal('#syncPreviewModal', {});
+
+    function syncPreview() {
+        const date = $('#syncDate').val();
+
+        $('.overlay-loading').show();
+
+        $.ajax({
+            url: '/export-stock/sync-preview',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ date: date }),
+            success: function (response) {
+                $('.overlay-loading').hide();
+
+                if (!response.success) {
+                    addFlashMessage('Lỗi khi lấy dữ liệu từ Google Sheets: ' + (response.message || 'Lỗi không xác định.'), FLASH_MESSAGE_TYPE_ERROR);
+                    return;
+                }
+
+                _syncRows = response.newRows || [];
+                const newCount     = response.newCount || 0;
+                const skippedCount = response.skippedCount || 0;
+                const dateLabel    = date ? ` ngày <strong>${date}</strong>` : '';
+
+                // Tóm tắt
+                let summaryHtml = '';
+                if (newCount === 0) {
+                    summaryHtml = `<div class="alert alert-info mb-0">
+                        Dữ liệu${dateLabel} đã đồng bộ — không có bản ghi mới.
+                        ${skippedCount > 0 ? `<span class="text-muted">(${skippedCount} bản ghi đã tồn tại)</span>` : ''}
+                    </div>`;
+                } else {
+                    summaryHtml = `<div class="d-flex gap-2 align-items-center flex-wrap">
+                        <span class="badge bg-success fs-6">${newCount} bản ghi mới</span>
+                        ${skippedCount > 0 ? `<span class="badge bg-secondary fs-6">${skippedCount} đã tồn tại (bỏ qua)</span>` : ''}
+                        ${dateLabel ? `<span class="text-muted small">— Lọc theo${dateLabel}</span>` : ''}
+                    </div>`;
+                }
+                $('#syncSummary').html(summaryHtml);
+
+                // Bảng preview — group theo ngày, cuối mỗi ngày có dòng tổng
+                if (newCount > 0) {
+                    // Group rows theo ngày, giữ thứ tự xuất hiện
+                    const grouped = {};
+                    const dateOrder = [];
+                    _syncRows.forEach(function (row) {
+                        const d = row.date || '';
+                        if (!grouped[d]) {
+                            grouped[d] = [];
+                            dateOrder.push(d);
+                        }
+                        grouped[d].push(row);
+                    });
+
+                    let rows = '';
+                    let stt  = 1;
+                    dateOrder.forEach(function (date) {
+                        const dayRows    = grouped[date];
+                        let   dayRevenue = 0;
+                        let   dayProfit  = 0;
+
+                        dayRows.forEach(function (row) {
+                            const qty      = Number(row.quantity      || 0);
+                            const sell     = Number(row.sellingPrice   || 0);
+                            const purchase = Number(row.purchasePrice  || 0);
+                            dayRevenue += sell     * qty;
+                            dayProfit  += (sell - purchase) * qty;
+
+                            rows += `<tr>
+                                <td>${stt++}</td>
+                                <td>${row.date || ''}</td>
+                                <td>${row.productName || ''}</td>
+                                <td class="text-end">${purchase.toLocaleString()}</td>
+                                <td class="text-end">${sell.toLocaleString()}</td>
+                                <td class="text-end">${qty.toLocaleString()}</td>
+                                <td>${row.note || ''}</td>
+                            </tr>`;
+                        });
+
+                        // Dòng tổng cuối ngày
+                        rows += `<tr class="table-warning fw-bold">
+                            <td colspan="5" class="text-end">Tổng ngày ${date}</td>
+                            <td colspan="2">
+                                Doanh thu: ${dayRevenue.toLocaleString()} &nbsp;|&nbsp;
+                                Lợi nhuận: ${dayProfit.toLocaleString()}
+                            </td>
+                        </tr>`;
+                    });
+
+                    $('#syncPreviewBody').html(rows);
+                    $('#syncTableWrapper').removeClass('d-none');
+                    $('#btnConfirmSync').removeClass('d-none');
+                } else {
+                    $('#syncTableWrapper').addClass('d-none');
+                    $('#btnConfirmSync').addClass('d-none');
+                }
+
+                syncModal.show();
+            },
+            error: function (xhr, status, error) {
+                $('.overlay-loading').hide();
+                addFlashMessage('Đã xảy ra lỗi khi kết nối: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
+    }
+
+    function doSync() {
+        if (!_syncRows.length) {
+            return;
+        }
+
+        $('#btnConfirmSync').prop('disabled', true).text('Đang đồng bộ...');
+        $('.overlay-loading').show();
+
+        $.ajax({
+            url: '/export-stock/do-sync',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ rows: _syncRows }),
+            success: function (response) {
+                $('.overlay-loading').hide();
+                $('#btnConfirmSync').prop('disabled', false).html('&#10003; Xác nhận đồng bộ');
+                syncModal.hide();
+
+                if (response.success) {
+                    addFlashMessage(response.message || 'Đồng bộ thành công!');
+                    table.draw(false);
+                } else {
+                    addFlashMessage('Lỗi khi đồng bộ: ' + (response.message || 'Lỗi không xác định.'), FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, error) {
+                $('.overlay-loading').hide();
+                $('#btnConfirmSync').prop('disabled', false).html('&#10003; Xác nhận đồng bộ');
+                addFlashMessage('Đã xảy ra lỗi khi đồng bộ: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+            }
+        });
     }
 </script>

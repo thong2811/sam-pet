@@ -192,4 +192,60 @@ class ExportStock extends LeagueCsv
         }
         return $data;
     }
+
+    /**
+     * Trả về mảng tất cả id hiện có trong CSV.
+     *
+     * @return string[]
+     */
+    public function getExistingIds(): array
+    {
+        return array_keys($this->getData());
+    }
+
+    /**
+     * Lọc ra các rows chưa tồn tại trong CSV (dựa theo field 'id').
+     *
+     * @param array[] $rows Danh sách rows từ Google Sheets
+     * @return array[]
+     */
+    public function filterNewRows(array $rows): array
+    {
+        $existingIds = $this->getExistingIds();
+
+        return array_values(array_filter($rows, function (array $row) use ($existingIds): bool {
+            $id = $row['id'] ?? '';
+            return $id !== '' && !in_array($id, $existingIds, true);
+        }));
+    }
+
+    /**
+     * Import rows từ Google Sheets vào CSV, bảo toàn createdAt/updatedAt gốc.
+     *
+     * Không dùng addRows() vì addRows() overwrite createdAt/updatedAt bằng time().
+     * Method này merge trực tiếp vào data hiện tại rồi gọi saveData().
+     *
+     * @param array[] $rows Danh sách rows mới (đã qua filterNewRows)
+     */
+    public function importFromSheets(array $rows): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        $data = $this->getData();
+
+        foreach ($rows as $row) {
+            $id = $row['id'] ?? '';
+            if (empty($id)) {
+                continue;
+            }
+
+            // Normalize fields theo headers của CSV, giữ nguyên createdAt/updatedAt từ Sheets
+            $normalizedRow = $this->mappingDataWithHeaders($row);
+            $data[$id] = $normalizedRow;
+        }
+
+        $this->saveData($data);
+    }
 }

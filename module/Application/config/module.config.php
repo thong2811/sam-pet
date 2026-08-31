@@ -67,8 +67,22 @@ return [
             ]),
             'stocktaking' => createSegmentRoute(Controller\StocktakingController::class, '/stocktaking', []),
             'exportStock' => createSegmentRoute(Controller\ExportStockController::class, '/export-stock', [
-                'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
-                'delete' => createChildRoute('delete', ['id'])
+                'edit'        => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete'      => createChildRoute('delete', ['id']),
+                'syncPreview' => [
+                    'type'    => Segment::class,
+                    'options' => [
+                        'route'    => '/sync-preview',
+                        'defaults' => ['action' => 'syncPreview'],
+                    ],
+                ],
+                'doSync'      => [
+                    'type'    => Segment::class,
+                    'options' => [
+                        'route'    => '/do-sync',
+                        'defaults' => ['action' => 'doSync'],
+                    ],
+                ],
             ]),
             'exportInvoice' => createSegmentRoute(Controller\ExportInvoiceController::class, '/export-invoice', [
                 'add'   => createChildRoute('add', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
