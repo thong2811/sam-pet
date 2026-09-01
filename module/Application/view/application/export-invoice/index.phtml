@@ -35,33 +35,18 @@
             { name: 'no', data: 'no' },
             { name: 'date', data: 'date' },
             { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
-            { name: 'action', data: 'action' }
+            {
+                name: 'action', data: 'id',
+                render: (id) =>
+                    `<button class="btn btn-secondary btn-sm" onclick="reviewPdf('${id}')">Xem PDF</button>` +
+                    `<a class="btn btn-primary btn-sm ms-1" href="/export-invoice/edit/${id}">Sửa</a>` +
+                    `<button class="btn btn-danger btn-sm ms-1" onclick="removeRow('export-invoice','${id}',table)">Xóa</button>`
+            }
         ],
         serverSide: true
     });
 
-    function remove(id) {
-        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
-            return;
-        }
-        $.ajax({
-            url: '/export-invoice/do-delete',
-            type: 'DELETE',
-            contentType: 'application/json',
-            data: JSON.stringify({ id: id }),
-            success: function (response) {
-                if (response.success) {
-                    table.draw(false);
-                    addFlashMessage(`Xoá thành công`);
-                } else {
-                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
-                }
-            },
-            error: function (xhr, status, error) {
-                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
-            }
-        });
-    }
+    function remove(id) { removeRow('export-invoice', id, table); }
 
     function reviewPdf(id) {
         if (!id) {

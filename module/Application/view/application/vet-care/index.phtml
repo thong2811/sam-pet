@@ -39,31 +39,15 @@
             { name: 'spaAmount', data: 'spaAmount', render: $.fn.dataTable.render.number( ',') },
             { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
             { name: 'note', data: 'note' },
-            { name: 'action', data: 'action' }
+            {
+                name: 'action', data: 'id',
+                render: (id) =>
+                    `<a href="/vet-care/edit/${id}" class="btn btn-primary btn-sm">Chỉnh sửa</a>` +
+                    `<button class="btn btn-danger btn-sm ms-1" onclick="removeRow('vet-care','${id}',table)">Xóa</button>`
+            }
         ],
         serverSide: true
     });
 
-    function remove(id) {
-        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
-            return;
-        }
-        $.ajax({
-            url: '/vet-care/do-delete',
-            type: 'DELETE',
-            contentType: 'application/json',
-            data: JSON.stringify({ id: id }),
-            success: function (response) {
-                if (response.success) {
-                    table.draw(false);
-                    addFlashMessage(`Xoá thành công`);
-                } else {
-                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
-                }
-            },
-            error: function (xhr, status, error) {
-                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
-            },
-        });
-    }
+    function remove(id) { removeRow('vet-care', id, table); }
 </script>

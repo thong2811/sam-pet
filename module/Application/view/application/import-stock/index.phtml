@@ -43,33 +43,16 @@
             { name: 'quantity', data: 'quantity' },
             { name: 'total', data: 'total', render: $.fn.dataTable.render.number( ',') },
             { name: 'note', data: 'note' },
-            { name: 'action', data: 'action' }
+            {
+                name: 'action', data: 'id',
+                render: (id) =>
+                    `<button class="btn btn-danger btn-sm" onclick="removeRow('import-stock','${id}',table)">Xóa</button>`
+            }
         ],
         serverSide: true
     });
 
-    function remove(id) {
-        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
-            return;
-        }
-        $.ajax({
-            url: '/import-stock/do-delete',
-            type: 'DELETE',
-            contentType: 'application/json',
-            data: JSON.stringify({ id: id }),
-            success: function (response) {
-                if (response.success) {
-                    table.draw(false);
-                    addFlashMessage(`Xoá thành công`);
-                } else {
-                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
-                }
-            },
-            error: function (xhr, status, error) {
-                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
-            }
-        });
-    }
+    function remove(id) { removeRow('import-stock', id, table); }
 
     function editByDate() {
         const date = $('#editDate').val();
