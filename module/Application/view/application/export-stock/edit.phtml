@@ -7,7 +7,7 @@
 <div class="row mt-5">
     <h1> Chỉnh sửa xuất hàng ngày <?= $this->date ?></h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
-    <form method="post" action="/export-stock/do-edit" onchange="updateSumTotal()">
+    <form method="post" action="/export-stock/do-edit" id="exportStockEditForm" onchange="updateSumTotal()">
         <div class="container">
             <table class="table table-striped table-form mt-3">
                 <thead>
@@ -103,8 +103,8 @@
             <div class="alert alert-info">Tổng cộng:
                 <span class="fw-bold" id="sumTotal"></span>
             </div>
-            <button type="submit" class="btn btn-primary float-end">Lưu</button>
-            <a href="/export-stock" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Lưu</button>
+            <a href="/export-stock" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
@@ -190,5 +190,28 @@
 
         $('#sumTotal').html(sumTotal);
 
+    }
+</script>
+
+<script id="export-stock-edit-ajax">
+    function doSubmit() {
+        showOverlay('loading');
+        $.ajax({
+            url: '/export-stock/do-edit',
+            type: 'POST',
+            data: $('#exportStockEditForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Cập nhật thành công!');
+                    window.location.href = res.redirectUrl || '/export-stock';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
     }
 </script>

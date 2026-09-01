@@ -19,7 +19,7 @@ $petList = $this->petList ?? [];
         </div>
     <?php endif; ?>
 
-    <form method="post" action="/medical-record/do-add">
+    <form method="post" action="/medical-record/do-add" id="medicalRecordAddForm">
         <div class="mb-3">
             <label class="form-label">Vật nuôi</label>
             <select class="form-control select2" name="pet_id" id="petSelect" required>
@@ -58,8 +58,8 @@ $petList = $this->petList ?? [];
             </div>
         </div>
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary float-end">Lưu</button>
-            <a href="/medical-record" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Lưu</button>
+            <a href="/medical-record" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 
@@ -121,5 +121,28 @@ $petList = $this->petList ?? [];
         $('#diagnosisInput').val($(btn).data('diagnosis'));
         $('#prescriptionInput').val($(btn).data('prescription'));
         addFlashMessage('Đã copy toa thuốc');
+    }
+
+    function doSubmit() {
+        const form = document.getElementById('medicalRecordAddForm');
+        if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+        showOverlay('loading');
+        $.ajax({
+            url: '/medical-record/do-add',
+            type: 'POST',
+            data: $('#medicalRecordAddForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Thêm thành công!');
+                    window.location.href = res.redirectUrl || '/medical-record';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
     }
 </script>

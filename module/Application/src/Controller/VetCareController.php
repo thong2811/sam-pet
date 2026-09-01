@@ -40,6 +40,8 @@ class VetCareController extends AbstractActionController
             return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    public function editAction()
     {
         $id = $this->params()->fromRoute('id', '');
 

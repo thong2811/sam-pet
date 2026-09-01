@@ -38,15 +38,20 @@ class MedicalRecordController extends AbstractActionController
 
     public function doAddAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $model = new MedicalRecord();
-        $model->doAdd($postData);
+            $model = new MedicalRecord();
+            $model->doAdd($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Thêm lần khám thành công');
-        $petId = $postData['pet_id'] ?? '';
-        return $this->redirect()->toUrl('/medical-record/history/' . $petId);
+            $petId       = $postData['pet_id'] ?? '';
+            $redirectUrl = '/medical-record/history/' . $petId;
+
+            return new JsonModel(['success' => true, 'message' => 'Thêm lần khám thành công!', 'redirectUrl' => $redirectUrl]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function editAction()
@@ -67,15 +72,20 @@ class MedicalRecordController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $model = new MedicalRecord();
-        $model->doEdit($postData);
+            $model = new MedicalRecord();
+            $model->doEdit($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-        $petId = $postData['pet_id'] ?? '';
-        return $this->redirect()->toUrl('/medical-record/history/' . $petId);
+            $petId       = $postData['pet_id'] ?? '';
+            $redirectUrl = '/medical-record/history/' . $petId;
+
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!', 'redirectUrl' => $redirectUrl]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function doDeleteAction()

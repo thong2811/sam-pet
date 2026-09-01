@@ -99,8 +99,8 @@
             <textarea class="form-control" name="note"></textarea>
         </div>
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary float-end">Tạo</button>
-            <a href="/report" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Tạo</button>
+            <a href="/report" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
@@ -111,6 +111,31 @@
     $(document).ready(function () {
         $('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
     });
+
+    function doSubmit() {
+        if ($('#petShopRevenue').val() === '') {
+            alert('Lỗi: Doanh thu pet shop đang rỗng! Hãy chọn ngày có dữ liệu.');
+            return;
+        }
+        showOverlay('loading');
+        $.ajax({
+            url: '/report/do-add',
+            type: 'POST',
+            data: $('form').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Thêm thành công!');
+                    window.location.href = '/report';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
+    }
 
     function reloadReportByDate() {
         const date = $('#date').val();

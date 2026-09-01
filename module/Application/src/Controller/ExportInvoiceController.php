@@ -34,14 +34,17 @@ class ExportInvoiceController extends AbstractActionController
     }
 
     public function doAddAction() {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $exportInvoiceModel = new ExportInvoice();
-        $exportInvoiceModel->doAdd($postData);
+            $exportInvoiceModel = new ExportInvoice();
+            $exportInvoiceModel->doAdd($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
-        return $this->redirect()->toRoute('exportInvoice');
+            return new JsonModel(['success' => true, 'message' => 'Thêm thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function editAction()
@@ -61,14 +64,17 @@ class ExportInvoiceController extends AbstractActionController
     }
 
     public function doEditAction() {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $exportInvoiceModel = new ExportInvoice();
-        $exportInvoiceModel->doEdit($postData);
+            $exportInvoiceModel = new ExportInvoice();
+            $exportInvoiceModel->doEdit($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Sửa thành công');
-        return $this->redirect()->toRoute('exportInvoice');
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function doDeleteAction()

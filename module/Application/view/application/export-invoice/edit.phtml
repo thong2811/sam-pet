@@ -12,7 +12,7 @@ $exportProductList = $content['product'] ?? [];
 <div class="row mt-5">
     <h1> Phiếu doanh thu ngày <?= $this->date ?></h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
-    <form method="post" action="/export-invoice/do-edit" onchange="updateSumTotal()">
+    <form method="post" action="/export-invoice/do-edit" id="exportInvoiceEditForm" onchange="updateSumTotal()">
         <input type="hidden" name="date" value='<?= $this->date ?>'>
         <input type="hidden" name="id" value='<?= $this->id ?>'>
         <div class="container">
@@ -130,8 +130,8 @@ $exportProductList = $content['product'] ?? [];
             <div class="alert alert-info">Tổng cộng:
                 <span class="fw-bold" id="sumTotal"></span>
             </div>
-            <button type="submit" class="btn btn-primary float-end">Lưu</button>
-            <a href="/export-invoice" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Lưu</button>
+            <a href="/export-invoice" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
@@ -229,5 +229,26 @@ $exportProductList = $content['product'] ?? [];
     function deleteRow(elm) {
         $(elm).closest("tr").remove();
         updateSumTotal();
+    }
+
+    function doSubmit() {
+        showOverlay('loading');
+        $.ajax({
+            url: '/export-invoice/do-edit',
+            type: 'POST',
+            data: $('#exportInvoiceEditForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Cập nhật thành công!');
+                    window.location.href = '/export-invoice';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
     }
 </script>

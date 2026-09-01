@@ -28,14 +28,17 @@ class ExportStockController extends AbstractActionController
 
     public function doAddAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $exportStockModel = new ExportStock();
-        $exportStockModel->doAdd($postData);
+            $exportStockModel = new ExportStock();
+            $exportStockModel->doAdd($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
-        return $this->redirect()->toRoute('exportStock');
+            return new JsonModel(['success' => true, 'message' => 'Thêm thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function editAction()
@@ -53,22 +56,22 @@ class ExportStockController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request  = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
+            $date     = $postData['date'][0] ?? ($postData['date'] ?? '');
 
-        $date = $postData['date'] ?? '';
+            $exportStockModel = new ExportStock();
+            $exportStockModel->doEdit($postData);
 
-        $exportStockModel = new ExportStock();
-        $exportStockModel->doEdit($postData);
+            $redirectUrl = !empty($date)
+                ? $this->url()->fromRoute('exportStock', ['action' => 'edit', 'date' => $date])
+                : $this->url()->fromRoute('exportStock');
 
-        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-
-        // Redirect về trang edit của ngày vừa sửa, không phụ thuộc Referer header
-        if (!empty($date)) {
-            return $this->redirect()->toRoute('exportStock', ['action' => 'edit', 'date' => $date]);
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!', 'redirectUrl' => $redirectUrl]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        return $this->redirect()->toRoute('exportStock');
     }
 
     public function doDeleteAction()
