@@ -1,6 +1,6 @@
 # Sam Pet — Kế hoạch cải thiện
 
-> Cập nhật lần cuối: 2026-09-01 (Nhóm 1 ✅ | Nhóm 2 ✅ | Nhóm 3 ✅ | Nhóm 4 ✅ | Nhóm 5 ⬜ tạm dừng)
+> Cập nhật lần cuối: 2026-09-01 (Nhóm 1 ✅ | Nhóm 2 ✅ | Nhóm 3 ✅ | Nhóm 4 ✅ | Nhóm 5 ⬜ tạm dừng | Nhóm 6 ⬜ category)
 > Nguyên tắc: chỉnh từng nhóm nhỏ, kiểm tra kỹ trước khi sang nhóm tiếp theo.
 > Trạng thái: ⬜ Chưa làm · 🔄 Đang làm · ✅ Hoàn thành · ⏸ Tạm bỏ
 
@@ -95,7 +95,29 @@
 ✅ Nhóm 3 (tổ chức code)            — commit 040b8e1
 ✅ Nhóm 4 (UI/UX)                   — commit ae91790
 ⏸ Nhóm 5 (SQLite migration)        — tạm dừng, làm trên branch riêng
+⬜ Nhóm 6 (Category sản phẩm)      — làm cùng Nhóm 5 để tránh làm 2 lần
 ```
+
+---
+
+## Nhóm 6 — Category sản phẩm ⬜ CHƯA LÀM
+
+> **Khuyến nghị:** Làm cùng lúc với Nhóm 5 (SQLite migration) để tận dụng FK thực sự và `GROUP BY categoryId` cho báo cáo.
+> Nếu cần làm trước Nhóm 5, có thể implement theo pattern CSV hiện tại (thêm `category.csv` + field `categoryId` vào `product.csv`).
+
+**Mục tiêu:** Phân nhóm sản phẩm để lọc nhanh khi nhập/xuất hàng và báo cáo doanh thu breakdown theo danh mục.
+
+**Các nhóm dự kiến:** Thức ăn · Phụ kiện · Thuốc & vaccine · Vệ sinh · Cát vệ sinh · Đồ chơi · Thức ăn bổ sung
+
+| # | Hạng mục | Trạng thái | Ghi chú |
+|---|----------|-----------|---------|
+| 6.1 | Tạo bảng/file `categories` với các trường: `id`, `name`, `note` | ⬜ | CSV: `category.csv` / SQLite: bảng `categories` |
+| 6.2 | Thêm field `categoryId` vào `product` (CSV hoặc SQLite) | ⬜ | FK → categories.id, nullable |
+| 6.3 | Màn hình quản lý category — CRUD đơn giản | ⬜ | Trang mới `/category` |
+| 6.4 | Dropdown lọc theo category trong trang Quản lý kho (DataTable filter) | ⬜ | |
+| 6.5 | Dropdown chọn category trong form thêm/sửa sản phẩm | ⬜ | |
+| 6.6 | Dropdown lọc category trong form nhập hàng / xuất hàng để tìm sản phẩm nhanh hơn | ⬜ | Select2 filter theo category |
+| 6.7 | Báo cáo doanh thu breakdown theo category (thêm vào trang Overview hoặc Report) | ⬜ | Cần SQLite `GROUP BY` để hiệu quả |
 
 ---
 
@@ -103,6 +125,7 @@
 
 - Nhóm 1–4 đã hoàn thành trên branch `vet_2.0.0`.
 - Nhóm 5 nên làm trên branch `feature/sqlite-migration` tách từ `vet_2.0.0`.
+- Nhóm 6 (Category) nên làm **cùng Nhóm 5** — khi có SQLite thì có FK thực sự và dùng `GROUP BY categoryId` cho báo cáo breakdown hiệu quả. Nếu cần ngay trước Nhóm 5 thì implement theo pattern CSV.
 - Trước khi bắt đầu Nhóm 5, đọc kỹ `.kiro/specs/sam-pet-v2-optimized/requirements.md`.
 - Task 3.4 (DI cho controllers) hoãn lại — có thể làm song song với Nhóm 5.
 - Task 4.11, 4.12 hoãn lại — làm cùng lúc refactor view trong Nhóm 5.
