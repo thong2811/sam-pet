@@ -1,110 +1,149 @@
 <?php
-$this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
+$this->headScript()->appendFile('https://code.highcharts.com/highcharts.js');
+$this->headScript()->appendFile('https://code.highcharts.com/modules/exporting.js');
+
+$totals = $this->totals ?? [];
 ?>
-<div class="container">
-    <div class="mt-3">
-        <a class="btn btn-primary" href="/"> Biểu đồ doanh thu </a>
-        <a class="btn btn-primary" href="/overview/expenses"> Biểu đồ Thu/Chi </a>
+
+<div class="container mt-4">
+
+    <!-- Nav -->
+    <div class="mb-3">
+        <a class="btn btn-outline-primary" href="/overview">📈 Doanh thu</a>
+        <a class="btn btn-primary active ms-2" href="/overview/expenses">💰 Thu / Chi</a>
     </div>
 
-    <div id="dailyChart" class="chart"></div>
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-success h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Tổng doanh thu</div>
+                    <div class="fw-bold fs-5 text-success" id="cardTotalRevenue">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-danger h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Tổng chi phí</div>
+                    <div class="fw-bold fs-5 text-danger" id="cardTotalExpenses">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-secondary h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Tiết kiệm</div>
+                    <div class="fw-bold fs-5 text-secondary" id="cardTotalSavings">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-info h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Còn lại (thu - chi)</div>
+                    <div class="fw-bold fs-5 text-info" id="cardTotalRemaining">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div id="dailyChart" class="chart mb-4"></div>
     <div id="monthlyChart" class="chart"></div>
 </div>
+
 <script>
-    const data = JSON.parse(`<?= json_encode($this->data) ?>`);
+    const rawData = <?= json_encode($this->data, JSON_UNESCAPED_UNICODE) ?>;
 
-    $(function() {
-        renderChart('dailyChart');
-        renderChart('monthlyChart', true);
-    })
+    $(function () {
+        fillSummaryCards();
+        renderExpensesChart('dailyChart', false);
+        renderExpensesChart('monthlyChart', true);
+    });
 
-    function aggregateByMonth(data) {
-        const result = {};
+    function fillSummaryCards() {
+        const fmt = v => formatNumber(v) + ' VNĐ';
+        let totalRevenue = 0, totalExpenses = 0, totalSavings = 0, totalRemaining = 0;
+        (rawData.revenue   || []).forEach(p => totalRevenue   += p[1]);
+        (rawData.expenses  || []).forEach(p => totalExpenses  += p[1]);
+        (rawData.savings   || []).forEach(p => totalSavings   += p[1]);
+        (rawData.remaining || []).forEach(p => totalRemaining += p[1]);
 
-        data.forEach(item => {
-            const date = new Date(item[0]);
-            const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+        $('#cardTotalRevenue').text(fmt(totalRevenue));
+        $('#cardTotalExpenses').text(fmt(totalExpenses));
+        $('#cardTotalSavings').text(fmt(totalSavings));
 
-            if (!result[monthKey]) {
-                result[monthKey] = 0;
-            }
-            result[monthKey] += item[1];
-        });
-
-        return Object.keys(result).map(key => {
-            const [year, month] = key.split('-').map(Number);
-            return [Date.UTC(year, month, 1), result[key]];
-        });
+        const remainingEl = $('#cardTotalRemaining');
+        remainingEl.text(fmt(totalRemaining));
+        remainingEl.removeClass('text-info text-danger text-success');
+        remainingEl.addClass(totalRemaining >= 0 ? 'text-success' : 'text-danger');
     }
 
-    function aggregateByQuarter(data) {
-        const result = {};
-
-        data.forEach(item => {
-            const date = new Date(item[0]);
-            const quarterInYear = Math.floor(date.getUTCMonth() / 3) + 1;
-            const quarterKey = `${date.getUTCFullYear()}-${quarterInYear}`;
-
-            if (!result[quarterKey]) {
-                result[quarterKey] = 0;
-            }
-            result[quarterKey] += item[1];
+    function aggregateByMonth(points) {
+        const map = {};
+        (points || []).forEach(([ts, val]) => {
+            const d   = new Date(ts);
+            const key = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+            map[key]  = (map[key] || 0) + val;
         });
-
-        return Object.keys(result).map(key => {
-            const [year, quarterInYear] = key.split('-').map(Number);
-            return [Date.UTC(year, quarterInYear * 3, 1), result[key]];
-        });
+        return Object.entries(map)
+            .map(([k, v]) => [Number(k), v])
+            .sort((a, b) => a[0] - b[0]);
     }
 
-    function renderChart(id, isMonthly = false) {
-        const dateFormat = isMonthly ? '%m-%Y' : '%d-%m-%Y';
-        let option = {
-            title: {
-                text: 'Thống kê thu/chi' + (isMonthly ? ' (tháng)' : ' (quý)')
-            },
+    function renderExpensesChart(containerId, isMonthly) {
+        const title      = isMonthly ? 'Thu / Chi theo tháng' : 'Thu / Chi theo ngày';
+        const dateFormat = isMonthly ? '%m/%Y' : '%d/%m/%Y';
+
+        const makeSeries = (name, key, color, dashStyle = 'Solid') => ({
+            name,
+            color,
+            dashStyle,
+            data: isMonthly ? aggregateByMonth(rawData[key]) : (rawData[key] || []),
+        });
+
+        Highcharts.chart(containerId, {
+            chart: { type: 'line', zoomType: 'x' },
+            title: { text: title },
             xAxis: {
                 type: 'datetime',
-                title: {
-                    text: 'Thời gian'
-                },
-                labels: {
-                    format: `{value:${dateFormat}}`
-                }
+                labels: { format: `{value:${dateFormat}}` },
             },
             yAxis: {
-                title: {
-                    text: 'VNĐ'
-                }
+                title: { text: 'VNĐ' },
+                labels: {
+                    formatter: function () {
+                        return Highcharts.numberFormat(this.value, 0, '.', ',');
+                    }
+                },
+                plotLines: [{
+                    value: 0,
+                    color: '#aaa',
+                    width: 1,
+                    dashStyle: 'Dot',
+                }]
             },
             tooltip: {
-                xDateFormat: `${dateFormat}`,
-                shared: true
+                shared: true,
+                xDateFormat: dateFormat,
+                formatter: function () {
+                    let s = `<b>${Highcharts.dateFormat(dateFormat, this.x)}</b><br/>`;
+                    this.points.forEach(p => {
+                        s += `<span style="color:${p.color}">●</span> ${p.series.name}: <b>${Highcharts.numberFormat(p.y, 0, '.', ',')} VNĐ</b><br/>`;
+                    });
+                    return s;
+                }
             },
+            legend: { enabled: true },
             series: [
-                {
-                    name: 'Doanh thu',
-                    data: isMonthly ? aggregateByMonth(data.revenue) : aggregateByQuarter(data.revenue)
-                },
-                {
-                    name: 'Chi',
-                    data: isMonthly ? aggregateByMonth(data.expenses) : aggregateByQuarter(data.expenses)
-                },
-                {
-                    name: 'Chi - Rút tiết kiệm',
-                    data: isMonthly ? aggregateByMonth(data.savings) : aggregateByQuarter(data.savings)
-                },
-                {
-                    name: 'Còn lại',
-                    data: isMonthly ? aggregateByMonth(data.remaining) : aggregateByQuarter(data.remaining)
-                },
-            ]
-        }
-        Highcharts.chart(id, option);
+                makeSeries('Doanh thu',     'revenue',   '#2ecc71'),
+                makeSeries('Chi phí',       'expenses',  '#e74c3c'),
+                makeSeries('Tiết kiệm',     'savings',   '#95a5a6', 'ShortDash'),
+                makeSeries('Còn lại',       'remaining', '#3498db', 'ShortDot'),
+            ],
+            exporting: { enabled: true },
+        });
     }
-
-    function showChart(id) {
-
-    }
-
 </script>

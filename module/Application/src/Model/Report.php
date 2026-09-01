@@ -113,8 +113,11 @@ class Report extends LeagueCsv
 
         $chartData = [];
         foreach ($data as $row) {
-            $date            = $row['date'] ?? null;
-            $dateToMicroTime = $date ? strtotime($date) * 1000 : 0;
+            $date = $row['date'] ?? null;
+
+            // Fix: strtotime() không parse dd-mm-yyyy đúng — dùng createFromFormat
+            $dt              = $date ? \DateTime::createFromFormat('d-m-Y', $date) : null;
+            $dateToMicroTime = $dt ? ($dt->getTimestamp() * 1000) : 0;
 
             $petShopRevenue   = (float) ($row['petShopRevenue']   ?? 0);
             $petShopProfit    = (float) ($row['petShopProfit']    ?? 0);
@@ -125,7 +128,6 @@ class Report extends LeagueCsv
             $missingAmount    = (float) ($row['missingAmount']    ?? 0);
 
             $revenue   = $petShopRevenue + $spaRevenue + $treatmentRevenue;
-            // Công thức thống nhất với getDataToView: remaining = revenue - expenses
             $remaining = $this->calcRemaining($revenue, $expenses);
 
             $totalRevenue       += $revenue;
@@ -146,6 +148,7 @@ class Report extends LeagueCsv
             'totalRevenue'       => $totalRevenue,
             'totalExpenses'      => $totalExpenses,
             'totalMissingAmount' => $totalMissingAmount,
+            'totalRemaining'     => $totalRevenue - $totalExpenses,
         ];
         return [$totals, $chartData];
     }

@@ -1,94 +1,146 @@
 <?php
-$this->headScript()->appendFile('https://code.highcharts.com/highcharts.js')
+$this->headScript()->appendFile('https://code.highcharts.com/highcharts.js');
+$this->headScript()->appendFile('https://code.highcharts.com/modules/exporting.js');
+
+// Truyền totals từ controller
+$totals = $this->totals ?? [];
 ?>
-<div class="container">
-    <div class="mt-3">
-        <a class="btn btn-primary" href="/"> Biểu đồ doanh thu </a>
-        <a class="btn btn-primary" href="/overview/expenses"> Biểu đồ Thu/Chi </a>
+
+<div class="container mt-4">
+
+    <!-- Nav -->
+    <div class="mb-3">
+        <a class="btn btn-primary active" href="/overview">📈 Doanh thu</a>
+        <a class="btn btn-outline-primary ms-2" href="/overview/expenses">💰 Thu / Chi</a>
     </div>
 
-    <div id="dailyChart" class="chart"></div>
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-success h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Tổng doanh thu</div>
+                    <div class="fw-bold fs-5 text-success" id="cardTotalRevenue">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-primary h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Tổng lãi pet shop</div>
+                    <div class="fw-bold fs-5 text-primary" id="cardTotalProfit">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-info h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Thu điều trị</div>
+                    <div class="fw-bold fs-5 text-info" id="cardTreatmentRevenue">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-warning h-100">
+                <div class="card-body p-3">
+                    <div class="text-muted small">Thu spa</div>
+                    <div class="fw-bold fs-5 text-warning" id="cardSpaRevenue">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div id="dailyChart" class="chart mb-4"></div>
     <div id="monthlyChart" class="chart"></div>
 </div>
+
 <script>
-    const data = JSON.parse(`<?= json_encode($this->data) ?>`);
+    const rawData = <?= json_encode($this->data, JSON_UNESCAPED_UNICODE) ?>;
+    const totals  = <?= json_encode($totals, JSON_UNESCAPED_UNICODE) ?>;
 
-    $(function() {
-        renderChart('dailyChart');
-        renderChart('monthlyChart', true);
-    })
+    $(function () {
+        fillSummaryCards();
+        renderRevenueChart('dailyChart', false);
+        renderRevenueChart('monthlyChart', true);
+    });
 
-    function aggregateByMonth(data) {
-        const result = {};
+    function fillSummaryCards() {
+        const fmt = v => formatNumber(v) + ' VNĐ';
+        // Tính từ rawData để đảm bảo nhất quán với chart
+        let totalRevenue = 0, totalProfit = 0, totalTreatment = 0, totalSpa = 0;
+        (rawData.revenue        || []).forEach(p => totalRevenue   += p[1]);
+        (rawData.petShopProfit  || []).forEach(p => totalProfit    += p[1]);
+        (rawData.treatmentRevenue || []).forEach(p => totalTreatment += p[1]);
+        (rawData.spaRevenue     || []).forEach(p => totalSpa       += p[1]);
 
-        data.forEach(item => {
-            const date = new Date(item[0]);
-            const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
-
-            if (!result[monthKey]) {
-                result[monthKey] = 0;
-            }
-            result[monthKey] += item[1];
-        });
-
-        return Object.keys(result).map(key => {
-            const [year, month] = key.split('-').map(Number);
-            return [Date.UTC(year, month, 1), result[key]];
-        });
+        $('#cardTotalRevenue').text(fmt(totalRevenue));
+        $('#cardTotalProfit').text(fmt(totalProfit));
+        $('#cardTreatmentRevenue').text(fmt(totalTreatment));
+        $('#cardSpaRevenue').text(fmt(totalSpa));
     }
 
-    function renderChart(id, isMonthly = false) {
-        const dateFormat = isMonthly ? '%m-%Y' : '%d-%m-%Y';
-        let option = {
-            title: {
-                text: 'Thống kê doanh thu' + (isMonthly ? ' (tháng)' : ' (ngày)')
-            },
+    // Aggregate data gốc (array [[timestamp, value]]) theo tháng
+    function aggregateByMonth(points) {
+        const map = {};
+        (points || []).forEach(([ts, val]) => {
+            const d   = new Date(ts);
+            const key = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+            map[key]  = (map[key] || 0) + val;
+        });
+        return Object.entries(map)
+            .map(([k, v]) => [Number(k), v])
+            .sort((a, b) => a[0] - b[0]);
+    }
+
+    function renderRevenueChart(containerId, isMonthly) {
+        const title      = isMonthly ? 'Doanh thu theo tháng' : 'Doanh thu theo ngày';
+        const dateFormat = isMonthly ? '%m/%Y' : '%d/%m/%Y';
+
+        const makeSeries = (name, key, color) => ({
+            name,
+            color,
+            data: isMonthly ? aggregateByMonth(rawData[key]) : (rawData[key] || []),
+        });
+
+        Highcharts.chart(containerId, {
+            chart: { type: 'line', zoomType: 'x' },
+            title: { text: title },
             xAxis: {
                 type: 'datetime',
-                title: {
-                    text: 'Thời gian'
-                },
-                labels: {
-                    format: `{value:${dateFormat}}`
-                }
+                labels: { format: `{value:${dateFormat}}` },
             },
             yAxis: {
-                title: {
-                    text: 'VNĐ'
+                title: { text: 'VNĐ' },
+                labels: {
+                    formatter: function () {
+                        return Highcharts.numberFormat(this.value, 0, '.', ',');
+                    }
                 }
             },
             tooltip: {
-                xDateFormat: `${dateFormat}`,
-                shared: true
-            },
-            series: [
-                {
-                    name: 'Doanh thu',
-                    data: isMonthly ? aggregateByMonth(data.revenue) : data.revenue
-                },
-                {
-                    name: 'Thu pet shop',
-                    data: isMonthly ? aggregateByMonth(data.petShopRevenue) : data.petShopRevenue
-                },
-                {
-                    name: 'Lãi pet shop',
-                    data: isMonthly ? aggregateByMonth(data.petShopProfit) : data.petShopProfit
-                },
-                {
-                    name: 'Thu spa',
-                    data: isMonthly ? aggregateByMonth(data.spaRevenue) : data.spaRevenue
-                },
-                {
-                    name: 'Thu điều trị',
-                    data: isMonthly ? aggregateByMonth(data.treatmentRevenue) : data.treatmentRevenue
+                shared: true,
+                xDateFormat: dateFormat,
+                valueDecimals: 0,
+                valuePrefix: '',
+                valueSuffix: ' VNĐ',
+                formatter: function () {
+                    let s = `<b>${Highcharts.dateFormat(dateFormat, this.x)}</b><br/>`;
+                    this.points.forEach(p => {
+                        s += `<span style="color:${p.color}">●</span> ${p.series.name}: <b>${Highcharts.numberFormat(p.y, 0, '.', ',')} VNĐ</b><br/>`;
+                    });
+                    return s;
                 }
-            ]
-        }
-        Highcharts.chart(id, option);
+            },
+            legend: { enabled: true },
+            series: [
+                makeSeries('Tổng doanh thu',    'revenue',          '#2ecc71'),
+                makeSeries('Doanh thu pet shop', 'petShopRevenue',   '#3498db'),
+                makeSeries('Lãi pet shop',       'petShopProfit',    '#1abc9c'),
+                makeSeries('Thu spa',            'spaRevenue',       '#e67e22'),
+                makeSeries('Thu điều trị',       'treatmentRevenue', '#9b59b6'),
+            ],
+            exporting: { enabled: true },
+        });
     }
-
-    function showChart(id) {
-
-    }
-
 </script>

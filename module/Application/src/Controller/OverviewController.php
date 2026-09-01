@@ -30,8 +30,8 @@ class OverviewController extends AbstractActionController
     private function buildChartViewModel(): ViewModel
     {
         $reportModel = new Report();
-        [, $data] = $reportModel->getDataToViewChart();
+        [$totals, $data] = $reportModel->getDataToViewChart();
 
-        return new ViewModel(['data' => $data]);
+        return new ViewModel(['data' => $data, 'totals' => $totals]);
     }
 }
