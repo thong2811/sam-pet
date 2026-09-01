@@ -3,13 +3,13 @@
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
-
 <div class="row mt-5">
-    <h1> Thêm tiền điều trị - spa </h1>
-    <form method="post" action="/vet-care/do-add">
+    <h1> Thêm tiền điều trị - Spa </h1>
+    <form id="vetCareAddForm" class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Ngày</label>
-            <input type="text" class="form-control date-picker" id="date" name="date" autocomplete="off" value="<?= date('d-m-Y') ?>" required>
+            <input type="text" class="form-control date-picker" name="date"
+                   autocomplete="off" value="<?= date('d-m-Y') ?>" required>
         </div>
         <div class="mb-3">
             <label class="form-label">Tiền điều trị</label>
@@ -30,16 +30,39 @@
             <textarea class="form-control" name="note"></textarea>
         </div>
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary float-end">Tạo</button>
-            <a href="/vet-care" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Tạo</button>
+            <a href="/vet-care" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
+
 <script>
-    $(document).ready(function() {
-        $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
-            autoclose:true
-        });
+    $(document).ready(function () {
+        $('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
     });
+
+    function doSubmit() {
+        const form = document.getElementById('vetCareAddForm');
+        if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+        showOverlay('loading');
+
+        $.ajax({
+            url: '/vet-care/do-add',
+            type: 'POST',
+            data: $('#vetCareAddForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Thêm thành công!');
+                    window.location.href = '/vet-care';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
+    }
 </script>

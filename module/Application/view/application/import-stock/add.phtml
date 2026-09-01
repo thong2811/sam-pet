@@ -3,11 +3,10 @@
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
-
 <div class="row mt-5">
     <h1> Nhập hàng hóa </h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
-    <form method="post" action="/import-stock/do-add">
+    <form id="importStockForm">
         <div class="container">
             <table class="table table-striped table-form mt-3">
                 <thead>
@@ -17,7 +16,7 @@
                     <th style="width: 150px">Giá nhập</th>
                     <th style="width: 80px">Số lượng</th>
                     <th style="width: 400px">Ghi chú</th>
-                    <th style="width: 100px">Thao tác</th>
+                    <th style="width: 60px">Xóa</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -34,91 +33,100 @@
                         </select>
                     </td>
                     <td>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="purchasePrice" name="purchasePrice[]" required>
-                        </div>
+                        <input type="text" class="form-control purchase-price" name="purchasePrice[]" required>
                     </td>
                     <td>
-                        <input class="form-control" type="number" name="quantity[]" value="1" required>
+                        <input class="form-control" type="number" name="quantity[]" value="1" min="0" required>
                     </td>
                     <td>
                         <textarea class="form-control" name="note[]" rows="1"></textarea>
                     </td>
                     <td>
-                        <button class="btn btn-danger" onclick="removeInputRow(this)"> Xóa </button>
+                        <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeInputRow(this)">✕</button>
                     </td>
                 </tr>
                 </tbody>
             </table>
         </div>
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary float-end">Tạo</button>
-            <a href="/import-stock" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Tạo</button>
+            <a href="/import-stock" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
 
 <script>
-    let tableInputRowHtml = ``;
+    let tableInputRowHtml = '';
     let productList = [];
-    $(document).ready(function() {
-        tableInputRowHtml = $('.table-form').find('tbody').html();
 
+    $(document).ready(function () {
+        tableInputRowHtml = `<tr>${$('.table-form tbody tr').last().html()}</tr>`;
         initVariable();
-        $('.select2').select2({
-            dropdownCssClass: 'select-product-custom'
-        });
-        $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
-            autoclose:true
-        });
+        initSelect2AndDatepicker($('.table-form tbody'));
     });
 
-    $(document).keypress(event => {
-        if (event.which == '13') {
-            event.preventDefault();
-        }
-    });
+    $(document).keypress(e => { if (e.which === 13) e.preventDefault(); });
 
     function initVariable() {
-        let data = $('#productList').val();
-        productList = JSON.parse(data);
+        productList = JSON.parse($('#productList').val() || '{}');
+    }
+
+    function initSelect2AndDatepicker(ctx) {
+        ctx.find('.select2').select2({ dropdownCssClass: 'select-product-custom' });
+        ctx.find('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
     }
 
     function updateRowData(elm) {
-        let value = $(elm).val();
-        const tbodyElm = $(elm).closest('tbody');
-        const trElm = $(elm).closest('tr');
-
+        const value       = $(elm).val();
+        const trElm       = $(elm).closest('tr');
+        const tbodyElm    = $(elm).closest('tbody');
         const productData = productList[value] ?? {};
 
-        trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
-        trElm.find('#sellingPrice').val(productData.sellingPrice || 0);
+        trElm.find('.purchase-price').val(productData.purchasePrice || 0);
 
-        if (value) {
-            if ($('.select-product').last().val() !== '') {
-                addInputRow(tbodyElm);
-            }
+        if (value && $('.select-product').last().val() !== '') {
+            addInputRow(tbodyElm);
         }
     }
 
     function addInputRow(tbodyElm) {
         const date = tbodyElm.find('.date-picker').last().val();
-
         tbodyElm.append(tableInputRowHtml);
-        tbodyElm.find('.select2').select2({
-            dropdownCssClass: 'select-product-custom'
-        });
-        const datePicker = tbodyElm.find('.date-picker').last();
-        datePicker.val();
-        datePicker.datepicker({
-            format: 'dd-mm-yyyy',
-            autoclose:true
-        });
-        datePicker.val(date);
+        const lastTr = tbodyElm.find('tr').last();
+        lastTr.find('.select2').select2({ dropdownCssClass: 'select-product-custom' });
+        const dp = lastTr.find('.date-picker');
+        dp.datepicker({ format: 'dd-mm-yyyy', autoclose: true });
+        dp.val(date);
     }
 
-    function removeInputRow(elm) {
-        $(elm).closest('tr').remove();
+    function removeInputRow(btn) {
+        const tbody = $(btn).closest('tbody');
+        if (tbody.find('tr').length <= 1) return;
+        $(btn).closest('tr').remove();
+    }
+
+    function doSubmit() {
+        const form = document.getElementById('importStockForm');
+        if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+        showOverlay('loading');
+
+        $.ajax({
+            url: '/import-stock/do-add',
+            type: 'POST',
+            data: $('#importStockForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Thêm thành công!');
+                    window.location.href = '/import-stock';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
     }
 </script>

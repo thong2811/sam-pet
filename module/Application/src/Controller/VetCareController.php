@@ -28,19 +28,18 @@ class VetCareController extends AbstractActionController
 
     public function doAddAction()
     {
-        $this->layout()->setTemplate(false);
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+            $vetCareModel = new VetCare();
+            $vetCareModel->doAdd($postData);
 
-        $vetCareModel = new VetCare();
-        $vetCareModel->addRow($postData);
-
-        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
-        return $this->redirect()->toRoute('vetCare');
+            return new JsonModel(['success' => true, 'message' => 'Thêm thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
-
-    public function editAction()
     {
         $id = $this->params()->fromRoute('id', '');
 
@@ -52,22 +51,21 @@ class VetCareController extends AbstractActionController
 
     public function doEditAction()
     {
-        $this->layout()->setTemplate(false);
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+            $vetCareModel = new VetCare();
+            $vetCareModel->doEdit($postData);
 
-        $vetCareModel = new VetCare();
-        $vetCareModel->doEdit($postData);
-
-        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function doDeleteAction()
     {
-        $this->layout()->setTemplate(false);
-
         try {
             $request = $this->getRequest();
             $body = $request->getContent();
@@ -98,8 +96,6 @@ class VetCareController extends AbstractActionController
 
     public function dataTableServerSideAction()
     {
-        $this->layout()->setTemplate(false);
-
         try {
             $request = $this->getRequest();
             $postData = $request->getPost();

@@ -27,14 +27,17 @@ class ImportStockController extends AbstractActionController
 
     public function doAddAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $importStockModel = new ImportStock();
-        $importStockModel->doAdd($postData);
+            $importStockModel = new ImportStock();
+            $importStockModel->doAdd($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
-        return $this->redirect()->toRoute('importStock');
+            return new JsonModel(['success' => true, 'message' => 'Thêm thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function editAction()
@@ -52,14 +55,22 @@ class ImportStockController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $importStockModel = new ImportStock();
-        $importStockModel->doEdit($postData);
+            $importStockModel = new ImportStock();
+            $importStockModel->doEdit($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+            $date = $postData['date'][0] ?? '';
+            $redirectUrl = !empty($date)
+                ? $this->url()->fromRoute('importStock', ['action' => 'edit', 'date' => $date])
+                : $this->url()->fromRoute('importStock');
+
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!', 'redirectUrl' => $redirectUrl]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function doDeleteAction()

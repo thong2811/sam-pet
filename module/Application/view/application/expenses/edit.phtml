@@ -4,12 +4,10 @@
  */
 
 use Application\Model\Expenses;
-
 ?>
-
 <div class="row mt-5">
-    <h1> Chỉnh sửa chi ngày <?= $this->date ?></h1>
-    <form method="post" action="/expenses/do-edit">
+    <h1> Chỉnh sửa chi ngày <?= $this->escapeHtml($this->date) ?></h1>
+    <form id="expensesEditForm">
         <div class="container">
             <table class="table table-striped table-form mt-3">
                 <thead>
@@ -23,42 +21,45 @@ use Application\Model\Expenses;
                 </tr>
                 </thead>
                 <tbody>
-                <?php
-                foreach ($this->expensesList as $expensesId => $expensesData):
-                    $date = $expensesData['date'] ?? '';
-                    $type = $expensesData['type'] ?? '';
-                    $reason = $expensesData['reason'] ?? '-';
-                    $amount = $expensesData['amount'] ?? 0;
-                    $person = $expensesData['person'] ?? '-';
-                    $note = $expensesData['note'] ?? '';
+                <?php foreach ($this->expensesList as $expensesId => $expensesData):
+                    $rowDate = $expensesData['date']   ?? '';
+                    $type    = $expensesData['type']   ?? '';
+                    $reason  = $expensesData['reason'] ?? '';
+                    $amount  = $expensesData['amount'] ?? 0;
+                    $person  = $expensesData['person'] ?? '';
+                    $note    = $expensesData['note']   ?? '';
                 ?>
                 <tr>
-                    <div>
-                        <input type="hidden" name="expensesId[]" value="<?= $expensesId ?>">
-                    </div>
+                    <input type="hidden" name="expensesId[]" value="<?= $expensesId ?>">
                     <td>
-                        <input class="form-control date-picker w-100" name="date[]" value="<?= $date ?>" autocomplete="off" required/>
+                        <input class="form-control date-picker w-100" name="date[]"
+                               value="<?= $this->escapeHtmlAttr($rowDate) ?>" autocomplete="off" required/>
                     </td>
                     <td>
                         <select class="form-control" name="type[]">
-                            <option value="<?= Expenses::TYPE_OTHER ?>">Khác</option>
-                            <option value="<?= Expenses::TYPE_SAVINGS ?>" <?= $type === Expenses::TYPE_SAVINGS ? 'selected' : '' ?> >Tiền tiết kiệm</option>
+                            <option value="<?= Expenses::TYPE_OTHER ?>"
+                                <?= $type === Expenses::TYPE_OTHER ? 'selected' : '' ?>>Khác</option>
+                            <option value="<?= Expenses::TYPE_SAVINGS ?>"
+                                <?= $type === Expenses::TYPE_SAVINGS ? 'selected' : '' ?>>Tiền tiết kiệm</option>
                         </select>
                     </td>
                     <td>
-                        <input type="text" class="form-control reason" id="reason" name="reason[]" required onchange="addInputRow(this)" value="<?= $reason ?>">
+                        <input type="text" class="form-control reason" name="reason[]"
+                               value="<?= $this->escapeHtmlAttr($reason) ?>" required>
                     </td>
                     <td>
                         <div class="input-group">
                             <span class="input-group-text">VNĐ</span>
-                            <input type="text" class="form-control" id="amount" name="amount[]" required value="<?= $amount ?>">
+                            <input type="text" class="form-control" name="amount[]"
+                                   value="<?= $this->escapeHtmlAttr($amount) ?>" required>
                         </div>
                     </td>
                     <td>
-                        <input type="text" class="form-control" id="person" name="person[]" value="<?= $person ?>">
+                        <input type="text" class="form-control" name="person[]"
+                               value="<?= $this->escapeHtmlAttr($person) ?>">
                     </td>
                     <td>
-                        <textarea class="form-control" name="note[]" rows="1"><?= $note ?></textarea>
+                        <textarea class="form-control" name="note[]" rows="1"><?= $this->escapeHtml($note) ?></textarea>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -66,26 +67,42 @@ use Application\Model\Expenses;
             </table>
         </div>
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary float-end">Lưu</button>
-            <a href="/expenses" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Lưu</button>
+            <a href="/expenses" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
 
 <script>
-    let tableInputRowHtml = ``;
-    $(document).ready(function() {
-        tableInputRowHtml = $('.table-form').find('tbody').html();
+    $(document).ready(function () {
+        $('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
+    });
 
-        $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
-            autoclose:true
+    $(document).keypress(e => { if (e.which === 13) e.preventDefault(); });
+
+    function doSubmit() {
+        const form = document.getElementById('expensesEditForm');
+        if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+        showOverlay('loading');
+
+        $.ajax({
+            url: '/expenses/do-edit',
+            type: 'POST',
+            data: $('#expensesEditForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Cập nhật thành công!');
+                    // Controller trả redirectUrl về trang edit ngày vừa sửa
+                    window.location.href = res.redirectUrl || '/expenses';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
         });
-    });
-
-    $(document).keypress(event => {
-        if (event.which == '13') {
-            event.preventDefault();
-        }
-    });
+    }
 </script>

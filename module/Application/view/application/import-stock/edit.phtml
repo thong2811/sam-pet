@@ -3,11 +3,10 @@
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
-
 <div class="row mt-5">
-    <h1> Chỉnh sửa nhập hàng ngày <?= $this->date ?></h1>
+    <h1> Chỉnh sửa nhập hàng ngày <?= $this->escapeHtml($this->date) ?></h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
-    <form method="post" action="/import-stock/do-edit">
+    <form id="importStockEditForm">
         <div class="container">
             <table class="table table-striped table-form mt-3">
                 <thead>
@@ -20,43 +19,41 @@
                 </tr>
                 </thead>
                 <tbody>
-                <?php
-                foreach ($this->importStockList as $importStockId => $importStockData):
-                    $date = $importStockData['date'] ?? '';
-                    $quantity = $importStockData['quantity'] ?? 0;
-                    $purchasePrice = $importStockData['purchasePrice'] ?? 0;
-                    $note = $importStockData['note'] ?? '';
+                <?php foreach ($this->importStockList as $importStockId => $importStockData):
+                    $rowDate       = $importStockData['date']          ?? '';
+                    $quantity      = $importStockData['quantity']       ?? 0;
+                    $purchasePrice = $importStockData['purchasePrice']  ?? 0;
+                    $note          = $importStockData['note']           ?? '';
                 ?>
                 <tr>
-                    <div>
-                        <input type="hidden" name="importStockId[]" value="<?= $importStockId ?>">
-                    </div>
+                    <input type="hidden" name="importStockId[]" value="<?= $importStockId ?>">
                     <td>
-                        <input class="form-control date-picker w-100" name="date[]" value="<?= $date ?>" autocomplete="off" required/>
+                        <input class="form-control date-picker w-100" name="date[]"
+                               value="<?= $this->escapeHtmlAttr($rowDate) ?>" autocomplete="off" required/>
                     </td>
                     <td>
-                        <select class="select-product form-control select2" name="productId[]" onchange="updateRowData(this)" required>
+                        <select class="select-product form-control select2" name="productId[]"
+                                onchange="updateRowData(this)" required>
                             <option value="">Chọn hàng hóa</option>
-                            <?php
-                            foreach ($this->productList as $productId => $productData):
-                                $isSelected = !empty($importStockData['productId']) && $importStockData['productId'] == $productId;
-                                $selected = $isSelected ? 'selected' : '';
-                                $productName = $productData['name'] ?? '-';
+                            <?php foreach ($this->productList as $productId => $productData):
+                                $isSelected  = !empty($importStockData['productId']) && $importStockData['productId'] == $productId;
                             ?>
-                                <option value="<?= $productId ?>" <?= $selected ?> > <?= $productName ?> </option>
+                                <option value="<?= $productId ?>" <?= $isSelected ? 'selected' : '' ?>>
+                                    <?= $productData['name'] ?? '-' ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </td>
                     <td>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="purchasePrice" value="<?= $purchasePrice ?>" name="purchasePrice[]" required>
-                        </div>
+                        <input type="text" class="form-control purchase-price" name="purchasePrice[]"
+                               value="<?= $this->escapeHtmlAttr($purchasePrice) ?>" required>
                     </td>
                     <td>
-                        <input class="form-control" type="number" name="quantity[]" value="<?= $quantity ?>" required>
+                        <input class="form-control" type="number" name="quantity[]"
+                               value="<?= $this->escapeHtmlAttr($quantity) ?>" min="0" required>
                     </td>
                     <td>
-                        <textarea class="form-control" name="note[]" rows="1"><?= $note ?></textarea>
+                        <textarea class="form-control" name="note[]" rows="1"><?= $this->escapeHtml($note) ?></textarea>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -64,50 +61,53 @@
             </table>
         </div>
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary float-end">Lưu</button>
-            <a href="/import-stock" class="btn btn-danger float-end mx-2">Quay lại</a>
+            <button type="button" class="btn btn-primary float-end" onclick="doSubmit()">Lưu</button>
+            <a href="/import-stock" class="btn btn-secondary float-end mx-2">Quay lại</a>
         </div>
     </form>
 </div>
 
 <script>
-    let tableInputRowHtml = ``;
-    let productList = [];
-    $(document).ready(function() {
-        tableInputRowHtml = $('.table-form').find('tbody').html();
+    let productList = {};
 
-        initVariable();
-        $('.select2').select2({
-            dropdownCssClass: 'select-product-custom'
-        });
-        $('.date-picker').datepicker({
-            format: 'dd-mm-yyyy',
-            autoclose:true
-        });
+    $(document).ready(function () {
+        productList = JSON.parse($('#productList').val() || '{}');
+        $('.select2').select2({ dropdownCssClass: 'select-product-custom' });
+        $('.date-picker').datepicker({ format: 'dd-mm-yyyy', autoclose: true });
     });
 
-    $(document).keypress(event => {
-        if (event.which == '13') {
-            event.preventDefault();
-        }
-    });
-
-    function initVariable() {
-        let data = $('#productList').val();
-        productList = JSON.parse(data);
-    }
+    $(document).keypress(e => { if (e.which === 13) e.preventDefault(); });
 
     function updateRowData(elm) {
-        let value = $(elm).val();
-        const trElm = $(elm).closest('tr');
-
+        const value       = $(elm).val();
+        const trElm       = $(elm).closest('tr');
         const productData = productList[value] ?? {};
-
-        trElm.find('#purchasePrice').val(productData.purchasePrice || 0);
-        trElm.find('#sellingPrice').val(productData.sellingPrice || 0);
+        trElm.find('.purchase-price').val(productData.purchasePrice || 0);
     }
 
-    function removeInputRow(elm) {
-        $(elm).closest('tr').remove();
+    function doSubmit() {
+        const form = document.getElementById('importStockEditForm');
+        if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+        showOverlay('loading');
+
+        $.ajax({
+            url: '/import-stock/do-edit',
+            type: 'POST',
+            data: $('#importStockEditForm').serialize(),
+            success: function (res) {
+                if (res.success) {
+                    addFlashMessage(res.message || 'Cập nhật thành công!');
+                    // Controller trả redirectUrl về trang edit ngày vừa sửa
+                    window.location.href = res.redirectUrl || '/import-stock';
+                } else {
+                    addFlashMessage(res.message || 'Có lỗi xảy ra.', FLASH_MESSAGE_TYPE_ERROR);
+                }
+            },
+            error: function (xhr, status, err) {
+                addFlashMessage('Lỗi kết nối: ' + err, FLASH_MESSAGE_TYPE_ERROR);
+            },
+            complete: hideOverlay
+        });
     }
 </script>

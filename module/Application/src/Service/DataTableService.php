@@ -101,7 +101,7 @@ class DataTableService
     public static function sortByVietnamese(array &$data, string $key): void
     {
         $coll = new Collator('vi_VN');
-        usort($data, function ($a, $b) use ($key, $coll) {
+        uasort($data, function ($a, $b) use ($key, $coll) {
             if (!isset($b[$key])) return 1;
             if (!isset($a[$key])) return -1;
             return $coll->compare((string) $a[$key], (string) $b[$key]);

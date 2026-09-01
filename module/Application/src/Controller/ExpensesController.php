@@ -24,14 +24,17 @@ class ExpensesController extends AbstractActionController
 
     public function doAddAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
 
-        $expensesModel = new Expenses();
-        $expensesModel->doAdd($postData);
+            $expensesModel = new Expenses();
+            $expensesModel->doAdd($postData);
 
-        $this->flashMessenger()->addSuccessMessage('Thêm thành công');
-        return $this->redirect()->toRoute('expenses');
+            return new JsonModel(['success' => true, 'message' => 'Thêm thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     public function editAction()
@@ -46,22 +49,22 @@ class ExpensesController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request  = $this->getRequest();
-        $postData = $request->getPost()->toArray();
+        try {
+            $request  = $this->getRequest();
+            $postData = $request->getPost()->toArray();
+            $date     = $postData['date'][0] ?? '';
 
-        $date = $postData['date'][0] ?? '';
+            $expensesModel = new Expenses();
+            $expensesModel->doEdit($postData);
 
-        $expensesModel = new Expenses();
-        $expensesModel->doEdit($postData);
+            $redirectUrl = !empty($date)
+                ? $this->url()->fromRoute('expenses', ['action' => 'edit', 'date' => $date])
+                : $this->url()->fromRoute('expenses');
 
-        $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-
-        // Redirect về trang edit ngày vừa sửa, không phụ thuộc Referer header
-        if (!empty($date)) {
-            return $this->redirect()->toRoute('expenses', ['action' => 'edit', 'date' => $date]);
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!', 'redirectUrl' => $redirectUrl]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        return $this->redirect()->toRoute('expenses');
     }
 
     public function doDeleteAction()
