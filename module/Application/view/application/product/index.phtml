@@ -160,7 +160,12 @@
             { name: 'repackageStock', data: 'repackageStock' },
             { name: 'remainStock', data: 'remainStock' },
             { name: 'updatedAt', data: 'updatedAt' },
-            { name: 'action', data: 'action' }
+            {
+                name: 'action', data: 'id',
+                render: (id) =>
+                    `<button class="btn btn-danger btn-sm" onclick="removeRow('product','${id}',table)">Xóa</button>` +
+                    `<button class="btn btn-primary btn-sm ms-1" onclick="openEditModal('${id}')">Chỉnh sửa</button>`
+            }
         ],
         serverSide: true
     });
@@ -270,26 +275,6 @@
     }
 
     function remove(id) {
-        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
-            return;
-        }
-
-        $.ajax({
-            url: `/${controllerName}/do-delete`,
-            type: 'DELETE',
-            contentType: 'application/json',
-            data: JSON.stringify({ id: id }),
-            success: function (response) {
-                if (response.success) {
-                    table.draw(false);
-                    addFlashMessage(`Xoá thành công`);
-                } else {
-                    addFlashMessage(`Đã xảy ra lỗi khi xóa. ${response.message || 'error unknown'}`, FLASH_MESSAGE_TYPE_ERROR);
-                }
-            },
-            error: function (xhr, status, error) {
-                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
-            }
-        });
+        removeRow('product', id, table);
     }
 </script>

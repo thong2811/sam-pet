@@ -159,9 +159,8 @@ class ExportStock extends LeagueCsv
 
         foreach ($data as $id => &$row) {
             $sellingPrice = $row['sellingPrice'] ?? 0;
-            $quantity = $row['quantity'] ?? 0;
+            $quantity     = $row['quantity']     ?? 0;
             $row['total'] = (int) $sellingPrice * (int) $quantity;
-            $row['action'] = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
         }
 
         return $data;

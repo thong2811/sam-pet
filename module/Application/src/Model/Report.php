@@ -90,8 +90,6 @@ class Report extends LeagueCsv
             $row['treatmentProfit'] = $treatmentRevenue * VetCare::TREATMENT_PROFIT_PERCENT;
             $row['revenue']         = $petShopRevenue + $spaRevenue + $treatmentRevenue;
             $row['remaining']       = $this->calcRemaining($row['revenue'], $expenses);
-            $row['action']          = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
-            $row['action']         .= sprintf('<button class="btn btn-primary ms-2" onclick="openEditModal(\'%s\')"> Cập nhật </button>', $id);
 
             $totalRevenue       += $row['revenue'];
             $totalExpenses      += $expenses;

@@ -10,23 +10,28 @@ use Laminas\View\Model\ViewModel;
 
 class OverviewController extends AbstractActionController
 {
+    /**
+     * Dashboard doanh thu — /overview (default) và /overview/index
+     */
     public function indexAction()
     {
-        $reportModel = new Report();
-        list($totals, $data) = $reportModel->getDataToViewChart();
-
-        return new ViewModel([
-            'data' => $data,
-        ]);
+        return $this->buildChartViewModel();
     }
 
+    /**
+     * Dashboard thu/chi — /overview/expenses
+     * Data giống indexAction, chỉ khác view template.
+     */
     public function expensesAction()
     {
-        $reportModel = new Report();
-        list($totals, $data) = $reportModel->getDataToViewChart();
+        return $this->buildChartViewModel();
+    }
 
-        return new ViewModel([
-            'data' => $data,
-        ]);
+    private function buildChartViewModel(): ViewModel
+    {
+        $reportModel = new Report();
+        [, $data] = $reportModel->getDataToViewChart();
+
+        return new ViewModel(['data' => $data]);
     }
 }

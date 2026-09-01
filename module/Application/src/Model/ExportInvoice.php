@@ -152,12 +152,11 @@ class ExportInvoice extends LeagueCsv
         ]);
     }
 
-    public function getDataToView() {
+    public function getDataToView()
+    {
         $data = $this->getData();
         foreach ($data as $id => &$row) {
-            $row['action'] = sprintf('<button class="btn btn-secondary" onclick="reviewPdf(\'%s\')"> Xem PDF </button>', $id);
-            $row['action'] .= sprintf('<a class="btn btn-primary ms-2" href="/export-invoice/edit/%s"> Sửa </a>', $id);
-            $row['action'] .= sprintf('<button class="btn btn-danger ms-2" onclick="remove(\'%s\')"> Xóa </button>', $id);
+            // action column được render phía client trong DataTable
         }
         return $data;
     }

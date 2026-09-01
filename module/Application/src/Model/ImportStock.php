@@ -105,9 +105,8 @@ class ImportStock extends LeagueCsv
 
         foreach ($data as $id => &$row) {
             $purchasePrice = $row['purchasePrice'] ?? 0;
-            $quantity = $row['quantity'] ?? 0;
-            $row['total'] = (int) $purchasePrice * (int) $quantity;
-            $row['action'] = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
+            $quantity      = $row['quantity']      ?? 0;
+            $row['total']  = (int) $purchasePrice * (int) $quantity;
         }
 
         return $data;

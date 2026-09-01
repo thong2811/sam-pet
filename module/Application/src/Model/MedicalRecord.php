@@ -34,17 +34,14 @@ class MedicalRecord extends LeagueCsv
     public function getDataToView()
     {
         $ownerPetModel = new OwnerPet();
-        $ownerPetData = $ownerPetModel->getData();
+        $ownerPetData  = $ownerPetModel->getData();
 
         $data = $this->getData();
         foreach ($data as $id => &$row) {
-            $petId = $row['pet_id'] ?? '';
-            $pet = $ownerPetData[$petId] ?? [];
-            $row['pet_name'] = $pet['pet_name'] ?? '';
+            $petId           = $row['pet_id'] ?? '';
+            $pet             = $ownerPetData[$petId] ?? [];
+            $row['pet_name']   = $pet['pet_name']   ?? '';
             $row['owner_name'] = $pet['owner_name'] ?? '';
-            $row['action'] = sprintf(
-                '<a href="/medical-record/edit/%s" class="btn btn-primary btn-sm">Sửa</a> ', $id)
-                . sprintf('<button class="btn btn-danger btn-sm" onclick="remove(\'%s\')">Xóa</button>', $id);
         }
         return $data;
     }

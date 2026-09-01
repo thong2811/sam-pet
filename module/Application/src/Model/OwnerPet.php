@@ -38,11 +38,7 @@ class OwnerPet extends LeagueCsv
     {
         $data = $this->getData();
         foreach ($data as $id => &$row) {
-            $row['action'] = sprintf(
-                '<a href="/medical-record/add/%s" class="btn btn-success btn-sm">Khám</a> ', $id)
-                . sprintf('<a href="/medical-record/history/%s" class="btn btn-info btn-sm">Lịch sử</a> ', $id)
-                . sprintf('<button class="btn btn-primary btn-sm" onclick="openEditModal(\'%s\')">Sửa</button> ', $id)
-                . sprintf('<button class="btn btn-danger btn-sm" onclick="remove(\'%s\')">Xóa</button>', $id);
+            // action column được render phía client trong DataTable
         }
         return $data;
     }

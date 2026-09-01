@@ -59,13 +59,8 @@ class VetCare extends LeagueCsv
 
         foreach ($data as $id => &$row) {
             $treatmentAmount = $row['treatmentAmount'] ?? 0;
-            $spaAmount = $row['spaAmount'] ?? 0;
-            $row['total'] = (int) $treatmentAmount + (int) $spaAmount;
-            $row['action'] = sprintf('
-                <button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>
-                <a href="/vet-care/edit/%s" class="btn btn-primary">Chỉnh sửa</a>
-                ', $id, $id);
-
+            $spaAmount       = $row['spaAmount']       ?? 0;
+            $row['total']    = (int) $treatmentAmount + (int) $spaAmount;
         }
 
         return $data;

@@ -1,0 +1,74 @@
+<?php
+/**
+ * Partial — các trường tài chính dùng chung cho modal Add và Edit.
+ * @var string $prefix              - 'add' hoặc 'edit'
+ * @var float  $treatmentProfitPercent
+ */
+$p = $prefix ?? 'add';
+$pct = ($treatmentProfitPercent ?? 0.4) * 100;
+?>
+<div class="col-12 float-start">
+    <label class="form-label col-12">Pet shop</label>
+    <div class="mb-3 col-5 float-start">
+        <div class="input-group">
+            <span class="input-group-text">Doanh thu</span>
+            <input type="text" class="form-control" id="<?= $p ?>-petShopRevenue" name="petShopRevenue" required readonly>
+        </div>
+    </div>
+    <div class="mb-3 col-5 float-end">
+        <div class="input-group">
+            <span class="input-group-text">Lãi</span>
+            <input type="text" class="form-control" id="<?= $p ?>-petShopProfit" name="petShopProfit" required readonly>
+        </div>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">Thu spa</label>
+    <div class="input-group">
+        <span class="input-group-text">VNĐ</span>
+        <input type="text" class="form-control" id="<?= $p ?>-spaRevenue" name="spaRevenue" required readonly>
+    </div>
+</div>
+<div class="col-12 float-start">
+    <label class="form-label col-12">Điều trị</label>
+    <div class="mb-3 col-5 float-start">
+        <div class="input-group">
+            <span class="input-group-text">Doanh thu</span>
+            <input type="text" class="form-control" id="<?= $p ?>-treatmentRevenue" name="treatmentRevenue" required readonly>
+        </div>
+    </div>
+    <div class="mb-3 col-5 float-end">
+        <div class="input-group">
+            <span class="input-group-text">Lãi (<?= $pct ?>%)</span>
+            <input type="text" class="form-control" id="<?= $p ?>-treatmentProfit" name="treatmentProfit" required readonly>
+        </div>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">Tổng thu</label>
+    <div class="input-group">
+        <span class="input-group-text">VNĐ</span>
+        <input type="text" class="form-control" id="<?= $p ?>-revenue" name="revenue" required readonly>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">Tổng chi</label>
+    <div class="input-group">
+        <span class="input-group-text">VNĐ</span>
+        <input type="text" class="form-control" id="<?= $p ?>-expenses" name="expenses" required readonly>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">Rút tiền tiết kiệm</label>
+    <div class="input-group">
+        <span class="input-group-text">VNĐ</span>
+        <input type="text" class="form-control" id="<?= $p ?>-savings" name="savings" required readonly>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">Còn lại</label>
+    <div class="input-group">
+        <span class="input-group-text">VNĐ</span>
+        <input type="text" class="form-control" id="<?= $p ?>-remaining" readonly>
+    </div>
+</div>

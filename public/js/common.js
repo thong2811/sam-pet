@@ -132,6 +132,38 @@ function closeAlertMessage(elm)
     $(elm).closest('.alert').remove();
 }
 
+/**
+ * Hàm xóa record dùng chung cho tất cả trang.
+ * @param {string} controllerName  - tên controller, ví dụ 'product'
+ * @param {string} id              - id của record cần xóa
+ * @param {object} table           - DataTables instance để reload sau khi xóa
+ * @param {string} deleteUrl       - URL endpoint xóa (mặc định /{controllerName}/do-delete)
+ */
+function removeRow(controllerName, id, table, deleteUrl = null)
+{
+    if (!confirm('Bạn có chắc chắn muốn xóa?')) return;
+
+    const url = deleteUrl || `/${controllerName}/do-delete`;
+
+    $.ajax({
+        url: url,
+        type: 'DELETE',
+        contentType: 'application/json',
+        data: JSON.stringify({ id: id }),
+        success: function (response) {
+            if (response.success) {
+                if (table) table.draw(false);
+                addFlashMessage('Xoá thành công');
+            } else {
+                addFlashMessage('Đã xảy ra lỗi khi xóa: ' + (response.message || 'unknown'), FLASH_MESSAGE_TYPE_ERROR);
+            }
+        },
+        error: function (xhr, status, error) {
+            addFlashMessage('Đã xảy ra lỗi khi xóa: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+        }
+    });
+}
+
 function addFlashMessage(message, type = FLASH_MESSAGE_TYPE_SUCCESS)
 {
     let alertClass = '';

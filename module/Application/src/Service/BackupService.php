@@ -119,6 +119,52 @@ class BackupService
     }
 
     // -------------------------------------------------------------------------
+    // Stocktaking backup (local ZIP — không upload GitHub)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Tạo file ZIP backup tại data/backup_stocktaking/ trước khi chốt kho.
+     * Không upload lên GitHub — chỉ lưu local.
+     * Trả về true nếu thành công, false nếu thất bại.
+     */
+    public function backupForStocktaking(): bool
+    {
+        $sourceFolder = realpath(__DIR__ . '/../../../../data');
+        if (!$sourceFolder) {
+            return false;
+        }
+
+        $backupFolder   = $sourceFolder . DIRECTORY_SEPARATOR . 'backup_stocktaking';
+        $backupFileName = 'backup_data_stocktaking_' . time() . '.zip';
+        $backupFilePath = $backupFolder . DIRECTORY_SEPARATOR . $backupFileName;
+
+        if (!is_dir($backupFolder)) {
+            mkdir($backupFolder, 0777, true);
+        }
+
+        if (file_exists($backupFilePath)) {
+            return false;
+        }
+
+        $zip = new ZipArchive();
+        if (!$zip->open($backupFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+            return false;
+        }
+
+        $files = scandir($sourceFolder);
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..') continue;
+            $filePath = $sourceFolder . DIRECTORY_SEPARATOR . $file;
+            if (is_file($filePath) && pathinfo($filePath, PATHINFO_EXTENSION) === 'csv') {
+                $zip->addFile($filePath, $file);
+            }
+        }
+
+        $zip->close();
+        return true;
+    }
+
+    // -------------------------------------------------------------------------
     // Zip
     // -------------------------------------------------------------------------
 

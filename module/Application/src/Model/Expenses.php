@@ -125,14 +125,8 @@ class Expenses extends LeagueCsv
         $data = $this->getData();
 
         foreach ($data as $id => &$row) {
-            $type = $row['type'] ?? self::TYPE_OTHER;
+            $type            = $row['type'] ?? self::TYPE_OTHER;
             $row['typeText'] = $this->getTypeText($type);
-
-
-            $sellingPrice = $row['sellingPrice'] ?? 0;
-            $quantity = $row['quantity'] ?? 0;
-            $row['total'] = (int) $sellingPrice * (int) $quantity;
-            $row['action'] = sprintf('<button class="btn btn-danger" onclick="remove(\'%s\')"> Xóa </button>', $id);
         }
 
         return $data;
