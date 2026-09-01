@@ -51,50 +51,48 @@ class Expenses extends LeagueCsv
 
     public function doEdit($postData)
     {
-        $date        = $postData['date'][0]        ?? ($postData['dateKey'] ?? '');
-        $typeList    = $postData['type']           ?? [];
-        $reasonList  = $postData['reason']         ?? [];
-        $amountList  = $postData['amount']         ?? [];
-        $personList  = $postData['person']         ?? [];
-        $noteList    = $postData['note']           ?? [];
-        $dateList    = $postData['date']           ?? [];
+        $expensesIdList = $postData['expensesId'] ?? [];
+        $dateList       = $postData['date']        ?? [];
+        $typeList       = $postData['type']        ?? [];
+        $reasonList     = $postData['reason']      ?? [];
+        $amountList     = $postData['amount']      ?? [];
+        $personList     = $postData['person']      ?? [];
+        $noteList       = $postData['note']        ?? [];
 
-        // Lấy ngày từ row đầu tiên để xác định scope xóa
-        $targetDate = !empty($dateList[0]) ? $dateList[0] : '';
-
-        // Replace-all: xóa toàn bộ rows của ngày đó, insert lại
-        if (!empty($targetDate)) {
-            $existingData   = $this->getData();
-            $otherDaysData  = array_filter($existingData, function ($row) use ($targetDate) {
-                return ($row['date'] ?? '') !== $targetDate;
-            });
-
-            $newRows = [];
-            foreach ($dateList as $index => $rowDate) {
-                if (empty($rowDate)) {
-                    continue;
-                }
-                $now = time();
-                $newRows[] = $this->mappingDataWithHeaders([
-                    'id'        => self::generateId(),
-                    'date'      => $rowDate,
-                    'type'      => $typeList[$index]   ?? self::TYPE_OTHER,
-                    'reason'    => $reasonList[$index]  ?? '',
-                    'amount'    => $amountList[$index]  ?? 0,
-                    'person'    => $personList[$index]  ?? '',
-                    'note'      => $noteList[$index]    ?? '',
-                    'createdAt' => $now,
-                    'updatedAt' => $now,
-                ]);
-            }
-
-            $merged = array_values($otherDaysData);
-            foreach ($newRows as $row) {
-                $merged[$row['id']] = $row;
-            }
-
-            $this->saveData($merged);
+        if (empty($expensesIdList)) {
+            return;
         }
+
+        $existingData = $this->getData();
+
+        // Xóa đúng các rows theo ID (không xóa theo ngày để tránh duplicate)
+        $idsToDelete = array_filter($expensesIdList, fn($id) => !empty($id));
+        foreach ($idsToDelete as $id) {
+            unset($existingData[$id]);
+        }
+
+        // Insert lại với dữ liệu mới (giữ nguyên createdAt gốc nếu có)
+        $now = time();
+        foreach ($expensesIdList as $index => $expensesId) {
+            $rowDate = $dateList[$index] ?? '';
+            if (empty($rowDate) || empty($expensesId)) {
+                continue;
+            }
+
+            $existingData[$expensesId] = $this->mappingDataWithHeaders([
+                'id'        => $expensesId,
+                'date'      => $rowDate,
+                'type'      => $typeList[$index]   ?? self::TYPE_OTHER,
+                'reason'    => $reasonList[$index]  ?? '',
+                'amount'    => $amountList[$index]  ?? 0,
+                'person'    => $personList[$index]  ?? '',
+                'note'      => $noteList[$index]    ?? '',
+                'createdAt' => $now,
+                'updatedAt' => $now,
+            ]);
+        }
+
+        $this->saveData($existingData);
     }
 
     public function totalAmountByDate() {

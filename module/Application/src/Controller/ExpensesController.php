@@ -52,14 +52,12 @@ class ExpensesController extends AbstractActionController
         try {
             $request  = $this->getRequest();
             $postData = $request->getPost()->toArray();
-            $date     = $postData['date'][0] ?? '';
 
             $expensesModel = new Expenses();
             $expensesModel->doEdit($postData);
 
-            $redirectUrl = !empty($date)
-                ? $this->url()->fromRoute('expenses', ['action' => 'edit', 'date' => $date])
-                : $this->url()->fromRoute('expenses');
+            // Redirect về index vì ngày có thể đã thay đổi sau khi edit
+            $redirectUrl = $this->url()->fromRoute('expenses');
 
             return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!', 'redirectUrl' => $redirectUrl]);
         } catch (\Throwable $e) {

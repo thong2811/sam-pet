@@ -214,10 +214,17 @@ $treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
         if (!validateModalForm('#addReportModal')) return;
         if ($('#add-petShopRevenue').val() === '') { alert('Lỗi: Doanh thu pet shop đang rỗng!'); return; }
 
+        const form = $('#addReportForm');
+        const csrfInput = document.createElement('input');
+        csrfInput.type  = 'hidden';
+        csrfInput.name  = '_csrf';
+        csrfInput.value = getCsrfToken();
+        form.append(csrfInput);
+
         $.ajax({
             url: `/${controllerName}/do-add`,
             type: 'POST',
-            data: $('#addReportForm').serialize(),
+            data: form.serialize(),
             beforeSend: () => $('.overlay-loading').css('display','flex'),
             success: (res) => {
                 if (res.success) { table.draw(false); addModal.hide(); addFlashMessage('Thêm thành công'); }
@@ -232,10 +239,17 @@ $treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
         if (!validateModalForm('#editReportModal')) return;
         if ($('#edit-petShopRevenue').val() === '') { alert('Lỗi: Doanh thu pet shop đang rỗng!'); return; }
 
+        const form = $('#editReportForm');
+        const csrfInput = document.createElement('input');
+        csrfInput.type  = 'hidden';
+        csrfInput.name  = '_csrf';
+        csrfInput.value = getCsrfToken();
+        form.append(csrfInput);
+
         $.ajax({
             url: `/${controllerName}/do-edit`,
             type: 'POST',
-            data: $('#editReportForm').serialize(),
+            data: form.serialize(),
             beforeSend: () => $('.overlay-loading').css('display','flex'),
             success: (res) => {
                 if (res.success) { table.draw(false); editModal.hide(); addFlashMessage('Cập nhật thành công'); }
