@@ -89,12 +89,28 @@ function calculateSumAmountCells(table)
     }
 }
 
+/**
+ * Math parser an toàn — thay thế eval().
+ * Chỉ chấp nhận số, dấu thập phân, khoảng trắng và các toán tử + - * / ( ).
+ * Từ chối mọi ký tự khác để tránh code injection.
+ */
 function calculateExpression(expression)
 {
+    if (typeof expression !== 'string' || expression.trim() === '') {
+        return '';
+    }
+    // Whitelist: chỉ cho phép chữ số, dấu chấm, khoảng trắng, + - * / ( )
+    if (!/^[\d\s+\-*/().]+$/.test(expression)) {
+        return 'Chỉ nhập số và phép tính + - * / ( )';
+    }
     try {
-        return eval(expression);
-    } catch (error) {
-        return "Phép tính không hợp lệ !";
+        // Dùng Function constructor thay eval — vẫn là dynamic eval nhưng
+        // đã được whitelist input nên an toàn với injection
+        // eslint-disable-next-line no-new-func
+        const result = Function('"use strict"; return (' + expression + ')')();
+        return isFinite(result) ? result : 'Kết quả không hợp lệ';
+    } catch (e) {
+        return 'Phép tính không hợp lệ';
     }
 }
 
@@ -127,9 +143,25 @@ function clearModalForm(modalId)
     form.reset();
 }
 
-function closeAlertMessage(elm)
+/**
+ * Hiển thị overlay loading với text tùy theo context.
+ * @param {string} text - 'backup' | 'loading' | 'syncing' | hoặc chuỗi bất kỳ
+ */
+function showOverlay(text = 'loading')
 {
-    $(elm).closest('.alert').remove();
+    const messages = {
+        backup:  'Đang backup dữ liệu...',
+        loading: 'Đang xử lý...',
+        syncing: 'Đang đồng bộ dữ liệu...',
+    };
+    const msg = messages[text] || text;
+    $('.overlay-loading-text').text(msg);
+    $('.overlay-loading').css('display', 'flex');
+}
+
+function hideOverlay()
+{
+    $('.overlay-loading').hide();
 }
 
 /**
@@ -185,4 +217,20 @@ function addFlashMessage(message, type = FLASH_MESSAGE_TYPE_SUCCESS)
             <button type="button" class="btn-close float-end" onclick="closeAlertMessage(this)"></button>
         </div>
     `);
+
+    // Cập nhật lại padding-top sau khi thêm flash message
+    const flash = document.getElementById('flashMessages');
+    if (flash) document.body.style.paddingTop = flash.offsetHeight + 'px';
+}
+
+function closeAlertMessage(elm)
+{
+    $(elm).closest('.alert').remove();
+    // Cập nhật padding-top sau khi đóng message
+    const flash = document.getElementById('flashMessages');
+    if (flash) {
+        document.body.style.paddingTop = flash.children.length > 0
+            ? flash.offsetHeight + 'px'
+            : '0';
+    }
 }

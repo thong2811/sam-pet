@@ -2,63 +2,129 @@
     --brand-color: #013755;
 }
 
+/* =========================================================
+   Layout
+   ========================================================= */
+
+body {
+    /* padding-top được set động bởi JS khi có flash messages */
+}
+
+.main-content {
+    padding-bottom: 80px; /* tránh calculator widget che nội dung cuối trang */
+}
+
+/* =========================================================
+   Navbar
+   ========================================================= */
+
 .navbar {
     background-color: var(--brand-color);
 }
+
+.navbar .nav-link.active,
+.navbar li.active .nav-link {
+    color: var(--bs-navbar-active-color, #fff) !important;
+    font-weight: bold;
+    border-bottom: 2px solid rgba(255,255,255,0.7);
+}
+
+/* =========================================================
+   Buttons
+   ========================================================= */
 
 .btn-primary {
     background-color: var(--brand-color);
     border-color: var(--brand-color);
 }
 
-/* allows bootstrap to style Laminas Navigation generated overview items within the navbar */
-.navbar li.active a {
-    color: var(--bs-navbar-active-color);
-}
+/* =========================================================
+   Forms
+   ========================================================= */
 
 .form-label {
     font-weight: bold;
 }
 
-/*Datatable*/
+/* =========================================================
+   DataTable — dùng class thay ID để áp dụng cho mọi table
+   ========================================================= */
 
-#dataTable_wrapper {
+.dataTables_wrapper {
     font-size: 12px !important;
 }
 
-#dataTable_wrapper th{
-    text-align: center!important;
+.dataTables_wrapper th {
+    text-align: center !important;
 }
 
-#dataTable_wrapper .btn{
+.dataTables_wrapper .btn {
     font-size: 12px !important;
 }
 
-#dataTable_wrapper .dt-layout-row:has(.active-sticky) {
+.dataTables_wrapper .dt-layout-row:has(.active-sticky) {
     background: white;
     position: sticky;
     top: 0;
 }
 
-#dataTable_wrapper table thead tr {
+.dataTables_wrapper table thead tr {
     background: white;
     position: sticky;
     top: 18px;
 }
 
+/* Giữ backward-compat với ID cũ */
+#dataTable_wrapper {
+    font-size: 12px !important;
+}
+
+#dataTable_wrapper th {
+    text-align: center !important;
+}
+
+#dataTable_wrapper .btn {
+    font-size: 12px !important;
+}
+
+/* =========================================================
+   Flash messages
+   ========================================================= */
+
+.flash-messages {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+.flash-messages .alert {
+    border-radius: 0;
+}
+
+/* =========================================================
+   Overlay loading
+   ========================================================= */
+
 .overlay-loading {
     display: none;
+    align-items: center;
+    justify-content: center;
     height: 100%;
     width: 100%;
-    background: black;
-    opacity: 0.5;
+    background: rgba(0, 0, 0, 0.6);
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 9999999;
-    align-items: center;
-    justify-content: center;
+    z-index: 99999;
 }
+
+/* =========================================================
+   Select2
+   ========================================================= */
 
 .select-product-custom {
     width: 400px !important;
@@ -68,30 +134,29 @@
     max-height: 400px !important;
 }
 
+/* =========================================================
+   Calculator widget
+   ========================================================= */
+
 .calculate-container {
     position: fixed;
     bottom: 0;
     width: 100vw;
+    z-index: 1000;
 }
+
+/* =========================================================
+   Charts
+   ========================================================= */
 
 .chart {
     width: 100%;
     height: 400px;
 }
 
-.flash-messages {
-    position: fixed;
-    width: 100%;
-    top: 0;
-    left: 0;
-    z-index: 99;
-    font-size: 9px;
-    font-weight: bold;
-}
-
-.flash-messages .alert {
-    border-radius: 0;
-}
+/* =========================================================
+   Sticky table headers / footers
+   ========================================================= */
 
 .table-headers-sticky thead tr th {
     position: -webkit-sticky;
@@ -107,7 +172,11 @@
     background: white;
 }
 
-.stocktaking-row:has(.stocktaking-input:focus)  {
+/* =========================================================
+   Stocktaking
+   ========================================================= */
+
+.stocktaking-row:has(.stocktaking-input:focus) {
     background: greenyellow !important;
 }
 
@@ -117,5 +186,4 @@
     height: 155px;
     bottom: 0;
     width: 100%;
-
 }

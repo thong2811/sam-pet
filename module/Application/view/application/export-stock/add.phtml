@@ -18,7 +18,7 @@
                     <th style="width: 150px">Giá bán</th>
                     <th style="width: 80px">Số lượng</th>
                     <th style="width: 400px">Ghi chú</th>
-                    <th style="width: 100px">Thao tác</th>
+                    <th style="width: 60px">Xóa</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -49,6 +49,9 @@
                     </td>
                     <td>
                         <textarea class="form-control" name="note[]" rows="1"></textarea>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeInputRow(this)">✕</button>
                     </td>
                 </tr>
                 </tbody>
@@ -124,6 +127,14 @@
             autoclose:true
         });
         datePicker.val(date);
+    }
+
+    function removeInputRow(btn) {
+        const tbody = $(btn).closest('tbody');
+        // Không cho xóa nếu chỉ còn 1 dòng
+        if (tbody.find('tr').length <= 1) return;
+        $(btn).closest('tr').remove();
+        updateSumTotal();
     }
 
     function updateSumTotal() {
