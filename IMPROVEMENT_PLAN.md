@@ -72,7 +72,7 @@
 
 | # | Hạng mục | Trạng thái | Tham chiếu spec v2 |
 |---|----------|-----------|-------------------|
-| 5.1 | Thiết kế SQLite schema đầy đủ (11 bảng theo spec v2) | ⬜ | Yêu cầu 15, Section 6 design.md |
+| 5.1 | Thiết kế SQLite schema đầy đủ (11 bảng theo spec v2 + bổ sung bên dưới) | ⬜ | Yêu cầu 15, Section 6 design.md |
 | 5.2 | Tạo class `Database` với PDO, WAL mode, transaction support | ⬜ | Yêu cầu 15 |
 | 5.3 | Viết migration script `bin/migrate-csv-to-sqlite.php` | ⬜ | Yêu cầu 16 |
 | 5.4 | Chuyển `Product` sang Repository + SQLite (tính `remainStock` bằng SQL JOIN) | ⬜ | Yêu cầu 1, 2 |
@@ -84,6 +84,10 @@
 | 5.10 | Thêm DateRangeFilter vào DataTable cho các bảng chính | ⬜ | Yêu cầu 17 |
 | 5.11 | Dashboard lazy load chart qua AJAX thay vì nhúng data vào HTML | ⬜ | Yêu cầu 18 |
 | 5.12 | Stocktaking: thay `prompt()` bằng Bootstrap Modal có xác nhận (StocktakingModal) | ⬜ | Yêu cầu 6 |
+| 5.13 | Thêm bảng `categories` + field `categoryId` vào `products` (FK, nullable) | ⬜ | Xem Nhóm 6 — làm cùng lúc để tránh migrate 2 lần |
+| 5.14 | Thêm bảng `customers` + field `customerId` nullable vào `export_stock` | ⬜ | Phục vụ lịch sử mua hàng, công nợ sau này |
+| 5.15 | Chuẩn hoá `repackage_history`: bỏ field `content` text thuần, thêm `fromProductId`, `toProductId`, `fromQuantity`, `toQuantity` | ⬜ | Cho phép query báo cáo chiết hàng theo sản phẩm |
+| 5.16 | Thêm indexes cho các field hay query: `date`, `productId` trên import/export stock, `pet_id` trên medical_records, `date` trên vet_care/expenses/reports | ⬜ | Tránh full table scan khi data lớn |
 
 ---
 
