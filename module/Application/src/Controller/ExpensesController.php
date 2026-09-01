@@ -46,14 +46,22 @@ class ExpensesController extends AbstractActionController
 
     public function doEditAction()
     {
-        $request = $this->getRequest();
+        $request  = $this->getRequest();
         $postData = $request->getPost()->toArray();
+
+        $date = $postData['date'][0] ?? '';
 
         $expensesModel = new Expenses();
         $expensesModel->doEdit($postData);
 
         $this->flashMessenger()->addSuccessMessage('Cập nhật thành công');
-        return $this->redirect()->toUrl($this->getRequest()->getHeader('Referer')->getUri());
+
+        // Redirect về trang edit ngày vừa sửa, không phụ thuộc Referer header
+        if (!empty($date)) {
+            return $this->redirect()->toRoute('expenses', ['action' => 'edit', 'date' => $date]);
+        }
+
+        return $this->redirect()->toRoute('expenses');
     }
 
     public function doDeleteAction()

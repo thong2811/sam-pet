@@ -106,8 +106,15 @@ return [
                 'delete' => createChildRoute('delete', ['id'])
             ]),
             'report'      => createSegmentRoute(Controller\ReportController::class, '/report', [
-                'edit'   => createChildRoute('edit', ['id']),
-                'delete' => createChildRoute('delete', ['id'])
+                'edit'        => createChildRoute('edit', ['id']),
+                'delete'      => createChildRoute('delete', ['id']),
+                'dataByDate'  => [
+                    'type'    => Segment::class,
+                    'options' => [
+                        'route'    => '/data-by-date',
+                        'defaults' => ['action' => 'dataByDate'],
+                    ],
+                ],
             ]),
             'pdf'      => createSegmentRoute(Controller\PdfController::class, '/pdf', []),
             'ownerPet' => createSegmentRoute(Controller\OwnerPetController::class, '/owner-pet', [

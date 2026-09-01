@@ -33,18 +33,22 @@ class VetCare extends LeagueCsv
 
         $total = [];
         foreach ($data as $row) {
-            $date = $row['date'] ?? null;
+            $date            = $row['date']            ?? null;
             $treatmentAmount = $row['treatmentAmount'] ?? null;
-            $spaAmount = $row['spaAmount'] ?? null;
+            $spaAmount       = $row['spaAmount']       ?? null;
+
             if (empty($date) || !is_numeric($treatmentAmount) || !is_numeric($spaAmount)) {
                 continue;
             }
 
             $treatmentSum = $total[$date]['treatment'] ?? 0;
-            $total[$date]['treatment'] = $treatmentSum + $treatmentAmount;
+            $total[$date]['treatment'] = $treatmentSum + (float) $treatmentAmount;
 
             $spaSum = $total[$date]['spa'] ?? 0;
-            $total[$date]['spa'] = $spaSum + $spaAmount;
+            $total[$date]['spa'] = $spaSum + (float) $spaAmount;
+
+            // treatmentProfit tính theo hằng số, không để caller tự tính lại
+            $total[$date]['treatmentProfit'] = $total[$date]['treatment'] * self::TREATMENT_PROFIT_PERCENT;
         }
 
         return $total;

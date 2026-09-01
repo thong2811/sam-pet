@@ -125,6 +125,29 @@ class ReportController extends AbstractActionController
         }
     }
 
+    /**
+     * GET /report/data-by-date?date=dd-mm-yyyy
+     * Trả JSON tổng hợp dữ liệu theo ngày để auto-fill form báo cáo.
+     */
+    public function dataByDateAction()
+    {
+        try {
+            $date = trim((string) $this->params()->fromQuery('date', ''));
+
+            if (empty($date)) {
+                return new JsonModel(['success' => false, 'message' => 'Thiếu tham số date.']);
+            }
+
+            $reportModel = new Report();
+            $data        = $reportModel->getDataByDate($date);
+
+            return new JsonModel(['success' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            CommonService::loggerException()->error($e->getMessage());
+            return new JsonModel(['success' => false, 'message' => 'Lỗi server.']);
+        }
+    }
+
     public function dataTableServerSideAction()
     {
         try {

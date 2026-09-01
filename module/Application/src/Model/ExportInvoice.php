@@ -71,114 +71,85 @@ class ExportInvoice extends LeagueCsv
         return $pdfGeneratorModel->generate($date, $pdfData);
     }
 
-    public function doAdd($postData)
+    /**
+     * Build nội dung hóa đơn từ POST data.
+     * Dùng chung cho doAdd và doEdit để tránh code clone.
+     *
+     * @return array{content: string, total: float}
+     */
+    private function buildInvoiceContent(array $postData): array
     {
-        $date = $postData['date'] ?? '';
-        $productIdList = $postData['productId'] ?? [];
-        $quantityList = $postData['quantity'] ?? [];
+        $productIdList     = $postData['productId']     ?? [];
+        $quantityList      = $postData['quantity']      ?? [];
         $purchasePriceList = $postData['purchasePrice'] ?? [];
-        $sellingPriceList = $postData['sellingPrice'] ?? [];
-        $productName = $postData['productName'] ?? [];
-        $desc = $postData['desc'] ?? [];
+        $sellingPriceList  = $postData['sellingPrice']  ?? [];
+        $productNameList   = $postData['productName']   ?? [];
+        $descList          = $postData['desc']          ?? [];
 
         $productContent = [];
         $sumTotal = 0;
+
         foreach ($productIdList as $index => $productId) {
             if (empty($productId)) {
                 continue;
             }
-            $quantity = $quantityList[$index] ?? 0;
-            $sellingPrice = $sellingPriceList[$index] ?? 0;
-            $total = $sellingPrice * $quantity;
+            $quantity     = (float) ($quantityList[$index]     ?? 0);
+            $sellingPrice = (float) ($sellingPriceList[$index] ?? 0);
+            $total        = $sellingPrice * $quantity;
 
             $productContent[] = [
-                'productId' => $productId,
-                'productName' => $productName[$index] ?? '',
-                'desc' => $desc[$index] ?? '',
-                'quantity' => $quantityList[$index] ?? 0,
-                'purchasePrice' => $purchasePriceList[$index] ?? 0,
-                'sellingPrice' => $sellingPriceList[$index] ?? 0,
-                'total' => $total
+                'productId'    => $productId,
+                'productName'  => $productNameList[$index] ?? '',
+                'desc'         => $descList[$index]        ?? '',
+                'quantity'     => $quantity,
+                'purchasePrice'=> (float) ($purchasePriceList[$index] ?? 0),
+                'sellingPrice' => $sellingPrice,
+                'total'        => $total,
             ];
             $sumTotal += $total;
         }
 
         $treatmentContent = [
-            'desc' => $postData['treatmentDesc'] ?? '',
-            'total' => $postData['treatmentTotal'] ?? 0,
+            'desc'  => $postData['treatmentDesc']  ?? '',
+            'total' => (float) ($postData['treatmentTotal'] ?? 0),
         ];
         $spaContent = [
-            'desc' => $postData['spaDesc'] ?? '',
-            'total' => $postData['spaTotal'] ?? 0,
+            'desc'  => $postData['spaDesc']  ?? '',
+            'total' => (float) ($postData['spaTotal'] ?? 0),
         ];
         $sumTotal += $treatmentContent['total'] + $spaContent['total'];
 
-        $this->addRow([
-            'date' => $date,
+        return [
             'content' => json_encode([
-                'product' => $productContent,
-                'spa' => $spaContent,
-                'treatment' => $treatmentContent
+                'product'   => $productContent,
+                'spa'       => $spaContent,
+                'treatment' => $treatmentContent,
             ]),
-            'total' => $sumTotal
-        ]);
+            'total' => $sumTotal,
+        ];
+    }
 
+    public function doAdd($postData)
+    {
+        $built = $this->buildInvoiceContent($postData);
+
+        $this->addRow([
+            'date'    => $postData['date'] ?? '',
+            'content' => $built['content'],
+            'total'   => $built['total'],
+        ]);
     }
 
     public function doEdit($postData)
     {
-        $id = $postData['id'] ?? '';
-        $date = $postData['date'] ?? '';
-        $productIdList = $postData['productId'] ?? [];
-        $quantityList = $postData['quantity'] ?? [];
-        $purchasePriceList = $postData['purchasePrice'] ?? [];
-        $sellingPriceList = $postData['sellingPrice'] ?? [];
-        $productName = $postData['productName'] ?? [];
-        $desc = $postData['desc'] ?? [];
-
-        $productContent = [];
-        $sumTotal = 0;
-        foreach ($productIdList as $index => $productId) {
-            if (empty($productId)) {
-                continue;
-            }
-            $quantity = $quantityList[$index] ?? 0;
-            $sellingPrice = $sellingPriceList[$index] ?? 0;
-            $total = $sellingPrice * $quantity;
-
-            $productContent[] = [
-                'productId' => $productId,
-                'productName' => $productName[$index] ?? '',
-                'desc' => $desc[$index] ?? '',
-                'quantity' => $quantityList[$index] ?? 0,
-                'purchasePrice' => $purchasePriceList[$index] ?? 0,
-                'sellingPrice' => $sellingPriceList[$index] ?? 0,
-                'total' => $total
-            ];
-            $sumTotal += $total;
-        }
-
-        $treatmentContent = [
-            'desc' => $postData['treatmentDesc'] ?? '',
-            'total' => $postData['treatmentTotal'] ?? 0,
-        ];
-        $spaContent = [
-            'desc' => $postData['spaDesc'] ?? '',
-            'total' => $postData['spaTotal'] ?? 0,
-        ];
-        $sumTotal += $treatmentContent['total'] + $spaContent['total'];
+        $built = $this->buildInvoiceContent($postData);
 
         $this->updateRow([
-            'id' => $id,
-            'date' => $date,
-            'content' => json_encode([
-                'product' => $productContent,
-                'spa' => $spaContent,
-                'treatment' => $treatmentContent
-            ]),
-            'total' => $sumTotal
+            'id'      => $postData['id'] ?? '',
+            'date'    => $postData['date'] ?? '',
+            'content' => $built['content'],
+            'total'   => $built['total'],
         ]);
-
     }
 
     public function getDataToView() {
