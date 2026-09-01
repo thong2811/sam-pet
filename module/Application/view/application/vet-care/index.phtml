@@ -3,11 +3,16 @@
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
-<div class="container mt-5">
-    <h1 class="mb-5"> Điều trị - Spa </h1>
+<div class="container mt-4">
+    <h1 class="mb-3"> Điều trị - Spa</h1>
+
     <div class="my-2">
-        <div class="d-flex">
-            <a href="/vet-care/add" class="btn btn-primary"> Thêm mới +</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="/vet-care/add" class="btn btn-primary">+ Thêm mới</a>
+            <div class="input-group w-auto">
+                <button class="btn btn-outline-primary" onclick="editByDate()">✏ Chỉnh sửa theo ngày</button>
+                <input class="form-control date-picker" id="editDate" name="date" autocomplete="off" placeholder="dd-mm-yyyy" style="width:140px"/>
+            </div>
         </div>
     </div>
     <table id="dataTable" class="table table-striped" style="width:100%">
@@ -50,4 +55,12 @@
     });
 
     function remove(id) { removeRow('vet-care', id, table); }
+
+    function editByDate() {
+        const date = $('#editDate').val();
+        if (!date) { alert('Hãy nhập ngày chỉnh sửa!'); return; }
+        // vet-care edit theo id — tìm record của ngày đó và redirect
+        // Hiện tại chưa có route edit-by-date, dùng tìm kiếm trong table
+        table.search(date).draw();
+    }
 </script>

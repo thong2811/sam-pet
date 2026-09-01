@@ -4,8 +4,8 @@
  */
 ?>
 
-<div class="row mt-5">
-    <h1> Chiết hàng </h1>
+<div class="row mt-4">
+    <h1 class="mb-3"> Chiết hàng</h1>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
     <form method="post" action="/product/do-repackage">
         <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\Application\Service\CsrfService::getToken(), ENT_QUOTES, 'UTF-8') ?>">

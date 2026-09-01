@@ -1,0 +1,60 @@
+<?php
+/**
+ * Partial: Sub-navigation bar dùng chung cho tất cả trang.
+ *
+ * Truyền vào:
+ *   $this->subNavLinks  — array của [ 'href' => '...', 'label' => '...', 'type' => 'link'|'action'|'danger' ]
+ *   $this->subNavRight  — array tương tự, hiển thị bên phải (vd: nút Chốt kho, Đồng bộ)
+ *   $currentPath        — string path hiện tại (từ $_SERVER['REQUEST_URI'])
+ *
+ * Ví dụ dùng trong view:
+ *   echo $this->partial('application/layout/sub-nav.phtml', [
+ *       'subNavLinks' => [
+ *           ['href' => '/product',  'label' => '📦 Quản lý kho'],
+ *           ['href' => '/import-stock', 'label' => '📥 Nhập hàng'],
+ *       ],
+ *   ]);
+ */
+
+$links    = $this->subNavLinks ?? [];
+$rightEls = $this->subNavRight  ?? [];
+$current  = '/' . ltrim($_SERVER['REQUEST_URI'] ?? '', '/');
+?>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <?php foreach ($links as $link):
+        $isActive = isset($link['href']) && str_starts_with($current, $link['href']);
+        $type = $link['type'] ?? 'link';
+
+        if ($type === 'danger'):
+        ?>
+            <button class="btn btn-danger btn-sm" <?= $link['onclick'] ?? '' ?>>
+                <?= $link['label'] ?>
+            </button>
+        <?php elseif ($type === 'action'): ?>
+            <button class="btn btn-outline-secondary btn-sm" <?= $link['onclick'] ?? '' ?>>
+                <?= $link['label'] ?>
+            </button>
+        <?php else: ?>
+            <a href="<?= $link['href'] ?>"
+               class="btn btn-sm <?= $isActive ? 'btn-light text-dark fw-bold' : 'btn-outline-light' ?>">
+                <?= $link['label'] ?>
+            </a>
+        <?php endif; ?>
+    <?php endforeach; ?>
+
+    <?php if (!empty($rightEls)): ?>
+        <div class="ms-auto d-flex flex-wrap gap-2">
+            <?php foreach ($rightEls as $el):
+                $type = $el['type'] ?? 'action';
+                if ($type === 'danger'): ?>
+                    <button class="btn btn-danger btn-sm" <?= $el['onclick'] ?? '' ?>>
+                        <?= $el['label'] ?>
+                    </button>
+                <?php else: ?>
+                    <button class="btn btn-success btn-sm" <?= $el['onclick'] ?? '' ?>>
+                        <?= $el['label'] ?>
+                    </button>
+            <?php endif; endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>

@@ -13,19 +13,51 @@ $csrfToken       = CsrfService::getToken();
 // Active nav: lấy path hiện tại để highlight đúng menu item
 $currentPath = '/' . ltrim($_SERVER['REQUEST_URI'] ?? '', '/');
 
-// Map path prefix → route name để detect active
-$navItems = [
-    ['href' => '/product',        'label' => 'Quản lý kho'],
-    ['href' => '/import-stock',   'label' => 'Nhập hàng'],
-    ['href' => '/export-stock',   'label' => 'Xuất hàng'],
-    ['href' => '/vet-care',       'label' => 'Điều trị - Spa'],
-    ['href' => '/expenses',       'label' => 'Quản lý chi'],
-    ['href' => '/report',         'label' => 'Báo cáo thu - chi'],
-    ['href' => '/export-invoice', 'label' => 'Sổ doanh thu'],
-    ['href' => '/owner-pet',      'label' => 'Vật nuôi'],
-    ['href' => '/medical-record', 'label' => 'Khám bệnh'],
-    ['href' => '/settings',       'label' => '⚙ Cài đặt'],
+// Nhóm navbar dropdown — mỗi nhóm gồm label, icon, href prefix để detect active, và danh sách items
+$navGroups = [
+    [
+        'label' => 'Kho hàng',
+        'icon'  => '🏪',
+        'prefixes' => ['/product', '/import-stock', '/export-stock', '/stocktaking'],
+        'items' => [
+            ['href' => '/product',      'label' => 'Quản lý kho'],
+            ['href' => '/import-stock', 'label' => 'Nhập hàng'],
+            ['href' => '/export-stock', 'label' => 'Xuất hàng'],
+            ['href' => '/product/repackage',  'label' => 'Chiết hàng'],
+            ['href' => '/stocktaking',  'label' => 'Kiểm kê'],
+            ['href' => '/product/add-invoice-check',  'label' => 'Trạng thái hóa đơn'],
+        ],
+    ],
+    [
+        'label' => 'Phòng khám',
+        'icon'  => '🏥',
+        'prefixes' => ['/owner-pet', '/medical-record', '/vet-care'],
+        'items' => [
+            ['href' => '/vet-care',        'label' => 'Điều trị - Spa'],
+            ['href' => '/owner-pet',       'label' => 'Vật nuôi'],
+            ['href' => '/medical-record',  'label' => 'Khám bệnh'],
+        ],
+    ],
+    [
+        'label' => 'Tài chính',
+        'icon'  => '📊',
+        'prefixes' => ['/overview', '/report', '/export-invoice', '/expenses'],
+        'items' => [
+            ['href' => '/overview',        'label' => 'Tổng quan'],
+            ['href' => '/expenses',        'label' => 'Quản lý chi'],
+            ['href' => '/report',          'label' => 'Báo cáo thu - chi'],
+            ['href' => '/export-invoice',  'label' => 'Sổ doanh thu'],
+        ],
+    ],
 ];
+
+// Helper: kiểm tra nhóm có active không
+$isGroupActive = function(array $prefixes) use ($currentPath): bool {
+    foreach ($prefixes as $prefix) {
+        if (str_starts_with($currentPath, $prefix)) return true;
+    }
+    return false;
+};
 
 // Tiêu đề trang: ưu tiên headTitle được set bởi view, fallback về STORE_NAME
 $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF-8');
@@ -58,7 +90,7 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
 
         <!-- Scripts -->
         <?= $this->headScript()
-            ->appendFile($this->basePath('js/bootstrap.min.js'))
+            ->appendFile('https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js')
             ->appendFile('https://code.jquery.com/jquery-3.7.1.min.js')
             ->appendFile('https://cdn.datatables.net/2.1.8/js/dataTables.min.js')
             ->appendFile('https://cdn.datatables.net/plug-ins/2.1.8/sorting/date-eu.js')
@@ -109,23 +141,74 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
                 </button>
                 <div class="collapse navbar-collapse" id="navbarMain">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <?php foreach ($navItems as $item):
-                            $isActive = str_starts_with($currentPath, $item['href']);
+                        <?php foreach ($navGroups as $gi => $group):
+                            $groupActive = $isGroupActive($group['prefixes']);
+                            $dropdownId  = 'navDropdown' . $gi;
                         ?>
-                        <li class="nav-item<?= $isActive ? ' active' : '' ?>">
-                            <a class="nav-link<?= $isActive ? ' active' : '' ?>"
-                               href="<?= $item['href'] ?>"
-                               <?= $isActive ? 'aria-current="page"' : '' ?>>
-                                <?= $item['label'] ?>
+                        <li class="nav-item dropdown<?= $groupActive ? ' active' : '' ?>">
+                            <a class="nav-link dropdown-toggle<?= $groupActive ? ' active' : '' ?>"
+                               href="#"
+                               id="<?= $dropdownId ?>"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false">
+                                <?= $group['icon'] ?> <?= $group['label'] ?>
                             </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="<?= $dropdownId ?>">
+                                <?php foreach ($group['items'] as $item):
+                                    $itemActive = str_starts_with($currentPath, $item['href']);
+                                ?>
+                                <li>
+                                    <a class="dropdown-item<?= $itemActive ? ' active' : '' ?>"
+                                       href="<?= $item['href'] ?>"
+                                       <?= $itemActive ? 'aria-current="page"' : '' ?>>
+                                        <?= $item['label'] ?>
+                                    </a>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
                         </li>
                         <?php endforeach; ?>
+
+                        <!-- Cài đặt — item đơn, không dropdown -->
+                        <?php $settingsActive = str_starts_with($currentPath, '/settings'); ?>
+                        <li class="nav-item<?= $settingsActive ? ' active' : '' ?>">
+                            <a class="nav-link<?= $settingsActive ? ' active' : '' ?>"
+                               href="/settings"
+                               <?= $settingsActive ? 'aria-current="page"' : '' ?>>
+                                ⚙ Cài đặt
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
         </nav>
 
         <div class="container main-content">
+            <?php
+            // Auto sub-nav: tìm nhóm hiện tại và render sub-nav tự động
+            // View không cần tự viết sub-nav nữa
+            $activeGroup = null;
+            foreach ($navGroups as $group) {
+                if ($isGroupActive($group['prefixes'])) {
+                    $activeGroup = $group;
+                    break;
+                }
+            }
+            if ($activeGroup):
+            ?>
+            <nav class="sub-nav d-flex flex-wrap gap-2 py-2 px-1 mb-3">
+                <?php foreach ($activeGroup['items'] as $item):
+                    $itemActive = str_starts_with($currentPath, $item['href']);
+                ?>
+                <a href="<?= $item['href'] ?>"
+                   class="btn btn-sm <?= $itemActive ? 'btn-light text-dark fw-bold' : 'btn-outline-light' ?>">
+                    <?= $item['label'] ?>
+                </a>
+                <?php endforeach; ?>
+            </nav>
+            <?php endif; ?>
+
             <?= $this->content ?>
             <hr>
             <footer>

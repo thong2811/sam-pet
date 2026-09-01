@@ -3,6 +3,35 @@
 }
 
 /* =========================================================
+   Sub-navigation bar (tự động render từ layout)
+   ========================================================= */
+
+.sub-nav {
+    background-color: var(--brand-color);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-left: -12px;
+    margin-right: -12px;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+.sub-nav .btn-outline-light {
+    color: rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.3);
+}
+
+.sub-nav .btn-outline-light:hover {
+    background-color: rgba(255,255,255,0.15);
+    color: #fff;
+    border-color: rgba(255,255,255,0.6);
+}
+
+.sub-nav .btn-light {
+    background-color: rgba(255,255,255,0.95);
+    border-color: transparent;
+}
+
+/* =========================================================
    Layout
    ========================================================= */
 
@@ -20,6 +49,28 @@ body {
 
 .navbar {
     background-color: var(--brand-color);
+}
+
+/* Dropdown dark — màu nhất quán với navbar */
+.navbar .dropdown-menu-dark {
+    background-color: #01263f;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.navbar .dropdown-menu-dark .dropdown-item {
+    color: rgba(255,255,255,0.75);
+}
+
+.navbar .dropdown-menu-dark .dropdown-item:hover,
+.navbar .dropdown-menu-dark .dropdown-item:focus {
+    background-color: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.navbar .dropdown-menu-dark .dropdown-item.active {
+    background-color: rgba(255,255,255,0.2);
+    color: #fff;
+    font-weight: bold;
 }
 
 .navbar .nav-link.active,

@@ -3,13 +3,14 @@
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
 ?>
-<div class="container mt-5">
-    <h1 class="mb-5"> Danh sách phiếu doanh thu</h1>
+<div class="container mt-4">
+    <h1 class="mb-3"> Sổ doanh thu</h1>
+
     <div class="my-2">
         <div class="d-flex">
-            <div class="input-group w-50 ms-3">
-                <input class="form-control date-picker" id="date" name="date" autocomplete="off" placeholder="Nhập ngày..." required/>
-                <button class="btn btn-primary" onclick="addByDate()"> Thêm mới </button>
+            <div class="input-group w-auto">
+                <input class="form-control date-picker" id="date" name="date" autocomplete="off" placeholder="Chọn ngày..." style="width:140px"/>
+                <button class="btn btn-primary" onclick="addByDate()">+ Thêm mới</button>
             </div>
         </div>
     </div>
