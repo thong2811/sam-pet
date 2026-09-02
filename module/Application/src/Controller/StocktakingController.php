@@ -55,10 +55,9 @@ class StocktakingController extends AbstractActionController
         $postData    = $request->getPost()->toArray();
         $closedAt    = $postData['closedAt'] ?? date('d-m-Y');
         $note        = $postData['note']     ?? '';
-        $backupDir   = getcwd() . '/data/backup_stocktaking';
 
         try {
-            $this->stocktakingRepo->renewWarehouse($closedAt, $note, $backupDir);
+            $this->stocktakingRepo->renewWarehouse($closedAt, $note);
             $this->flashMessenger()->addSuccessMessage('Chốt kho thành công. Hãy kiểm tra lại kho hàng.');
             return $this->redirect()->toUrl('/product');
         } catch (\RuntimeException $e) {

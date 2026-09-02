@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Application\Repository;
 
+use Application\Service\BackupService;
 use Application\Service\CommonService;
 
 /**
@@ -97,7 +98,7 @@ class StocktakingRepository extends BaseRepository
     /**
      * renewWarehouse — Thiết kế mới 5.8a:
      *
-     * 1. Backup DB (VACUUM INTO)
+     * 1. Backup DB qua BackupService::createLocalBackup('stocktaking')
      * 2. Validate tất cả sản phẩm đã có số kiểm kê
      * 3. Tạo stocktaking_period + period_items (lưu actualStock)
      * 4. Cập nhật products.initStock = actualStock, repackageStock = 0
@@ -106,31 +107,23 @@ class StocktakingRepository extends BaseRepository
      *
      * Toàn bộ bước 3-6 trong 1 transaction — rollback tự động nếu lỗi.
      *
-     * @param string $closedAtDate  Ngày chốt kho dd-mm-yyyy
-     * @param string $note          Ghi chú chốt kho
-     * @param string $backupDir     Thư mục lưu file backup .db
      * @throws \RuntimeException nếu có lỗi nghiêm trọng
      */
     public function renewWarehouse(
         string $closedAtDate,
-        string $note = '',
-        string $backupDir = ''
+        string $note = ''
     ): void {
         $logger = CommonService::logger();
 
         // ── Bước 1: Backup DB trước khi thay đổi bất cứ điều gì ──────
-        if (!empty($backupDir)) {
-            $backupPath = rtrim($backupDir, '/\\')
-                . DIRECTORY_SEPARATOR
-                . 'backup_' . date('Ymd_His') . '.db';
-            try {
-                $this->db->vacuumInto($backupPath);
-                $logger->info("renewWarehouse: Backup thành công → $backupPath");
-            } catch (\Throwable $e) {
-                throw new \RuntimeException(
-                    'renewWarehouse: Backup thất bại — hủy chốt kho. ' . $e->getMessage()
-                );
-            }
+        try {
+            $backupService = new BackupService();
+            $backupPath    = $backupService->createLocalBackup('stocktaking', 10);
+            $logger->info("renewWarehouse: Backup thành công → $backupPath");
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(
+                'renewWarehouse: Backup thất bại — hủy chốt kho. ' . $e->getMessage()
+            );
         }
 
         // ── Bước 2: Validate tất cả sản phẩm đã có số kiểm kê ────────

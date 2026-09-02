@@ -7,14 +7,12 @@ namespace Application\Service;
 use Application\Database\Database;
 
 /**
- * BackupService v2 — backup/restore file app.db thay vì ZIP CSV.
+ * BackupService v2 — backup/restore file app.db.
  *
- * Thay đổi so với v1:
- *  - Asset GitHub: backup.db (thay vì backup.zip)
- *  - backup(): dùng Database::vacuumInto() tạo bản sao nhất quán
- *  - restore(): download backup.db, replace app.db
- *  - backupForStocktaking(): vacuumInto() vào data/backup_stocktaking/
- *  - Không còn ZipArchive dependency
+ * Tất cả backup local gom về 1 thư mục `data/backups/`:
+ *   data/backups/auto/        ← sau doAdd/doEdit report (giữ 7 bản)
+ *   data/backups/stocktaking/ ← trước mỗi lần chốt kho (giữ 10 bản)
+ *   data/backups/github/      ← file tạm trước khi upload GitHub Releases
  */
 class BackupService
 {
@@ -22,13 +20,18 @@ class BackupService
     private const GITHUB_API    = 'https://api.github.com';
     private const GITHUB_UPLOAD = 'https://uploads.github.com';
 
+    // Số bản backup tối đa giữ lại cho mỗi loại
+    private const KEEP_AUTO        = 7;
+    private const KEEP_STOCKTAKING = 10;
+
     private string $token;
     private string $owner;
     private string $repo;
     private string $releaseTag;
     private string $dataDir;
     private string $dbPath;
-    private string $cachePath;   // temp file for upload/download
+    private string $backupsDir;  // data/backups/
+    private string $cachePath;   // file tạm cho GitHub upload/download
 
     public function __construct()
     {
@@ -38,13 +41,14 @@ class BackupService
         $env              = strtolower((string) ($_ENV['APP_ENV'] ?? 'dev'));
         $this->releaseTag = 'data-backup-' . ($env === 'prod' ? 'prod' : 'dev');
 
-        $this->dataDir   = rtrim(
+        $this->dataDir    = rtrim(
             realpath(__DIR__ . '/../../../../data') ?: __DIR__ . '/../../../../data',
             '/\\'
         );
-        $this->dbPath    = $this->dataDir . DIRECTORY_SEPARATOR . 'app.db';
-        $this->cachePath = $this->dataDir . DIRECTORY_SEPARATOR . 'cache'
-                         . DIRECTORY_SEPARATOR . self::ASSET_NAME;
+        $this->dbPath     = $this->dataDir . DIRECTORY_SEPARATOR . 'app.db';
+        $this->backupsDir = $this->dataDir . DIRECTORY_SEPARATOR . 'backups';
+        $this->cachePath  = $this->backupsDir . DIRECTORY_SEPARATOR . 'github'
+                          . DIRECTORY_SEPARATOR . self::ASSET_NAME;
     }
 
     // -------------------------------------------------------------------------
@@ -52,15 +56,51 @@ class BackupService
     // -------------------------------------------------------------------------
 
     /**
-     * Tạo bản sao app.db (VACUUM INTO) rồi upload lên GitHub Releases.
-     * Được gọi sau response trả về client — không block UX.
-     * Lỗi chỉ ghi log, không throw.
+     * Tạo bản backup local vào data/backups/{subDir}/YYYY-MM-DD_HHiiss.db
+     * rồi tự xóa các file cũ vượt giới hạn $keepCount.
+     *
+     * @param  string $subDir     'auto' | 'stocktaking'
+     * @param  int    $keepCount  Số bản tối đa giữ lại
+     * @return string             Đường dẫn file backup vừa tạo
+     * @throws \RuntimeException  Nếu VACUUM INTO thất bại
+     */
+    public function createLocalBackup(string $subDir, int $keepCount): string
+    {
+        $dir  = $this->backupsDir . DIRECTORY_SEPARATOR . $subDir;
+        $path = $dir . DIRECTORY_SEPARATOR . date('Y-m-d_His') . '.db';
+
+        $this->ensureDir($dir);
+
+        if (!file_exists($this->dbPath)) {
+            throw new \RuntimeException('Không tìm thấy app.db tại: ' . $this->dbPath);
+        }
+
+        $db = new Database($this->dbPath);
+        $db->vacuumInto($path);
+
+        $this->pruneOldBackups($dir, $keepCount);
+
+        return $path;
+    }
+
+    /**
+     * Tạo backup local (auto) rồi upload lên GitHub Releases.
+     * Được gọi sau response — không block UX. Lỗi chỉ ghi log.
      */
     public function backup(): void
     {
         try {
             $this->validateConfig();
-            $this->createDbBackup($this->cachePath);
+
+            // 1. Tạo local backup (auto, giữ 7 bản)
+            $this->createLocalBackup('auto', self::KEEP_AUTO);
+
+            // 2. Tạo file tạm cho GitHub upload
+            $this->ensureDir(dirname($this->cachePath));
+            $db = new Database($this->dbPath);
+            $db->vacuumInto($this->cachePath);
+
+            // 3. Upload GitHub Releases
             $this->uploadToGithub();
 
             CommonService::logger($this->logPath())->info(
@@ -88,21 +128,18 @@ class BackupService
     {
         $downloadUrl = $this->getAssetDownloadUrl();
 
-        $restorePath = $this->dataDir . DIRECTORY_SEPARATOR . 'cache'
+        $restorePath = $this->backupsDir . DIRECTORY_SEPARATOR . 'github'
                      . DIRECTORY_SEPARATOR . 'backup_restore.db';
 
         $this->ensureDir(dirname($restorePath));
         $this->downloadFile($downloadUrl, $restorePath);
 
-        // Kiểm tra file tải về có phải SQLite hợp lệ
         if (!$this->isValidSqlite($restorePath)) {
             @unlink($restorePath);
             throw new \RuntimeException('File backup.db tải về không phải SQLite hợp lệ.');
         }
 
-        // Atomically replace app.db
         if (!rename($restorePath, $this->dbPath)) {
-            // Fallback nếu rename cross-device
             if (!copy($restorePath, $this->dbPath)) {
                 throw new \RuntimeException('Không thể thay thế app.db bằng file backup.');
             }
@@ -116,24 +153,45 @@ class BackupService
     }
 
     /**
-     * Backup trước khi chốt kho — lưu local, không upload GitHub.
-     * Được gọi từ StocktakingRepository::renewWarehouse().
+     * Backup local mỗi ngày — gọi khi app khởi động.
+     * Nếu hôm nay đã có backup rồi thì bỏ qua.
+     * Giữ tối đa 30 ngày gần nhất, tự xóa cũ.
+     * Lỗi chỉ ghi log, không throw — không được làm crash app.
+     */
+    public function backupDaily(): void
+    {
+        try {
+            $dir     = $this->backupsDir . DIRECTORY_SEPARATOR . 'auto';
+            $todayPrefix = date('Y-m-d');
+
+            // Đã có backup hôm nay → bỏ qua
+            if (!empty(glob($dir . DIRECTORY_SEPARATOR . $todayPrefix . '*.db'))) {
+                return;
+            }
+
+            $this->createLocalBackup('auto', 30);
+
+            CommonService::logger($this->logPath())->info(
+                'Daily backup thành công',
+                ['dir' => $dir]
+            );
+        } catch (\Throwable $e) {
+            CommonService::logger($this->logPath())->error(
+                'Daily backup thất bại: ' . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Giữ tối đa KEEP_STOCKTAKING bản gần nhất.
      *
-     * @deprecated Inject Database trực tiếp và dùng Database::vacuumInto()
-     *             StocktakingRepository tự gọi db->vacuumInto() nên method này
-     *             còn giữ cho backward compat với CommonService::backupDataToStocktaking()
+     * @deprecated Dùng createLocalBackup('stocktaking', self::KEEP_STOCKTAKING) trực tiếp.
+     *             Giữ lại cho backward compat với CommonService::backupDataToStocktaking()
      */
     public function backupForStocktaking(): bool
     {
         try {
-            $backupDir = $this->dataDir . DIRECTORY_SEPARATOR . 'backup_stocktaking';
-            $this->ensureDir($backupDir);
-
-            $backupPath = $backupDir . DIRECTORY_SEPARATOR
-                        . 'backup_' . date('Ymd_His') . '.db';
-
-            $db = new Database($this->dbPath);
-            $db->vacuumInto($backupPath);
+            $this->createLocalBackup('stocktaking', self::KEEP_STOCKTAKING);
             return true;
         } catch (\Throwable $e) {
             CommonService::logger($this->logPath())->error(
@@ -143,24 +201,35 @@ class BackupService
         }
     }
 
-    // -------------------------------------------------------------------------
-    // DB backup helpers
-    // -------------------------------------------------------------------------
-
     /**
-     * Tạo bản sao DB nhất quán bằng VACUUM INTO.
-     * Đảm bảo file đích là snapshot hoàn chỉnh dù đang có writes.
+     * Liệt kê các file backup local theo loại.
+     *
+     * @param  string $subDir  'auto' | 'stocktaking'
+     * @return array[]  [['file' => basename, 'path' => fullpath, 'size' => bytes, 'time' => timestamp]]
      */
-    private function createDbBackup(string $destPath): void
+    public function listLocalBackups(string $subDir): array
     {
-        $this->ensureDir(dirname($destPath));
-
-        if (!file_exists($this->dbPath)) {
-            throw new \RuntimeException('Không tìm thấy app.db tại: ' . $this->dbPath);
+        $dir = $this->backupsDir . DIRECTORY_SEPARATOR . $subDir;
+        if (!is_dir($dir)) {
+            return [];
         }
 
-        $db = new Database($this->dbPath);
-        $db->vacuumInto($destPath);
+        $files = glob($dir . DIRECTORY_SEPARATOR . '*.db');
+        if (!$files) {
+            return [];
+        }
+
+        // Sắp xếp mới nhất lên đầu
+        rsort($files);
+
+        return array_map(function (string $path): array {
+            return [
+                'file' => basename($path),
+                'path' => $path,
+                'size' => filesize($path),
+                'time' => filemtime($path),
+            ];
+        }, $files);
     }
 
     /**
@@ -362,6 +431,25 @@ class BackupService
     {
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
+        }
+    }
+
+    /**
+     * Xóa các file .db cũ trong thư mục, chỉ giữ lại $keepCount file mới nhất.
+     */
+    private function pruneOldBackups(string $dir, int $keepCount): void
+    {
+        $files = glob($dir . DIRECTORY_SEPARATOR . '*.db');
+        if (!$files || count($files) <= $keepCount) {
+            return;
+        }
+
+        // Sắp xếp tên file — format YYYY-MM-DD_HHiiss.db nên sort alpha = sort time
+        rsort($files);
+
+        $toDelete = array_slice($files, $keepCount);
+        foreach ($toDelete as $file) {
+            @unlink($file);
         }
     }
 
