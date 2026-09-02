@@ -139,6 +139,7 @@ function validateModalForm(modalId)
 function clearModalForm(modalId)
 {
     const form = $(modalId).find('form')[0];
+    if (!form) return;
     form.classList.remove('was-validated');
     form.reset();
 }
