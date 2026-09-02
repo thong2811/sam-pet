@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
+    libsqlite3-dev \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install -y \
         intl \
         pdo \
         pdo_mysql \
+        pdo_sqlite \
         zip \
         gd \
     && apt-get clean \

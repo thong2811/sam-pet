@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
-use Application\Model\Product;
-use Application\Model\RepackageHistory;
+use Application\Repository\ProductRepository;
+use Application\Repository\RepackageHistoryRepository;
 use Application\Service\CommonService;
+use Application\Service\CsrfService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
 class ProductController extends AbstractActionController
 {
+    private ProductRepository         $productRepo;
+    private RepackageHistoryRepository $historyRepo;
+
+    public function __construct(ProductRepository $productRepo, RepackageHistoryRepository $historyRepo)
+    {
+        $this->productRepo = $productRepo;
+        $this->historyRepo = $historyRepo;
+    }
+
     public function indexAction()
     {
         return new ViewModel();
@@ -26,136 +36,82 @@ class ProductController extends AbstractActionController
     public function doAddAction()
     {
         try {
-            $request = $this->getRequest();
-            $postData = $request->getPost()->toArray();
-
-            $product = new Product();
-            $product->doAdd($postData);
-
-            return new JsonModel([
-                'success' => true,
-                'message' => 'Thêm mới thành công!',
-            ]);
-        } catch (\RuntimeException $e) {
-            return new JsonModel([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+            $postData = $this->getRequest()->getPost()->toArray();
+            $this->productRepo->doAdd($postData);
+            return new JsonModel(['success' => true, 'message' => 'Thêm mới thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
     public function editAction()
     {
         $id = $this->params()->fromRoute('id', null);
-
         if (is_null($id)) {
-            $this->redirect()->toRoute('product', ['action' => 'index']);
+            return $this->redirect()->toRoute('product', ['action' => 'index']);
         }
-
-        $productModel = new Product();
-        $productData = $productModel->getDataById($id);
-
+        $productData = $this->productRepo->getDataById($id);
         return new ViewModel(['productData' => $productData]);
     }
 
     public function doEditAction()
     {
         try {
-            $request = $this->getRequest();
-            $postData = $request->getPost()->toArray();
-
-            $product = new Product();
-            $product->doEdit($postData);
-
-            return new JsonModel([
-                'success' => true,
-                'message' => 'Cập nhật thành công!',
-            ]);
-        } catch (\RuntimeException $e) {
-            return new JsonModel([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+            $postData = $this->getRequest()->getPost()->toArray();
+            $this->productRepo->doEdit($postData);
+            return new JsonModel(['success' => true, 'message' => 'Cập nhật thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
     public function doDeleteAction()
     {
         try {
-            $request = $this->getRequest();
-            $body = $request->getContent();
-            $data = json_decode($body, true);
-
+            $data = json_decode($this->getRequest()->getContent(), true);
             if (!isset($data['id'])) {
-                return new JsonModel([
-                    'success' => false,
-                    'message' => 'ID không được cung cấp.',
-                ]);
+                return new JsonModel(['success' => false, 'message' => 'ID không được cung cấp.']);
             }
-
-            $id = $data['id'];
-            $product = new Product();
-            $product->deleteRow($id);
-
-            return new JsonModel([
-                'success' => true,
-                'message' => 'Xóa thành công!',
-            ]);
-        } catch (\RuntimeException $e) {
-            return new JsonModel([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+            $this->productRepo->remove($data['id']);
+            return new JsonModel(['success' => true, 'message' => 'Xóa thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
     public function dataTableServerSideAction()
     {
         try {
-            $request = $this->getRequest();
-            $postData = $request->getPost();
-
-            $productModel = new Product();
-            list($totals, $data) = $productModel->getDataToView();
-
+            $postData = $this->getRequest()->getPost();
+            [$totals, $data] = $this->productRepo->getDataToView();
             $response = CommonService::dataTableServerSideProcessing($postData, $data);
             return new JsonModel(array_merge($totals, $response));
-
-        } catch (\RuntimeException $e) {
-            return new JsonModel([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-    public function repackageAction() {
-        $productModel = new Product();
-        list($totals, $productList) = $productModel->getDataToView();
-
-        $repackageHistoryModel = new RepackageHistory();
-        $repackageHistoryList = $repackageHistoryModel->getDataToView(20);
-
+    public function repackageAction()
+    {
+        [$totals, $productList] = $this->productRepo->getDataToView();
+        $repackageHistoryList   = $this->historyRepo->getDataToView(20);
         return new ViewModel(['productList' => $productList, 'repackageHistoryList' => $repackageHistoryList]);
     }
 
-    public function doRepackageAction() {
+    public function doRepackageAction()
+    {
         $request  = $this->getRequest();
         $postData = $request->getPost()->toArray();
 
-        // Validate CSRF
         try {
-            \Application\Service\CsrfService::validateOrFail(
-                \Application\Service\CsrfService::getTokenFromRequest($request)
-            );
+            CsrfService::validateOrFail(CsrfService::getTokenFromRequest($request));
         } catch (\RuntimeException $e) {
             $this->flashMessenger()->addErrorMessage($e->getMessage());
             return $this->redirect()->toUrl('/product/repackage');
         }
 
         try {
-            $productModel = new Product();
-            $productModel->doRepackage($postData);
+            $this->productRepo->doRepackage($postData, $this->historyRepo);
             $this->flashMessenger()->addSuccessMessage('Chiết hàng thành công.');
         } catch (\Exception $e) {
             $this->flashMessenger()->addErrorMessage($e->getMessage());
@@ -166,21 +122,15 @@ class ProductController extends AbstractActionController
 
     public function addInvoiceCheckAction()
     {
-        $productModel = new Product();
-        list($totals, $productList) = $productModel->getDataToView();
+        [$totals, $productList] = $this->productRepo->getDataToView();
         CommonService::sortDataByVietnamese($productList, 'name');
-
         return new ViewModel(['productList' => $productList]);
     }
 
     public function doAddInvoiceCheckAction()
     {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
-
-        $productModel = new Product();
-        $productModel->doAddInvoiceCheck($postData);
-
+        $postData = $this->getRequest()->getPost()->toArray();
+        $this->productRepo->doAddInvoiceCheck($postData);
         $this->flashMessenger()->addSuccessMessage('Cập nhật thành công.');
         return $this->redirect()->toUrl('/product/add-invoice-check');
     }

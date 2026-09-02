@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
-use Application\Model\ImportStock;
-use Application\Model\Product;
+use Application\Repository\ImportStockRepository;
+use Application\Repository\ProductRepository;
 use Application\Service\CommonService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
@@ -13,6 +13,15 @@ use Laminas\View\Model\ViewModel;
 
 class ImportStockController extends AbstractActionController
 {
+    private ImportStockRepository $importRepo;
+    private ProductRepository     $productRepo;
+
+    public function __construct(ImportStockRepository $importRepo, ProductRepository $productRepo)
+    {
+        $this->importRepo  = $importRepo;
+        $this->productRepo = $productRepo;
+    }
+
     public function indexAction()
     {
         return new ViewModel();
@@ -20,20 +29,16 @@ class ImportStockController extends AbstractActionController
 
     public function addAction()
     {
-        $productModel = new Product();
-        $productList = $productModel->getData();
+        $productList = $this->productRepo->getData();
         return new ViewModel(['productList' => $productList]);
     }
 
     public function doAddAction()
     {
         try {
-            $request  = $this->getRequest();
-            $postData = $request->getPost()->toArray();
-
-            $importStockModel = new ImportStock();
-            $importStockModel->doAdd($postData);
-
+            $postData        = $this->getRequest()->getPost()->toArray();
+            $productNameList = $this->productRepo->getProductNameList();
+            $this->importRepo->doAdd($postData, $productNameList);
             return new JsonModel(['success' => true, 'message' => 'Thêm thành công!']);
         } catch (\Throwable $e) {
             return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
@@ -42,27 +47,20 @@ class ImportStockController extends AbstractActionController
 
     public function editAction()
     {
-        $date = $this->params()->fromRoute('date', '');
-
-        $importStockModel = new ImportStock();
-        $importStockList = $importStockModel->getDataByKeyTypeDate('date', $date);
-
-        $productModel = new Product();
-        $productList = $productModel->getData();
-
+        $date            = $this->params()->fromRoute('date', '');
+        $importStockList = $this->importRepo->getDataByDate($date);
+        $productList     = $this->productRepo->getData();
         return new ViewModel(['date' => $date, 'importStockList' => $importStockList, 'productList' => $productList]);
     }
 
     public function doEditAction()
     {
         try {
-            $request  = $this->getRequest();
-            $postData = $request->getPost()->toArray();
+            $postData        = $this->getRequest()->getPost()->toArray();
+            $productNameList = $this->productRepo->getProductNameList();
+            $this->importRepo->doEdit($postData, $productNameList);
 
-            $importStockModel = new ImportStock();
-            $importStockModel->doEdit($postData);
-
-            $date = $postData['date'][0] ?? '';
+            $date        = $postData['date'][0] ?? '';
             $redirectUrl = !empty($date)
                 ? $this->url()->fromRoute('importStock', ['action' => 'edit', 'date' => $date])
                 : $this->url()->fromRoute('importStock');
@@ -76,50 +74,26 @@ class ImportStockController extends AbstractActionController
     public function doDeleteAction()
     {
         try {
-            $request = $this->getRequest();
-            $body = $request->getContent();
-            $data = json_decode($body, true);
-
+            $data = json_decode($this->getRequest()->getContent(), true);
             if (!isset($data['id'])) {
-                return new JsonModel([
-                    'success' => false,
-                    'message' => 'ID không được cung cấp.',
-                ]);
+                return new JsonModel(['success' => false, 'message' => 'ID không được cung cấp.']);
             }
-
-            $id = $data['id'];
-            $importStockModel = new ImportStock();
-            $importStockModel->deleteRow($id);
-
-            return new JsonModel([
-                'success' => true,
-                'message' => 'Xóa thành công!',
-            ]);
-        } catch (\RuntimeException $e) {
-            return new JsonModel([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+            $this->importRepo->remove($data['id']);
+            return new JsonModel(['success' => true, 'message' => 'Xóa thành công!']);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
     public function dataTableServerSideAction()
     {
         try {
-            $request = $this->getRequest();
-            $postData = $request->getPost();
-
-            $importStockModel = new ImportStock();
-            $data = $importStockModel->getDataToView();
-
+            $postData = $this->getRequest()->getPost();
+            $data     = $this->importRepo->getDataToView();
             $response = CommonService::dataTableServerSideProcessing($postData, $data);
             return new JsonModel($response);
-
-        } catch (\RuntimeException $e) {
-            return new JsonModel([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+        } catch (\Throwable $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

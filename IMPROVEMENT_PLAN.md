@@ -1,6 +1,6 @@
 # Sam Pet — Kế hoạch cải thiện
 
-> Cập nhật lần cuối: 2026-09-01 (Nhóm 1 ✅ | Nhóm 2 ✅ | Nhóm 3 ✅ | Nhóm 4 ✅ | Nhóm 5 ⬜ tạm dừng | Nhóm 6 ⬜ category)
+> Cập nhật lần cuối: 2026-09-01 (Nhóm 1 ✅ | Nhóm 2 ✅ | Nhóm 3 ✅ | Nhóm 4 ✅ | Nhóm 5 🔄 Sprint 3 xong | Nhóm 6 ⬜ category)
 > Nguyên tắc: chỉnh từng nhóm nhỏ, kiểm tra kỹ trước khi sang nhóm tiếp theo.
 > Trạng thái: ⬜ Chưa làm · 🔄 Đang làm · ✅ Hoàn thành · ⏸ Tạm bỏ
 
@@ -65,29 +65,30 @@
 
 ---
 
-## Nhóm 5 — Database ⏸ TẠM DỪNG (làm sau)
+## Nhóm 5 — Database 🔄 ĐANG LÀM (branch `feature/sqlite-migration`)
 
-> Nhóm này là thay đổi lớn nhất — nên làm trên branch riêng `feature/sqlite-migration`.
-> Tham chiếu kỹ thuật: `.kiro/specs/sam-pet-v2-optimized/requirements.md`
+> Sprint 1 + 2 hoàn thành 2026-09-01. Sprint 3 tiếp theo: Repository layer thay thế từng Model.
+> Tham chiếu kỹ thuật: `.kiro/specs/sam-pet-v2-optimized/requirements.md` *(lỗi thời — ưu tiên plan này)*
 
-| # | Hạng mục | Trạng thái | Tham chiếu spec v2 |
-|---|----------|-----------|-------------------|
-| 5.1 | Thiết kế SQLite schema đầy đủ (11 bảng theo spec v2 + bổ sung bên dưới) | ⬜ | Yêu cầu 15, Section 6 design.md |
-| 5.2 | Tạo class `Database` với PDO, WAL mode, transaction support | ⬜ | Yêu cầu 15 |
-| 5.3 | Viết migration script `bin/migrate-csv-to-sqlite.php` | ⬜ | Yêu cầu 16 |
-| 5.4 | Chuyển `Product` sang Repository + SQLite (tính `remainStock` bằng SQL JOIN) | ⬜ | Yêu cầu 1, 2 |
-| 5.5 | Chuyển `ImportStock` và `ExportStock` sang SQLite | ⬜ | Yêu cầu 3, 4 |
-| 5.6 | Chuyển `VetCare`, `Expenses`, `Report` sang SQLite | ⬜ | Yêu cầu 7, 8, 9 |
-| 5.7 | Chuyển `ExportInvoice`, `OwnerPet`, `MedicalRecord` sang SQLite | ⬜ | Yêu cầu 10, 12, 13 |
-| 5.8 | Chuyển `Stocktaking`, `RepackageHistory` sang SQLite | ⬜ | Yêu cầu 6 |
-| 5.9 | Cập nhật `BackupService`: backup file `.db` thay vì ZIP CSV | ⬜ | Yêu cầu 14 |
-| 5.10 | Thêm DateRangeFilter vào DataTable cho các bảng chính | ⬜ | Yêu cầu 17 |
-| 5.11 | Dashboard lazy load chart qua AJAX thay vì nhúng data vào HTML | ⬜ | Yêu cầu 18 |
-| 5.12 | Stocktaking: thay `prompt()` bằng Bootstrap Modal có xác nhận (StocktakingModal) | ⬜ | Yêu cầu 6 |
-| 5.13 | Thêm bảng `categories` + field `categoryId` vào `products` (FK, nullable) | ⬜ | Xem Nhóm 6 — làm cùng lúc để tránh migrate 2 lần |
-| 5.14 | Thêm bảng `customers` + field `customerId` nullable vào `export_stock` | ⬜ | Phục vụ lịch sử mua hàng, công nợ sau này |
-| 5.15 | Chuẩn hoá `repackage_history`: bỏ field `content` text thuần, thêm `fromProductId`, `toProductId`, `fromQuantity`, `toQuantity` | ⬜ | Cho phép query báo cáo chiết hàng theo sản phẩm |
-| 5.16 | Thêm indexes cho các field hay query: `date`, `productId` trên import/export stock, `pet_id` trên medical_records, `date` trên vet_care/expenses/reports | ⬜ | Tránh full table scan khi data lớn |
+| # | Hạng mục | Trạng thái | Ghi chú |
+|---|----------|-----------|---------|
+| 5.1 | Thiết kế SQLite schema đầy đủ (15 bảng + indexes) | ✅ | `data/migrations/001_initial_schema.sql` — 15 bảng, 20+ indexes |
+| 5.2 | Tạo class `Database` với PDO, WAL mode, transaction support | ✅ | `module/Application/src/Database/Database.php` + `DatabaseFactory.php` — 9/9 test passed |
+| 5.3 | Viết migration script `bin/migrate-csv-to-sqlite.php` | ✅ | 9131 rows, 0 FK orphan; repackage_history parse content→ cặp from/to; NULL timestamp preserve |
+| 5.4 | Chuyển `Product` sang Repository + SQLite (tính `remainStock` bằng SQL JOIN) | ✅ | `ProductRepository` — SQL JOIN, doRepackage, calcRemainStock |
+| 5.5 | Chuyển `ImportStock` và `ExportStock` sang SQLite | ✅ | `ImportStockRepository`, `ExportStockRepository` — filterNewRows dùng SQL IN |
+| 5.6 | Chuyển `VetCare`, `Expenses`, `Report` sang SQLite | ✅ | `VetCareRepository`, `ExpensesRepository`, `ReportRepository` |
+| 5.7 | Chuyển `ExportInvoice`, `OwnerPet`, `MedicalRecord` sang SQLite | ✅ | `ExportInvoiceRepository`, `OwnerPetRepository`, `MedicalRecordRepository` — getDataToView SQL JOIN |
+| 5.8 | Chuyển `Stocktaking`, `RepackageHistory` sang SQLite | ✅ | `StocktakingRepository`, `RepackageHistoryRepository` |
+| 5.8a | **Redesign logic kiểm kê:** dùng `stocktaking_periods` + `stocktaking_period_items` để giữ lịch sử | ✅ | `renewWarehouse()`: VACUUM INTO backup → validate → period → update initStock → DELETE import/export trong 1 transaction |
+| 5.9 | Cập nhật `BackupService`: backup file `.db` bằng `VACUUM INTO` thay vì ZIP CSV | ✅ | `BackupService` v2: asset `backup.db`, `isValidSqlite()`, `restore()` replace app.db |
+| 5.10 | Thêm DateRangeFilter vào DataTable cho các bảng chính | ⬜ | Sprint 4 |
+| 5.11 | Dashboard lazy load chart qua AJAX thay vì nhúng data vào HTML | ⬜ | Sprint 4 |
+| 5.12 | Stocktaking: thay `prompt()` bằng Bootstrap Modal có xác nhận (StocktakingModal) | ⬜ | Sprint 4 |
+| 5.13 | Thêm bảng `categories` + field `categoryId` vào `products` (FK, nullable) | ✅ | Đã có trong schema migration 001 — implement CRUD Sprint 4 (xem Nhóm 6) |
+| 5.14 | Thêm bảng `customers` + field `customerId` nullable vào `export_stock` | ✅ | Đã có trong schema migration 001 |
+| 5.15 | Chuẩn hoá `repackage_history`: `fromProductId`, `toProductId`, `fromQuantity`, `toQuantity` | ✅ | Đã có trong schema migration 001 (bỏ field `content` text thuần) |
+| 5.16 | Thêm indexes cho các field hay query: `date`, `productId`, `pet_id`... | ✅ | 20+ indexes trong migration 001 — thiết kế ngay từ đầu |
 
 ---
 
@@ -98,8 +99,26 @@
 ✅ Nhóm 2 (business logic)          — commit a75ba80
 ✅ Nhóm 3 (tổ chức code)            — commit 040b8e1
 ✅ Nhóm 4 (UI/UX)                   — commit ae91790
-⏸ Nhóm 5 (SQLite migration)        — tạm dừng, làm trên branch riêng
-⬜ Nhóm 6 (Category sản phẩm)      — làm cùng Nhóm 5 để tránh làm 2 lần
+🔄 Nhóm 5 (SQLite migration)        — branch feature/sqlite-migration
+   ✅ Sprint 1: Database layer + Schema (2026-09-01)
+      - 15 bảng, 20+ indexes, WAL mode, migration system
+      - Files: Database.php, DatabaseFactory.php, 001_initial_schema.sql
+      - Dockerfile: thêm pdo_sqlite; composer.json: ext-pdo, ext-pdo_sqlite
+   ✅ Sprint 2: Migration script CSV → SQLite (2026-09-01)
+      - `bin/migrate-csv-to-sqlite.php` — 9131 rows, 0 FK orphan, DB 1928KB
+      - `bin/verify-migration.php` — script xác minh kết quả
+      - Options: `--dry-run` (chỉ đọc báo cáo), `--force` (xóa DB cũ tạo lại)
+      - Edge cases: NULL timestamps giữ nguyên, repackage_history parse content→cặp from/to
+      - 2 rows report.csv duplicate id bị skip đúng (data bẩn trong CSV gốc)
+   ⬜ Sprint 3: Repository layer (thay thế từng Model)
+   ✅ Sprint 3: Repository layer (2026-09-01)
+      - 11 Repository classes thay thế hoàn toàn Model CSV
+      - 11 Controllers cập nhật dùng Repository qua DI
+      - module.config.php: 11 Repository factories + 12 Controller factories
+      - BackupService v2: VACUUM INTO thay ZIP CSV, asset backup.db
+      - Lint: 35/35 PASS | Smoke test: 33/33 PASS | HTTP: 10/10 routes 200
+   ⬜ Sprint 4: Features mới (DateRange, lazy chart, StocktakingModal)
+⬜ Nhóm 6 (Category sản phẩm)      — làm cùng Sprint 4 Nhóm 5
 ```
 
 ---
@@ -128,8 +147,85 @@
 ## Ghi chú nhanh
 
 - Nhóm 1–4 đã hoàn thành trên branch `vet_2.0.0`.
-- Nhóm 5 nên làm trên branch `feature/sqlite-migration` tách từ `vet_2.0.0`.
-- Nhóm 6 (Category) nên làm **cùng Nhóm 5** — khi có SQLite thì có FK thực sự và dùng `GROUP BY categoryId` cho báo cáo breakdown hiệu quả. Nếu cần ngay trước Nhóm 5 thì implement theo pattern CSV.
-- Trước khi bắt đầu Nhóm 5, đọc kỹ `.kiro/specs/sam-pet-v2-optimized/requirements.md`.
-- Task 3.4 (DI cho controllers) hoãn lại — có thể làm song song với Nhóm 5.
-- Task 4.11, 4.12 hoãn lại — làm cùng lúc refactor view trong Nhóm 5.
+- Nhóm 5 đang làm trên branch `feature/sqlite-migration`.
+- **Sprint 1 Nhóm 5 hoàn thành (2026-09-01):**
+  - `data/migrations/001_initial_schema.sql` — 15 bảng, 20+ indexes
+  - `module/Application/src/Database/Database.php` — PDO, WAL, migration system, VACUUM INTO
+  - `module/Application/src/Database/DatabaseFactory.php` — Laminas DI
+  - `module/Application/config/module.config.php` — đăng ký `Database::class`
+  - `docker/php/Dockerfile` — thêm `pdo_sqlite`, `libsqlite3-dev`
+  - `composer.json` — thêm `ext-pdo`, `ext-pdo_sqlite`
+  - `bin/test-database.php` — 9/9 test PASSED
+- **Quyết định thiết kế đã chốt:**
+  - ID dùng TEXT (uniqid hex) — tương thích CSV, không cần map FK khi migrate
+  - Stocktaking theo thiết kế 5.8a — giữ lịch sử qua `stocktaking_periods`
+  - `repackage_history` chuẩn hoá theo 5.15 (`fromProductId`, `toProductId`, `fromQuantity`, `toQuantity`)
+  - `categories` và `customers` đã có trong schema từ đầu
+- **Sprint 3 Nhóm 5 hoàn thành (2026-09-01):**
+  - 11 Repository classes (`module/Application/src/Repository/`) thay thế hoàn toàn Model CSV
+  - `ProductRepository`: remainStock tính bằng SQL JOIN, không load toàn bộ CSV vào memory
+  - `ExportStockRepository`: filterNewRows dùng SQL IN, importFromSheets filter lần 2 trong transaction
+  - `ReportRepository`: getDataByDate dùng SQL aggregate trực tiếp, getDataToViewChart sort bằng SUBSTR
+  - `MedicalRecordRepository`: getDataToView JOIN với owners_pets
+  - `StocktakingRepository`: renewWarehouse (5.8a) — VACUUM INTO backup → period → DELETE history
+  - 11 Controllers cập nhật DI (constructor injection), `module.config.php` đầy đủ factories
+  - `BackupService` v2: backup/restore `.db` thay ZIP CSV, VACUUM INTO, isValidSqlite validation
+  - Lint: **35/35 PASS** | Smoke test: **33/33 PASS** | HTTP: **10/10 routes 200**
+- Sprint 4 tiếp theo: DateRangeFilter, lazy chart, StocktakingModal, Category CRUD (Nhóm 6)
+- Nhóm 6 (Category) sẽ làm trong Sprint 4 — schema (`categories`, `products.categoryId`) đã sẵn sàng.
+- Task 3.4 (DI cho controllers) hoãn lại — làm song song Sprint 3.
+- Task 4.11, 4.12 hoãn lại — làm cùng lúc refactor view trong Sprint 3/4.
+
+---
+
+## Thiết kế lại logic kiểm kê kho (task 5.8a) — Chi tiết
+
+### Vấn đề hiện tại
+
+Sau khi chốt kho (`renewWarehouse`), hệ thống **xóa toàn bộ** `import_stock` và `export_stock` rồi set lại `initStock`. Điều này gây mất lịch sử nhập/xuất — không thể điều tra sai lệch, kiểm tra gian lận, hay đối soát về sau.
+
+### Thiết kế mới — Stocktaking Periods
+
+Thay vì xóa lịch sử, đánh dấu **mốc kiểm kê** bằng bảng `stocktaking_periods`:
+
+```sql
+stocktaking_periods (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    closedAt    TEXT,          -- ngày chốt kho dd-mm-yyyy
+    note        TEXT,
+    createdAt   INTEGER,
+    updatedAt   INTEGER
+)
+
+stocktaking_period_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    periodId    INTEGER FK → stocktaking_periods.id,
+    productId   INTEGER FK → products.id,
+    actualStock REAL,          -- số lượng đếm thực tế khi kiểm kê
+    createdAt   INTEGER,
+    updatedAt   INTEGER
+)
+```
+
+### Công thức tính tồn kho mới
+
+```sql
+-- remainStock tại thời điểm hiện tại:
+remainStock =
+    COALESCE(last_period.actualStock, p.initStock)   -- tồn kho tại mốc kiểm kê gần nhất
+  + COALESCE(import_after_period, 0)                 -- nhập sau mốc đó
+  - COALESCE(export_after_period, 0)                 -- xuất sau mốc đó
+  + p.repackageStock                                 -- chiết hàng (cộng dồn)
+```
+
+Trong đó `last_period` là `stocktaking_period_items` có `periodId` lớn nhất (mốc gần nhất).
+
+### Lợi ích
+
+| | Hiện tại | Thiết kế mới |
+|--|---------|-------------|
+| Lịch sử nhập/xuất | Bị xóa sau chốt kho | **Giữ nguyên vĩnh viễn** |
+| Điều tra sai lệch | Không thể | Có thể query theo period |
+| Chốt kho nhiều lần | Mỗi lần reset từ đầu | Mỗi lần tạo 1 period mới |
+| Rollback kiểm kê | Không thể | Xóa period là rollback |
+| Báo cáo theo kỳ | Không có | Query giữa 2 period IDs |

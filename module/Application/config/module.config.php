@@ -4,9 +4,32 @@ declare(strict_types=1);
 
 namespace Application;
 
+use Application\Controller\ExportInvoiceController;
+use Application\Controller\ExportStockController;
+use Application\Controller\ImportStockController;
+use Application\Controller\MedicalRecordController;
+use Application\Controller\OverviewController;
+use Application\Controller\OwnerPetController;
+use Application\Controller\ProductController;
 use Application\Controller\ReportController;
 use Application\Controller\SettingsController;
+use Application\Controller\StocktakingController;
+use Application\Controller\VetCareController;
+use Application\Controller\ExpensesController;
+use Application\Database\Database;
+use Application\Database\DatabaseFactory;
 use Application\Library\LeagueCsv;
+use Application\Repository\ExportInvoiceRepository;
+use Application\Repository\ExportStockRepository;
+use Application\Repository\ExpensesRepository;
+use Application\Repository\ImportStockRepository;
+use Application\Repository\MedicalRecordRepository;
+use Application\Repository\OwnerPetRepository;
+use Application\Repository\ProductRepository;
+use Application\Repository\RepackageHistoryRepository;
+use Application\Repository\ReportRepository;
+use Application\Repository\StocktakingRepository;
+use Application\Repository\VetCareRepository;
 use Application\Service\BackupService;
 use Application\Service\CommonService;
 use Laminas\Router\Http\Segment;
@@ -61,104 +84,141 @@ function createChildRoute($action, $params = [], $constraints = [])
 }
 
 return [
-    'router'          => [
+    'router' => [
         'routes' => [
-            'default'     => createSegmentRoute(Controller\OverviewController::class, '/'),
-            'overview'    => createSegmentRoute(Controller\OverviewController::class, '/overview', []),
-            'product'     => createSegmentRoute(Controller\ProductController::class, '/product', [
-                'edit'   => createChildRoute('edit', ['id']),
-                'delete' => createChildRoute('delete', ['id'])
+            'default'     => createSegmentRoute(OverviewController::class, '/'),
+            'overview'    => createSegmentRoute(OverviewController::class, '/overview', []),
+            'product'     => createSegmentRoute(ProductController::class, '/product', [
+                'edit'   => createChildRoute('edit',   ['id']),
+                'delete' => createChildRoute('delete', ['id']),
             ]),
-            'stocktaking' => createSegmentRoute(Controller\StocktakingController::class, '/stocktaking', []),
-            'exportStock' => createSegmentRoute(Controller\ExportStockController::class, '/export-stock', [
-                'edit'        => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+            'stocktaking' => createSegmentRoute(StocktakingController::class, '/stocktaking', []),
+            'exportStock' => createSegmentRoute(ExportStockController::class, '/export-stock', [
+                'edit'        => createChildRoute('edit',   ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
                 'delete'      => createChildRoute('delete', ['id']),
                 'syncPreview' => [
                     'type'    => Segment::class,
-                    'options' => [
-                        'route'    => '/sync-preview',
-                        'defaults' => ['action' => 'syncPreview'],
-                    ],
+                    'options' => ['route' => '/sync-preview', 'defaults' => ['action' => 'syncPreview']],
                 ],
-                'doSync'      => [
+                'doSync' => [
                     'type'    => Segment::class,
-                    'options' => [
-                        'route'    => '/do-sync',
-                        'defaults' => ['action' => 'doSync'],
-                    ],
+                    'options' => ['route' => '/do-sync', 'defaults' => ['action' => 'doSync']],
                 ],
             ]),
-            'exportInvoice' => createSegmentRoute(Controller\ExportInvoiceController::class, '/export-invoice', [
-                'add'   => createChildRoute('add', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
-                'edit'   => createChildRoute('edit', ['id']),
-                'pdf'   => createChildRoute('pdf', ['id']),
+            'exportInvoice' => createSegmentRoute(ExportInvoiceController::class, '/export-invoice', [
+                'add'  => createChildRoute('add',  ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'edit' => createChildRoute('edit', ['id']),
+                'pdf'  => createChildRoute('pdf',  ['id']),
             ]),
-            'importStock' => createSegmentRoute(Controller\ImportStockController::class, '/import-stock', [
-                'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
-                'delete' => createChildRoute('delete', ['id'])
+            'importStock' => createSegmentRoute(ImportStockController::class, '/import-stock', [
+                'edit'   => createChildRoute('edit',   ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete' => createChildRoute('delete', ['id']),
             ]),
-            'vetCare'     => createSegmentRoute(Controller\VetCareController::class, '/vet-care', [
-                'edit'   => createChildRoute('edit', ['id']),
-                'delete' => createChildRoute('delete', ['id'])
+            'vetCare'  => createSegmentRoute(VetCareController::class, '/vet-care', [
+                'edit'   => createChildRoute('edit',   ['id']),
+                'delete' => createChildRoute('delete', ['id']),
             ]),
-            'expenses'    => createSegmentRoute(Controller\ExpensesController::class, '/expenses', [
-                'edit'   => createChildRoute('edit', ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
-                'delete' => createChildRoute('delete', ['id'])
+            'expenses' => createSegmentRoute(ExpensesController::class, '/expenses', [
+                'edit'   => createChildRoute('edit',   ['date'], ['date' => '\d{2}-\d{2}-\d{4}']),
+                'delete' => createChildRoute('delete', ['id']),
             ]),
-            'report'      => createSegmentRoute(Controller\ReportController::class, '/report', [
-                'edit'        => createChildRoute('edit', ['id']),
+            'report' => createSegmentRoute(ReportController::class, '/report', [
+                'edit'        => createChildRoute('edit',   ['id']),
                 'delete'      => createChildRoute('delete', ['id']),
                 'dataByDate'  => [
                     'type'    => Segment::class,
-                    'options' => [
-                        'route'    => '/data-by-date',
-                        'defaults' => ['action' => 'dataByDate'],
-                    ],
+                    'options' => ['route' => '/data-by-date', 'defaults' => ['action' => 'dataByDate']],
                 ],
             ]),
             'pdf'      => createSegmentRoute(Controller\PdfController::class, '/pdf', []),
-            'ownerPet' => createSegmentRoute(Controller\OwnerPetController::class, '/owner-pet', [
-                'edit'   => createChildRoute('edit', ['id']),
-                'delete' => createChildRoute('delete', ['id'])
+            'ownerPet' => createSegmentRoute(OwnerPetController::class, '/owner-pet', [
+                'edit'   => createChildRoute('edit',   ['id']),
+                'delete' => createChildRoute('delete', ['id']),
             ]),
-            'medicalRecord' => createSegmentRoute(Controller\MedicalRecordController::class, '/medical-record', [
-                'add'     => createChildRoute('add', ['petId']),
-                'edit'    => createChildRoute('edit', ['id']),
+            'medicalRecord' => createSegmentRoute(MedicalRecordController::class, '/medical-record', [
+                'add'     => createChildRoute('add',     ['petId']),
+                'edit'    => createChildRoute('edit',    ['id']),
                 'history' => createChildRoute('history', ['petId']),
             ]),
-            'settings'      => createSegmentRoute(Controller\SettingsController::class, '/settings', [
+            'settings' => createSegmentRoute(SettingsController::class, '/settings', [
                 'doRestore' => [
                     'type'    => Segment::class,
-                    'options' => [
-                        'route'    => '/do-restore',
-                        'defaults' => ['action' => 'doRestore'],
-                    ],
+                    'options' => ['route' => '/do-restore', 'defaults' => ['action' => 'doRestore']],
                 ],
             ]),
         ],
     ],
-    'controllers'     => [
+
+    'controllers' => [
         'factories' => [
-            Controller\OverviewController::class        => InvokableFactory::class,
-            Controller\ProductController::class         => InvokableFactory::class,
-            Controller\StocktakingController::class     => InvokableFactory::class,
-            Controller\ExportStockController::class     => InvokableFactory::class,
-            Controller\ImportStockController::class     => InvokableFactory::class,
-            Controller\VetCareController::class         => InvokableFactory::class,
-            Controller\ExpensesController::class        => InvokableFactory::class,
-            Controller\ReportController::class          => static function (ContainerInterface $container): ReportController {
-                return new ReportController($container->get(BackupService::class));
+            // ── Controllers with Repository injection ──────────────────────
+            OverviewController::class => static function (ContainerInterface $c): OverviewController {
+                return new OverviewController($c->get(ReportRepository::class));
             },
-            Controller\PdfController::class             => InvokableFactory::class,
-            Controller\ExportInvoiceController::class   => InvokableFactory::class,
-            Controller\OwnerPetController::class        => InvokableFactory::class,
-            Controller\MedicalRecordController::class   => InvokableFactory::class,
-            Controller\SettingsController::class        => static function (ContainerInterface $container): SettingsController {
-                return new SettingsController($container->get(BackupService::class));
+            ProductController::class => static function (ContainerInterface $c): ProductController {
+                return new ProductController(
+                    $c->get(ProductRepository::class),
+                    $c->get(RepackageHistoryRepository::class)
+                );
+            },
+            StocktakingController::class => static function (ContainerInterface $c): StocktakingController {
+                return new StocktakingController(
+                    $c->get(ProductRepository::class),
+                    $c->get(StocktakingRepository::class)
+                );
+            },
+            ImportStockController::class => static function (ContainerInterface $c): ImportStockController {
+                return new ImportStockController(
+                    $c->get(ImportStockRepository::class),
+                    $c->get(ProductRepository::class)
+                );
+            },
+            ExportStockController::class => static function (ContainerInterface $c): ExportStockController {
+                return new ExportStockController(
+                    $c->get(ExportStockRepository::class),
+                    $c->get(ProductRepository::class)
+                );
+            },
+            VetCareController::class => static function (ContainerInterface $c): VetCareController {
+                return new VetCareController($c->get(VetCareRepository::class));
+            },
+            ExpensesController::class => static function (ContainerInterface $c): ExpensesController {
+                return new ExpensesController($c->get(ExpensesRepository::class));
+            },
+            ReportController::class => static function (ContainerInterface $c): ReportController {
+                return new ReportController(
+                    $c->get(ReportRepository::class),
+                    $c->get(ExportStockRepository::class),
+                    $c->get(VetCareRepository::class),
+                    $c->get(ExpensesRepository::class),
+                    $c->get(BackupService::class)
+                );
+            },
+            ExportInvoiceController::class => static function (ContainerInterface $c): ExportInvoiceController {
+                return new ExportInvoiceController(
+                    $c->get(ExportInvoiceRepository::class),
+                    $c->get(ExportStockRepository::class),
+                    $c->get(ProductRepository::class)
+                );
+            },
+            OwnerPetController::class => static function (ContainerInterface $c): OwnerPetController {
+                return new OwnerPetController($c->get(OwnerPetRepository::class));
+            },
+            MedicalRecordController::class => static function (ContainerInterface $c): MedicalRecordController {
+                return new MedicalRecordController(
+                    $c->get(MedicalRecordRepository::class),
+                    $c->get(OwnerPetRepository::class)
+                );
+            },
+            // ── Controllers unchanged (InvokableFactory still works) ───────
+            Controller\PdfController::class => InvokableFactory::class,
+            SettingsController::class => static function (ContainerInterface $c): SettingsController {
+                return new SettingsController($c->get(BackupService::class));
             },
         ],
     ],
-    'view_manager'    => [
+
+    'view_manager' => [
         'display_not_found_reason' => true,
         'display_exceptions'       => true,
         'doctype'                  => 'HTML5',
@@ -170,29 +230,66 @@ return [
             'error/404'               => __DIR__ . '/../view/error/404.phtml',
             'error/index'             => __DIR__ . '/../view/error/index.phtml',
         ],
-        'template_path_stack'      => [
+        'template_path_stack' => [
             __DIR__ . '/../view',
         ],
-        'strategies'               => ['ViewJsonStrategy']
+        'strategies' => ['ViewJsonStrategy'],
     ],
 
-// Service
+    // ── Services ────────────────────────────────────────────────────────────
     'service_manager' => [
         'factories' => [
-            LeagueCsv::class    => InvokableFactory::class,
+            // Infrastructure
+            LeagueCsv::class     => InvokableFactory::class,
             CommonService::class => InvokableFactory::class,
             BackupService::class => InvokableFactory::class,
-        ]
+            Database::class      => DatabaseFactory::class,
+
+            // Repositories — all receive Database via DI
+            ProductRepository::class => static function (ContainerInterface $c): ProductRepository {
+                return new ProductRepository($c->get(Database::class));
+            },
+            ImportStockRepository::class => static function (ContainerInterface $c): ImportStockRepository {
+                return new ImportStockRepository($c->get(Database::class));
+            },
+            ExportStockRepository::class => static function (ContainerInterface $c): ExportStockRepository {
+                return new ExportStockRepository($c->get(Database::class));
+            },
+            VetCareRepository::class => static function (ContainerInterface $c): VetCareRepository {
+                return new VetCareRepository($c->get(Database::class));
+            },
+            ExpensesRepository::class => static function (ContainerInterface $c): ExpensesRepository {
+                return new ExpensesRepository($c->get(Database::class));
+            },
+            ReportRepository::class => static function (ContainerInterface $c): ReportRepository {
+                return new ReportRepository($c->get(Database::class));
+            },
+            ExportInvoiceRepository::class => static function (ContainerInterface $c): ExportInvoiceRepository {
+                return new ExportInvoiceRepository($c->get(Database::class));
+            },
+            OwnerPetRepository::class => static function (ContainerInterface $c): OwnerPetRepository {
+                return new OwnerPetRepository($c->get(Database::class));
+            },
+            MedicalRecordRepository::class => static function (ContainerInterface $c): MedicalRecordRepository {
+                return new MedicalRecordRepository($c->get(Database::class));
+            },
+            StocktakingRepository::class => static function (ContainerInterface $c): StocktakingRepository {
+                return new StocktakingRepository($c->get(Database::class));
+            },
+            RepackageHistoryRepository::class => static function (ContainerInterface $c): RepackageHistoryRepository {
+                return new RepackageHistoryRepository($c->get(Database::class));
+            },
+        ],
     ],
 
-// Session
-    'session_containers' => [
-        Container::class,
+    // ── Database ─────────────────────────────────────────────────────────────
+    'database' => [
+        'path'           => getcwd() . '/data/app.db',
+        'migrations_dir' => getcwd() . '/data/migrations',
     ],
-    'session_storage' => [
-        'type' => SessionArrayStorage::class,
-    ],
-    'session_config'  => [
-        'gc_maxlifetime' => 7200,
-    ],
+
+    // ── Session ──────────────────────────────────────────────────────────────
+    'session_containers' => [Container::class],
+    'session_storage'    => ['type' => SessionArrayStorage::class],
+    'session_config'     => ['gc_maxlifetime' => 7200],
 ];

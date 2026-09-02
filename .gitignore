@@ -8,6 +8,7 @@ data/cache/*
 phpunit.xml
 composer.lock
 /data/
+!/data/migrations/
 /.idea/codeStyles/codeStyleConfig.xml
 /logs/
 /.env

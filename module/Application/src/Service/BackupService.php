@@ -4,11 +4,21 @@ declare(strict_types=1);
 
 namespace Application\Service;
 
-use ZipArchive;
+use Application\Database\Database;
 
+/**
+ * BackupService v2 — backup/restore file app.db thay vì ZIP CSV.
+ *
+ * Thay đổi so với v1:
+ *  - Asset GitHub: backup.db (thay vì backup.zip)
+ *  - backup(): dùng Database::vacuumInto() tạo bản sao nhất quán
+ *  - restore(): download backup.db, replace app.db
+ *  - backupForStocktaking(): vacuumInto() vào data/backup_stocktaking/
+ *  - Không còn ZipArchive dependency
+ */
 class BackupService
 {
-    private const ASSET_NAME    = 'backup.zip';
+    private const ASSET_NAME    = 'backup.db';
     private const GITHUB_API    = 'https://api.github.com';
     private const GITHUB_UPLOAD = 'https://uploads.github.com';
 
@@ -17,7 +27,8 @@ class BackupService
     private string $repo;
     private string $releaseTag;
     private string $dataDir;
-    private string $zipPath;
+    private string $dbPath;
+    private string $cachePath;   // temp file for upload/download
 
     public function __construct()
     {
@@ -26,9 +37,14 @@ class BackupService
         $this->repo       = (string) ($_ENV['GITHUB_REPO_NAME']  ?? '');
         $env              = strtolower((string) ($_ENV['APP_ENV'] ?? 'dev'));
         $this->releaseTag = 'data-backup-' . ($env === 'prod' ? 'prod' : 'dev');
-        // Tính absolute path mà không cần thư mục đích phải tồn tại trước
-        $this->dataDir = rtrim(realpath(__DIR__ . '/../../../../data') ?: __DIR__ . '/../../../../data', '/\\');
-        $this->zipPath = $this->dataDir . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . self::ASSET_NAME;
+
+        $this->dataDir   = rtrim(
+            realpath(__DIR__ . '/../../../../data') ?: __DIR__ . '/../../../../data',
+            '/\\'
+        );
+        $this->dbPath    = $this->dataDir . DIRECTORY_SEPARATOR . 'app.db';
+        $this->cachePath = $this->dataDir . DIRECTORY_SEPARATOR . 'cache'
+                         . DIRECTORY_SEPARATOR . self::ASSET_NAME;
     }
 
     // -------------------------------------------------------------------------
@@ -36,20 +52,20 @@ class BackupService
     // -------------------------------------------------------------------------
 
     /**
-     * Zip /data rồi upload lên GitHub Releases.
-     * Được gọi sau response trả về client (không block UX).
+     * Tạo bản sao app.db (VACUUM INTO) rồi upload lên GitHub Releases.
+     * Được gọi sau response trả về client — không block UX.
      * Lỗi chỉ ghi log, không throw.
      */
     public function backup(): void
     {
         try {
             $this->validateConfig();
-            $fileCount = $this->createZip();
+            $this->createDbBackup($this->cachePath);
             $this->uploadToGithub();
 
             CommonService::logger($this->logPath())->info(
                 'Backup thành công',
-                ['files' => $fileCount, 'release' => $this->releaseTag]
+                ['asset' => self::ASSET_NAME, 'release' => $this->releaseTag]
             );
         } catch (\Throwable $e) {
             CommonService::logger($this->logPath())->error(
@@ -57,183 +73,117 @@ class BackupService
                 ['trace' => $e->getTraceAsString()]
             );
         } finally {
-            // Dọn file zip tạm dù thành công hay thất bại
-            if (file_exists($this->zipPath)) {
-                @unlink($this->zipPath);
+            if (file_exists($this->cachePath)) {
+                @unlink($this->cachePath);
             }
         }
     }
 
     /**
-     * Tải backup.zip từ GitHub Releases về và giải nén vào /data.
-     * Dùng public download URL — không cần token.
+     * Download backup.db từ GitHub Releases và replace app.db.
      *
-     * @throws \RuntimeException nếu download hoặc giải nén thất bại
+     * @throws \RuntimeException nếu download hoặc replace thất bại
      */
     public function restore(): void
     {
         $downloadUrl = $this->getAssetDownloadUrl();
 
-        // Tải file về /data/cache/backup_restore.zip
-        $restorePath = $this->dataDir . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'backup_restore.zip';
+        $restorePath = $this->dataDir . DIRECTORY_SEPARATOR . 'cache'
+                     . DIRECTORY_SEPARATOR . 'backup_restore.db';
+
+        $this->ensureDir(dirname($restorePath));
         $this->downloadFile($downloadUrl, $restorePath);
 
-        // Giải nén từng file CSV vào /data (overwrite)
-        $zip = new ZipArchive();
-        if ($zip->open($restorePath) !== true) {
-            throw new \RuntimeException('Không thể mở file backup để giải nén.');
+        // Kiểm tra file tải về có phải SQLite hợp lệ
+        if (!$this->isValidSqlite($restorePath)) {
+            @unlink($restorePath);
+            throw new \RuntimeException('File backup.db tải về không phải SQLite hợp lệ.');
         }
 
-        $restoredCount = 0;
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $stat = $zip->statIndex($i);
-            $name = $stat['name'] ?? '';
-
-            // Chỉ lấy file CSV ở root, bỏ qua thư mục con và file khác
-            if (str_contains($name, '/') || pathinfo($name, PATHINFO_EXTENSION) !== 'csv') {
-                continue;
+        // Atomically replace app.db
+        if (!rename($restorePath, $this->dbPath)) {
+            // Fallback nếu rename cross-device
+            if (!copy($restorePath, $this->dbPath)) {
+                throw new \RuntimeException('Không thể thay thế app.db bằng file backup.');
             }
-
-            $destPath = $this->dataDir . DIRECTORY_SEPARATOR . basename($name);
-            $content  = $zip->getFromIndex($i);
-
-            if ($content === false) {
-                continue;
-            }
-
-            file_put_contents($destPath, $content);
-            $restoredCount++;
-        }
-
-        $zip->close();
-        @unlink($restorePath);
-
-        if ($restoredCount === 0) {
-            throw new \RuntimeException('Backup không chứa file CSV nào để khôi phục.');
+            @unlink($restorePath);
         }
 
         CommonService::logger($this->logPath())->info(
             'Restore thành công',
-            ['files' => $restoredCount]
+            ['source' => self::ASSET_NAME, 'dest' => $this->dbPath]
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Stocktaking backup (local ZIP — không upload GitHub)
-    // -------------------------------------------------------------------------
-
     /**
-     * Tạo file ZIP backup tại data/backup_stocktaking/ trước khi chốt kho.
-     * Không upload lên GitHub — chỉ lưu local.
-     * Trả về true nếu thành công, false nếu thất bại.
+     * Backup trước khi chốt kho — lưu local, không upload GitHub.
+     * Được gọi từ StocktakingRepository::renewWarehouse().
+     *
+     * @deprecated Inject Database trực tiếp và dùng Database::vacuumInto()
+     *             StocktakingRepository tự gọi db->vacuumInto() nên method này
+     *             còn giữ cho backward compat với CommonService::backupDataToStocktaking()
      */
     public function backupForStocktaking(): bool
     {
-        $sourceFolder = realpath(__DIR__ . '/../../../../data');
-        if (!$sourceFolder) {
+        try {
+            $backupDir = $this->dataDir . DIRECTORY_SEPARATOR . 'backup_stocktaking';
+            $this->ensureDir($backupDir);
+
+            $backupPath = $backupDir . DIRECTORY_SEPARATOR
+                        . 'backup_' . date('Ymd_His') . '.db';
+
+            $db = new Database($this->dbPath);
+            $db->vacuumInto($backupPath);
+            return true;
+        } catch (\Throwable $e) {
+            CommonService::logger($this->logPath())->error(
+                'backupForStocktaking thất bại: ' . $e->getMessage()
+            );
             return false;
         }
-
-        $backupFolder   = $sourceFolder . DIRECTORY_SEPARATOR . 'backup_stocktaking';
-        $backupFileName = 'backup_data_stocktaking_' . time() . '.zip';
-        $backupFilePath = $backupFolder . DIRECTORY_SEPARATOR . $backupFileName;
-
-        if (!is_dir($backupFolder)) {
-            mkdir($backupFolder, 0777, true);
-        }
-
-        if (file_exists($backupFilePath)) {
-            return false;
-        }
-
-        $zip = new ZipArchive();
-        if (!$zip->open($backupFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
-            return false;
-        }
-
-        $files = scandir($sourceFolder);
-        foreach ($files as $file) {
-            if ($file === '.' || $file === '..') continue;
-            $filePath = $sourceFolder . DIRECTORY_SEPARATOR . $file;
-            if (is_file($filePath) && pathinfo($filePath, PATHINFO_EXTENSION) === 'csv') {
-                $zip->addFile($filePath, $file);
-            }
-        }
-
-        $zip->close();
-        return true;
     }
 
     // -------------------------------------------------------------------------
-    // Zip
+    // DB backup helpers
     // -------------------------------------------------------------------------
 
     /**
-     * Zip toàn bộ file CSV trong /data (bỏ qua thư mục con và file backup).
-     * Trả về số file được zip.
+     * Tạo bản sao DB nhất quán bằng VACUUM INTO.
+     * Đảm bảo file đích là snapshot hoàn chỉnh dù đang có writes.
      */
-    public function createZip(): int
+    private function createDbBackup(string $destPath): void
     {
-        $cacheDir = $this->dataDir . '/cache';
-        if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0777, true);
+        $this->ensureDir(dirname($destPath));
+
+        if (!file_exists($this->dbPath)) {
+            throw new \RuntimeException('Không tìm thấy app.db tại: ' . $this->dbPath);
         }
 
-        $zip = new ZipArchive();
-        if ($zip->open($this->zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('Không thể tạo file zip tại: ' . $this->zipPath);
-        }
-
-        $fileCount = $this->addFilesToZip($zip, $this->dataDir, $this->dataDir);
-        $zip->close();
-
-        if ($fileCount === 0) {
-            throw new \RuntimeException('Không có file nào được zip — /data trống.');
-        }
-
-        return $fileCount;
+        $db = new Database($this->dbPath);
+        $db->vacuumInto($destPath);
     }
 
     /**
-     * Chỉ thêm file CSV ở root của /data vào zip.
-     * Bỏ qua toàn bộ thư mục con (backup_stocktaking, backup, cache, mpdf...)
-     * và các file không phải .csv.
+     * Kiểm tra file có phải SQLite bằng magic header "SQLite format 3\000".
      */
-    private function addFilesToZip(ZipArchive $zip, string $dir, string $baseDir): int
+    private function isValidSqlite(string $path): bool
     {
-        $count = 0;
-        $items = scandir($dir);
-
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-
-            $fullPath = $dir . DIRECTORY_SEPARATOR . $item;
-
-            // Chỉ lấy file CSV ở root /data, bỏ qua thư mục con và file khác
-            if (!is_file($fullPath)) {
-                continue;
-            }
-
-            if (pathinfo($fullPath, PATHINFO_EXTENSION) !== 'csv') {
-                continue;
-            }
-
-            $zip->addFile($fullPath, $item);
-            $count++;
+        if (!file_exists($path) || filesize($path) < 16) {
+            return false;
         }
-
-        return $count;
+        $handle = fopen($path, 'rb');
+        if (!$handle) {
+            return false;
+        }
+        $header = fread($handle, 16);
+        fclose($handle);
+        return str_starts_with((string) $header, 'SQLite format 3');
     }
 
     // -------------------------------------------------------------------------
     // GitHub Releases API
     // -------------------------------------------------------------------------
 
-    /**
-     * Upload file zip lên GitHub Releases (upsert release + overwrite asset).
-     */
     public function uploadToGithub(): void
     {
         $releaseId = $this->upsertRelease();
@@ -241,25 +191,21 @@ class BackupService
         $this->uploadAsset($releaseId);
     }
 
-    /**
-     * Tìm release với tag data-backup, tạo mới nếu chưa có.
-     * Trả về release ID.
-     */
     private function upsertRelease(): int
     {
-        $url      = sprintf('%s/repos/%s/%s/releases/tags/%s', self::GITHUB_API, $this->owner, $this->repo, $this->releaseTag);
+        $url      = sprintf('%s/repos/%s/%s/releases/tags/%s',
+            self::GITHUB_API, $this->owner, $this->repo, $this->releaseTag);
         $response = $this->curlRequest('GET', $url);
 
         if (isset($response['id'])) {
             return (int) $response['id'];
         }
 
-        // Release chưa tồn tại — tạo mới
         $url      = sprintf('%s/repos/%s/%s/releases', self::GITHUB_API, $this->owner, $this->repo);
         $payload  = [
             'tag_name'   => $this->releaseTag,
             'name'       => 'Data Backup [' . strtoupper(str_replace('data-backup-', '', $this->releaseTag)) . ']',
-            'body'       => 'Backup tự động của toàn bộ dữ liệu CSV — môi trường ' . str_replace('data-backup-', '', $this->releaseTag) . '.',
+            'body'       => 'Backup tự động app.db — môi trường ' . str_replace('data-backup-', '', $this->releaseTag) . '.',
             'draft'      => false,
             'prerelease' => false,
         ];
@@ -272,12 +218,10 @@ class BackupService
         return (int) $response['id'];
     }
 
-    /**
-     * Xóa asset backup.zip cũ trong release (nếu tồn tại).
-     */
     private function deleteExistingAsset(int $releaseId): void
     {
-        $url      = sprintf('%s/repos/%s/%s/releases/%d/assets', self::GITHUB_API, $this->owner, $this->repo, $releaseId);
+        $url      = sprintf('%s/repos/%s/%s/releases/%d/assets',
+            self::GITHUB_API, $this->owner, $this->repo, $releaseId);
         $response = $this->curlRequest('GET', $url);
 
         if (!is_array($response)) {
@@ -286,38 +230,35 @@ class BackupService
 
         foreach ($response as $asset) {
             if (($asset['name'] ?? '') === self::ASSET_NAME) {
-                $deleteUrl = sprintf('%s/repos/%s/%s/releases/assets/%d', self::GITHUB_API, $this->owner, $this->repo, (int) $asset['id']);
+                $deleteUrl = sprintf('%s/repos/%s/%s/releases/assets/%d',
+                    self::GITHUB_API, $this->owner, $this->repo, (int) $asset['id']);
                 $this->curlRequest('DELETE', $deleteUrl);
                 break;
             }
         }
     }
 
-    /**
-     * Upload file zip lên release.
-     */
     private function uploadAsset(int $releaseId): void
     {
-        $url      = sprintf('%s/repos/%s/%s/releases/%d/assets?name=%s', self::GITHUB_UPLOAD, $this->owner, $this->repo, $releaseId, self::ASSET_NAME);
-        $fileData = file_get_contents($this->zipPath);
+        $url      = sprintf('%s/repos/%s/%s/releases/%d/assets?name=%s',
+            self::GITHUB_UPLOAD, $this->owner, $this->repo, $releaseId, self::ASSET_NAME);
+        $fileData = file_get_contents($this->cachePath);
 
         if ($fileData === false) {
-            throw new \RuntimeException('Không thể đọc file zip: ' . $this->zipPath);
+            throw new \RuntimeException('Không thể đọc file backup: ' . $this->cachePath);
         }
 
-        $response = $this->curlRequest('POST', $url, $fileData, 'application/zip');
+        $response = $this->curlRequest('POST', $url, $fileData, 'application/octet-stream');
 
         if (!isset($response['id'])) {
             throw new \RuntimeException('Upload asset thất bại: ' . json_encode($response));
         }
     }
 
-    /**
-     * Lấy download URL của asset backup.zip từ release mới nhất.
-     */
     private function getAssetDownloadUrl(): string
     {
-        $url      = sprintf('%s/repos/%s/%s/releases/tags/%s', self::GITHUB_API, $this->owner, $this->repo, $this->releaseTag);
+        $url      = sprintf('%s/repos/%s/%s/releases/tags/%s',
+            self::GITHUB_API, $this->owner, $this->repo, $this->releaseTag);
         $response = $this->curlRequest('GET', $url);
 
         if (!isset($response['assets']) || !is_array($response['assets'])) {
@@ -337,11 +278,6 @@ class BackupService
     // HTTP helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Thực hiện HTTP request tới GitHub API bằng cURL.
-     *
-     * @return array Decoded JSON response
-     */
     private function curlRequest(string $method, string $url, string $body = '', string $contentType = 'application/json'): array
     {
         $ch = curl_init($url);
@@ -350,7 +286,7 @@ class BackupService
             'Authorization: Bearer ' . $this->token,
             'Accept: application/vnd.github+json',
             'X-GitHub-Api-Version: 2022-11-28',
-            'User-Agent: sam-pet-backup/1.0',
+            'User-Agent: sam-pet-backup/2.0',
         ];
 
         if ($body !== '') {
@@ -379,7 +315,6 @@ class BackupService
             throw new \RuntimeException('cURL lỗi: ' . $curlErr);
         }
 
-        // DELETE trả về 204 No Content — không có body JSON
         if ($httpCode === 204) {
             return [];
         }
@@ -387,16 +322,14 @@ class BackupService
         $decoded = json_decode((string) $raw, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('GitHub API trả về không phải JSON (HTTP ' . $httpCode . '): ' . substr($raw, 0, 200));
+            throw new \RuntimeException(
+                'GitHub API trả về không phải JSON (HTTP ' . $httpCode . '): ' . substr($raw, 0, 200)
+            );
         }
 
         return (array) $decoded;
     }
 
-    /**
-     * Download file từ URL về đường dẫn chỉ định.
-     * Tự động follow redirect (GitHub asset URL redirect sang S3).
-     */
     private function downloadFile(string $url, string $destPath): void
     {
         $ch = curl_init($url);
@@ -422,8 +355,15 @@ class BackupService
     }
 
     // -------------------------------------------------------------------------
-    // Helpers
+    // Utility
     // -------------------------------------------------------------------------
+
+    private function ensureDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+    }
 
     private function validateConfig(): void
     {

@@ -4,65 +4,66 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
-use Application\Model\Product;
-use Application\Model\Stocktaking;
+use Application\Repository\ProductRepository;
+use Application\Repository\StocktakingRepository;
 use Application\Service\CommonService;
+use Application\Service\CsrfService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 
 class StocktakingController extends AbstractActionController
 {
-    public function indexAction() {
-        $productModel = new Product();
-        list($totals, $productList) = $productModel->getDataToView();
+    private ProductRepository     $productRepo;
+    private StocktakingRepository $stocktakingRepo;
+
+    public function __construct(ProductRepository $productRepo, StocktakingRepository $stocktakingRepo)
+    {
+        $this->productRepo      = $productRepo;
+        $this->stocktakingRepo  = $stocktakingRepo;
+    }
+
+    public function indexAction()
+    {
+        [, $productList]  = $this->productRepo->getDataToView();
         CommonService::sortDataByVietnamese($productList, 'name');
-        $stocktakingModel = new Stocktaking();
-        $stocktakingList = $stocktakingModel->getData();
+        $stocktakingList  = $this->stocktakingRepo->getData();
         return new ViewModel(['productList' => $productList, 'stocktakingList' => $stocktakingList]);
     }
 
-    public function doEditAction() {
-        $request = $this->getRequest();
-        $postData = $request->getPost()->toArray();
-        $stocktakingModel = new Stocktaking();
-        $stocktakingModel->doEdit($postData);
+    public function doEditAction()
+    {
+        $postData = $this->getRequest()->getPost()->toArray();
+        $this->stocktakingRepo->doEdit($postData);
         return $this->redirect()->toUrl('/stocktaking');
     }
 
-    public function renewWarehouseAction() {
+    public function renewWarehouseAction()
+    {
         $request = $this->getRequest();
 
-        // Validate CSRF
         try {
-            \Application\Service\CsrfService::validateOrFail(
-                \Application\Service\CsrfService::getTokenFromRequest($request)
-            );
+            CsrfService::validateOrFail(CsrfService::getTokenFromRequest($request));
         } catch (\RuntimeException $e) {
             $this->flashMessenger()->addErrorMessage($e->getMessage());
             return $this->redirect()->toUrl('/stocktaking');
         }
 
-        // Chỉ chấp nhận POST
         if (!$request->isPost()) {
             return $this->redirect()->toUrl('/stocktaking');
         }
 
-        $stocktakingModel = new Stocktaking();
-        $stocktakingList = $stocktakingModel->getData();
-        foreach ($stocktakingList as $stocktakingData) {
-            if ($stocktakingData["stocktaking"] === "") {
-                $this->flashMessenger()->addErrorMessage('Vẫn còn mặt hàng chưa kiểm kê. Hãy kiểm kê tất cả mặt hàng.');
-                return $this->redirect()->toUrl('/stocktaking');
-            }
-        }
+        $postData    = $request->getPost()->toArray();
+        $closedAt    = $postData['closedAt'] ?? date('d-m-Y');
+        $note        = $postData['note']     ?? '';
+        $backupDir   = getcwd() . '/data/backup_stocktaking';
 
-        $result = $stocktakingModel->renewWarehouse();
-        if (!$result) {
-            $this->flashMessenger()->addErrorMessage('Có lỗi xảy ra khi chốt kho. Dữ liệu đã được khôi phục, thử lại sau.');
+        try {
+            $this->stocktakingRepo->renewWarehouse($closedAt, $note, $backupDir);
+            $this->flashMessenger()->addSuccessMessage('Chốt kho thành công. Hãy kiểm tra lại kho hàng.');
+            return $this->redirect()->toUrl('/product');
+        } catch (\RuntimeException $e) {
+            $this->flashMessenger()->addErrorMessage($e->getMessage());
             return $this->redirect()->toUrl('/stocktaking');
         }
-
-        $this->flashMessenger()->addSuccessMessage('Chốt kho thành công. Hãy kiểm tra lại kho hàng.');
-        return $this->redirect()->toUrl('/product');
     }
 }

@@ -88,8 +88,28 @@
         <h1>Lịch sử chiết hàng:</h1>
         <div>
             <?php foreach ($this->repackageHistoryList as $id => $repackageHistoryData): ?>
-                <div class="bg-light text-dark ps-1"><?= date("d-m-Y H:i:s", $repackageHistoryData['createdAt']) ?></div>
-                <pre class="text-info"><?= $repackageHistoryData['content'] ?></pre>
+                <div class="bg-light text-dark ps-1">
+                    <?= date("d-m-Y H:i:s", (int) ($repackageHistoryData['createdAt'] ?? 0)) ?>
+                    — Ngày chiết: <?= htmlspecialchars($repackageHistoryData['date'] ?? '') ?>
+                </div>
+                <pre class="text-info"><?php
+                    $from  = htmlspecialchars($repackageHistoryData['fromProductName'] ?? '');
+                    $fromQ = (float) ($repackageHistoryData['fromQuantity'] ?? 0);
+                    $note  = trim($repackageHistoryData['note'] ?? '');
+                    $toItems = $repackageHistoryData['toItems'] ?? [];
+
+                    if ($from !== '' || !empty($toItems)) {
+                        echo "-{$fromQ} {$from}\n";
+                        foreach ($toItems as $item) {
+                            $toQ = (float) ($item['toQuantity'] ?? 0);
+                            $to  = htmlspecialchars($item['toProductName'] ?? '');
+                            echo "+{$toQ} {$to}\n";
+                        }
+                    } elseif ($note !== '') {
+                        // Row migrate từ CSV cũ — hiển thị note gốc
+                        echo htmlspecialchars($note);
+                    }
+                ?></pre>
             <?php endforeach; ?>
         </div>
     </div>
