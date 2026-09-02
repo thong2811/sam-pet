@@ -126,7 +126,7 @@
     function syncPreview() {
         const date = $('#syncDate').val();
 
-        $('.overlay-loading').show();
+        showOverlay();
 
         $.ajax({
             url: '/export-stock/sync-preview',
@@ -134,7 +134,7 @@
             contentType: 'application/json',
             data: JSON.stringify({ date: date }),
             success: function (response) {
-                $('.overlay-loading').hide();
+                hideOverlay();
 
                 if (!response.success) {
                     addFlashMessage('Lỗi khi lấy dữ liệu từ Google Sheets: ' + (response.message || 'Lỗi không xác định.'), FLASH_MESSAGE_TYPE_ERROR);
@@ -222,7 +222,7 @@
                 syncModal.show();
             },
             error: function (xhr, status, error) {
-                $('.overlay-loading').hide();
+                hideOverlay();
                 addFlashMessage('Đã xảy ra lỗi khi kết nối: ' + error, FLASH_MESSAGE_TYPE_ERROR);
             }
         });
@@ -234,7 +234,7 @@
         }
 
         $('#btnConfirmSync').prop('disabled', true).text('Đang đồng bộ...');
-        $('.overlay-loading').show();
+        showOverlay();
 
         $.ajax({
             url: '/export-stock/do-sync',
@@ -242,7 +242,7 @@
             contentType: 'application/json',
             data: JSON.stringify({ rows: _syncRows }),
             success: function (response) {
-                $('.overlay-loading').hide();
+                hideOverlay();
                 $('#btnConfirmSync').prop('disabled', false).html('&#10003; Xác nhận đồng bộ');
                 syncModal.hide();
 
@@ -254,7 +254,7 @@
                 }
             },
             error: function (xhr, status, error) {
-                $('.overlay-loading').hide();
+                hideOverlay();
                 $('#btnConfirmSync').prop('disabled', false).html('&#10003; Xác nhận đồng bộ');
                 addFlashMessage('Đã xảy ra lỗi khi đồng bộ: ' + error, FLASH_MESSAGE_TYPE_ERROR);
             }

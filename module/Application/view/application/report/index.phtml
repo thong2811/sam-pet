@@ -226,13 +226,13 @@ $treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
             url: `/${controllerName}/do-add`,
             type: 'POST',
             data: form.serialize(),
-            beforeSend: () => $('.overlay-loading').css('display','flex'),
+            beforeSend: () => showOverlay(),
             success: (res) => {
                 if (res.success) { table.draw(false); addModal.hide(); addFlashMessage('Thêm thành công'); }
                 else addFlashMessage('Lỗi khi thêm: ' + (res.message||'unknown'), FLASH_MESSAGE_TYPE_ERROR);
             },
             error: (x,s,e) => addFlashMessage('Lỗi kết nối: ' + e, FLASH_MESSAGE_TYPE_ERROR),
-            complete: () => $('.overlay-loading').hide()
+            complete: () => hideOverlay()
         });
     }
 
@@ -251,13 +251,13 @@ $treatmentProfitPercent = \Application\Model\VetCare::TREATMENT_PROFIT_PERCENT;
             url: `/${controllerName}/do-edit`,
             type: 'POST',
             data: form.serialize(),
-            beforeSend: () => $('.overlay-loading').css('display','flex'),
+            beforeSend: () => showOverlay(),
             success: (res) => {
                 if (res.success) { table.draw(false); editModal.hide(); addFlashMessage('Cập nhật thành công'); }
                 else addFlashMessage('Lỗi khi cập nhật: ' + (res.message||'unknown'), FLASH_MESSAGE_TYPE_ERROR);
             },
             error: (x,s,e) => addFlashMessage('Lỗi kết nối: ' + e, FLASH_MESSAGE_TYPE_ERROR),
-            complete: () => $('.overlay-loading').hide()
+            complete: () => hideOverlay()
         });
     }
 
