@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Application;
 
+use Application\Controller\CategoryController;
 use Application\Controller\ExportInvoiceController;
 use Application\Controller\ExportStockController;
 use Application\Controller\ImportStockController;
@@ -19,6 +20,7 @@ use Application\Controller\ExpensesController;
 use Application\Database\Database;
 use Application\Database\DatabaseFactory;
 use Application\Library\LeagueCsv;
+use Application\Repository\CategoryRepository;
 use Application\Repository\ExportInvoiceRepository;
 use Application\Repository\ExportStockRepository;
 use Application\Repository\ExpensesRepository;
@@ -87,7 +89,12 @@ return [
     'router' => [
         'routes' => [
             'default'     => createSegmentRoute(OverviewController::class, '/'),
-            'overview'    => createSegmentRoute(OverviewController::class, '/overview', []),
+            'overview'    => createSegmentRoute(OverviewController::class, '/overview', [
+                'chartData' => [
+                    'type'    => Segment::class,
+                    'options' => ['route' => '/chart-data', 'defaults' => ['action' => 'chartData']],
+                ],
+            ]),
             'product'     => createSegmentRoute(ProductController::class, '/product', [
                 'edit'   => createChildRoute('edit',   ['id']),
                 'delete' => createChildRoute('delete', ['id']),
@@ -140,6 +147,7 @@ return [
                 'edit'    => createChildRoute('edit',    ['id']),
                 'history' => createChildRoute('history', ['petId']),
             ]),
+            'category' => createSegmentRoute(CategoryController::class, '/category', []),
             'settings' => createSegmentRoute(SettingsController::class, '/settings', [
                 'doRestore' => [
                     'type'    => Segment::class,
@@ -158,7 +166,8 @@ return [
             ProductController::class => static function (ContainerInterface $c): ProductController {
                 return new ProductController(
                     $c->get(ProductRepository::class),
-                    $c->get(RepackageHistoryRepository::class)
+                    $c->get(RepackageHistoryRepository::class),
+                    $c->get(CategoryRepository::class)
                 );
             },
             StocktakingController::class => static function (ContainerInterface $c): StocktakingController {
@@ -210,6 +219,12 @@ return [
                     $c->get(OwnerPetRepository::class)
                 );
             },
+            CategoryController::class => static function (ContainerInterface $c): CategoryController {
+                return new CategoryController(
+                    $c->get(CategoryRepository::class),
+                    $c->get(ProductRepository::class)
+                );
+            },
             // ── Controllers unchanged (InvokableFactory still works) ───────
             Controller\PdfController::class => InvokableFactory::class,
             SettingsController::class => static function (ContainerInterface $c): SettingsController {
@@ -246,6 +261,9 @@ return [
             Database::class      => DatabaseFactory::class,
 
             // Repositories — all receive Database via DI
+            CategoryRepository::class => static function (ContainerInterface $c): CategoryRepository {
+                return new CategoryRepository($c->get(Database::class));
+            },
             ProductRepository::class => static function (ContainerInterface $c): ProductRepository {
                 return new ProductRepository($c->get(Database::class));
             },

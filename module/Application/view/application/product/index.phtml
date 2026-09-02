@@ -79,7 +79,15 @@
                         <label class="form-label">Tồn đầu kì</label>
                         <input type="number" class="form-control" id="initStock" name="initStock" required>
                     </div>
-                </form>
+                    <div class="mb-3">
+                        <label class="form-label">Danh mục</label>
+                        <select class="form-select" id="edit-categoryId" name="categoryId">
+                            <option value="">-- Không có --</option>
+                            <?php foreach ($this->categoryList ?? [] as $catId => $catName): ?>
+                                <option value="<?= htmlspecialchars($catId) ?>"><?= htmlspecialchars($catName) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
@@ -123,6 +131,15 @@
                     <div class="mb-3">
                         <label class="form-label">Tồn đầu kì</label>
                         <input type="number" class="form-control" id="initStock" name="initStock" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Danh mục</label>
+                        <select class="form-select" id="add-categoryId" name="categoryId">
+                            <option value="">-- Không có --</option>
+                            <?php foreach ($this->categoryList ?? [] as $catId => $catName): ?>
+                                <option value="<?= htmlspecialchars($catId) ?>"><?= htmlspecialchars($catName) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </form>
             </div>
@@ -216,6 +233,7 @@
         const purchasePrice = data.purchasePrice || '';
         const sellingPrice = data.sellingPrice || '';
         const initStock = data.initStock || '';
+        const categoryId = data.categoryId || '';
 
         $(editModalId).find('#productId').val(id);
         $(editModalId).find('#name').val(name);
@@ -223,6 +241,7 @@
         $(editModalId).find('#purchasePrice').val(purchasePrice);
         $(editModalId).find('#sellingPrice').val(sellingPrice);
         $(editModalId).find('#initStock').val(initStock);
+        $(editModalId).find('#edit-categoryId').val(categoryId);
     }
 
     function doAdd() {

@@ -234,3 +234,41 @@ function closeAlertMessage(elm)
             : '0';
     }
 }
+
+/**
+ * Khởi tạo bộ lọc DateRange cho một DataTable.
+ * Gắn datepicker vào 2 input, gửi date_from/date_to theo mỗi request AJAX.
+ *
+ * @param {object} table       - DataTables instance
+ * @param {string} fromInputId - id của input "Từ ngày" (không có #)
+ * @param {string} toInputId   - id của input "Đến ngày"  (không có #)
+ */
+function initDateRangeFilter(table, fromInputId, toInputId)
+{
+    const $from = $(`#${fromInputId}`);
+    const $to   = $(`#${toInputId}`);
+
+    // Gắn datepicker nếu chưa có
+    [$from, $to].forEach($el => {
+        if (!$el.hasClass('hasDatepicker')) {
+            $el.datepicker({ format: 'dd-mm-yyyy', autoclose: true });
+        }
+    });
+
+    // Inject date_from / date_to vào mỗi request AJAX của DataTable
+    table.on('preXhr.dt', function (e, settings, data) {
+        data.date_from = $from.val() || '';
+        data.date_to   = $to.val()   || '';
+    });
+
+    // Reload khi user chọn ngày
+    $from.on('changeDate', function () { table.draw(); });
+    $to.on('changeDate',   function () { table.draw(); });
+
+    // Nút xóa bộ lọc
+    $(`#clearDateRange_${fromInputId}`).on('click', function () {
+        $from.val('').datepicker('clearDates');
+        $to.val('').datepicker('clearDates');
+        table.draw();
+    });
+}

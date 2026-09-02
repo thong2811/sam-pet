@@ -109,15 +109,32 @@ class ReportRepository extends BaseRepository
     /**
      * Trả về [$totals, $chartData] — time-series cho Highcharts.
      * date dd-mm-yyyy → Unix timestamp milliseconds (×1000).
+     *
+     * @param string $from  dd-mm-yyyy (rỗng = không giới hạn)
+     * @param string $to    dd-mm-yyyy
      */
-    public function getDataToViewChart(): array
+    public function getDataToViewChart(string $from = '', string $to = ''): array
     {
-        // Sắp xếp theo ngày tăng dần — dùng substr để sort dd-mm-yyyy đúng
+        $where  = '';
+        $params = [];
+
+        if ($from !== '' || $to !== '') {
+            $parts = [];
+            if ($from !== '') {
+                $parts[]  = "SUBSTR(date,7,4)||SUBSTR(date,4,2)||SUBSTR(date,1,2) >= SUBSTR(?,7,4)||SUBSTR(?,4,2)||SUBSTR(?,1,2)";
+                $params[] = $from; $params[] = $from; $params[] = $from;
+            }
+            if ($to !== '') {
+                $parts[]  = "SUBSTR(date,7,4)||SUBSTR(date,4,2)||SUBSTR(date,1,2) <= SUBSTR(?,7,4)||SUBSTR(?,4,2)||SUBSTR(?,1,2)";
+                $params[] = $to; $params[] = $to; $params[] = $to;
+            }
+            $where = 'WHERE ' . implode(' AND ', $parts);
+        }
+
         $rows = $this->fetchAll("
-            SELECT * FROM reports
-            ORDER BY
-                SUBSTR(date,7,4) || SUBSTR(date,4,2) || SUBSTR(date,1,2) ASC
-        ");
+            SELECT * FROM reports $where
+            ORDER BY SUBSTR(date,7,4)||SUBSTR(date,4,2)||SUBSTR(date,1,2) ASC
+        ", $params);
 
         $totalRevenue       = 0.0;
         $totalExpenses      = 0.0;

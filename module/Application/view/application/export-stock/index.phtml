@@ -7,7 +7,7 @@
     <h1 class="mb-3"> Xuất hàng</h1>
 
     <div class="my-2">
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 mb-2">
             <a href="/export-stock/add" class="btn btn-primary"> Thêm mới +</a>
             <div class="input-group w-auto">
                 <button class="btn btn-primary" onclick="editByDate()"> Chỉnh sửa </button>
@@ -20,6 +20,7 @@
                 <input class="form-control date-picker" id="syncDate" name="syncDate" autocomplete="off" placeholder="Theo ngày (tuỳ chọn)..." style="width:200px"/>
             </div>
         </div>
+        <?= $this->partial('partial/date-range-filter', ['prefix' => 'exportStock']) ?>
     </div>
     <table id="dataTable" class="table table-striped" style="width:100%">
         <thead>
@@ -73,6 +74,8 @@
         }
         location.href = `/export-stock/edit/${date}`;
     }
+
+    initDateRangeFilter(table, 'exportStock_from', 'exportStock_to');
 </script>
 
 <!-- Modal đồng bộ Google Sheets -->

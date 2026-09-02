@@ -1,0 +1,17 @@
+<?php
+/**
+ * Partial: Date Range Filter UI
+ * Dùng: echo $this->partial('partial/date-range-filter', ['prefix' => 'importStock']);
+ * Yêu cầu: gọi initDateRangeFilter(table, prefix+'_from', prefix+'_to') trong JS của view.
+ */
+$prefix = $prefix ?? 'dateRange';
+?>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <span class="text-muted small">Lọc ngày:</span>
+    <input type="text" id="<?= $prefix ?>_from" class="form-control date-picker"
+           placeholder="Từ ngày" autocomplete="off" style="width:130px"/>
+    <span class="text-muted">—</span>
+    <input type="text" id="<?= $prefix ?>_to" class="form-control date-picker"
+           placeholder="Đến ngày" autocomplete="off" style="width:130px"/>
+    <button id="clearDateRange_<?= $prefix ?>_from" class="btn btn-outline-secondary btn-sm">✕ Xóa lọc</button>
+</div>

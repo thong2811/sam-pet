@@ -7,7 +7,8 @@
     <h1 class="mb-3">Lịch sử khám bệnh</h1>
 
     <div class="my-2">
-        <a href="/medical-record/add" class="btn btn-primary">+ Thêm lần khám</a>
+        <a href="/medical-record/add" class="btn btn-primary mb-2">+ Thêm lần khám</a>
+        <?= $this->partial('partial/date-range-filter', ['prefix' => 'medicalRecord']) ?>
     </div>
     <table id="dataTable" class="table table-striped" style="width:100%">
         <thead>
@@ -50,4 +51,6 @@
     });
 
     function remove(id) { removeRow('medical-record', id, table); }
+
+    initDateRangeFilter(table, 'medicalRecord_from', 'medicalRecord_to');
 </script>

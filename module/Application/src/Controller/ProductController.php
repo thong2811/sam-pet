@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Application\Controller;
 
 use Application\Repository\ProductRepository;
+use Application\Repository\CategoryRepository;
 use Application\Repository\RepackageHistoryRepository;
 use Application\Service\CommonService;
 use Application\Service\CsrfService;
@@ -16,16 +17,22 @@ class ProductController extends AbstractActionController
 {
     private ProductRepository         $productRepo;
     private RepackageHistoryRepository $historyRepo;
+    private CategoryRepository         $categoryRepo;
 
-    public function __construct(ProductRepository $productRepo, RepackageHistoryRepository $historyRepo)
-    {
-        $this->productRepo = $productRepo;
-        $this->historyRepo = $historyRepo;
+    public function __construct(
+        ProductRepository          $productRepo,
+        RepackageHistoryRepository $historyRepo,
+        CategoryRepository         $categoryRepo
+    ) {
+        $this->productRepo  = $productRepo;
+        $this->historyRepo  = $historyRepo;
+        $this->categoryRepo = $categoryRepo;
     }
 
     public function indexAction()
     {
-        return new ViewModel();
+        $categoryList = $this->categoryRepo->getNameList();
+        return new ViewModel(['categoryList' => $categoryList]);
     }
 
     public function addAction()

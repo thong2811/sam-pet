@@ -1,16 +1,24 @@
 <?php
 $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js');
 $this->headScript()->appendFile('https://code.highcharts.com/modules/exporting.js');
-
-$totals = $this->totals ?? [];
 ?>
 
 <div class="container mt-4">
 
-    <!-- Tab Doanh thu / Thu Chi -->
+    <!-- Tab -->
     <div class="mb-3">
         <a class="btn btn-outline-primary" href="/overview">📈 Doanh thu</a>
         <a class="btn btn-primary active ms-2" href="/overview/expenses">💰 Thu / Chi</a>
+    </div>
+
+    <!-- Date range -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <span class="text-muted small">Khoảng thời gian:</span>
+        <input type="text" id="chartFrom" class="form-control date-picker" placeholder="Từ ngày" autocomplete="off" style="width:130px"/>
+        <span class="text-muted">—</span>
+        <input type="text" id="chartTo"   class="form-control date-picker" placeholder="Đến ngày" autocomplete="off" style="width:130px"/>
+        <button class="btn btn-primary btn-sm" onclick="loadChart()">Xem</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="clearFilter()">✕ Tất cả</button>
     </div>
 
     <!-- Summary cards -->
@@ -49,36 +57,61 @@ $totals = $this->totals ?? [];
         </div>
     </div>
 
-    <!-- Charts -->
-    <div id="dailyChart" class="chart mb-4"></div>
+    <div id="chartLoading" class="text-center text-muted py-4 d-none">
+        <div class="spinner-border spinner-border-sm me-2"></div>Đang tải biểu đồ...
+    </div>
+    <div id="dailyChart"   class="chart mb-4"></div>
     <div id="monthlyChart" class="chart"></div>
 </div>
 
 <script>
-    const rawData = <?= json_encode($this->data, JSON_UNESCAPED_UNICODE) ?>;
+    let rawData = {};
 
-    $(function () {
-        fillSummaryCards();
-        renderExpensesChart('dailyChart', false);
-        renderExpensesChart('monthlyChart', true);
-    });
+    $(function () { loadChart(); });
 
-    function fillSummaryCards() {
-        const fmt = v => formatNumber(v) + ' VNĐ';
-        let totalRevenue = 0, totalExpenses = 0, totalSavings = 0, totalRemaining = 0;
-        (rawData.revenue   || []).forEach(p => totalRevenue   += p[1]);
-        (rawData.expenses  || []).forEach(p => totalExpenses  += p[1]);
-        (rawData.savings   || []).forEach(p => totalSavings   += p[1]);
-        (rawData.remaining || []).forEach(p => totalRemaining += p[1]);
+    function clearFilter() {
+        $('#chartFrom').val('').datepicker('clearDates');
+        $('#chartTo').val('').datepicker('clearDates');
+        loadChart();
+    }
 
-        $('#cardTotalRevenue').text(fmt(totalRevenue));
-        $('#cardTotalExpenses').text(fmt(totalExpenses));
-        $('#cardTotalSavings').text(fmt(totalSavings));
+    function loadChart() {
+        const from = $('#chartFrom').val() || '';
+        const to   = $('#chartTo').val()   || '';
 
-        const remainingEl = $('#cardTotalRemaining');
-        remainingEl.text(fmt(totalRemaining));
-        remainingEl.removeClass('text-info text-danger text-success');
-        remainingEl.addClass(totalRemaining >= 0 ? 'text-success' : 'text-danger');
+        $('#chartLoading').removeClass('d-none');
+        $('#dailyChart, #monthlyChart').empty();
+
+        $.get('/overview/chart-data', { from, to })
+            .done(function (res) {
+                $('#chartLoading').addClass('d-none');
+                if (!res.success) {
+                    addFlashMessage('Lỗi tải biểu đồ: ' + res.message, FLASH_MESSAGE_TYPE_ERROR);
+                    return;
+                }
+                rawData = res.data || {};
+                fillSummaryCards(res.totals || {});
+                renderExpensesChart('dailyChart',   false);
+                renderExpensesChart('monthlyChart', true);
+            })
+            .fail(function () {
+                $('#chartLoading').addClass('d-none');
+                addFlashMessage('Không thể tải dữ liệu biểu đồ.', FLASH_MESSAGE_TYPE_ERROR);
+            });
+    }
+
+    function fillSummaryCards(totals) {
+        const fmt = v => formatNumber(Math.round(v)) + ' VNĐ';
+        const remaining = totals.totalRemaining || 0;
+        $('#cardTotalRevenue').text(fmt(totals.totalRevenue   || 0));
+        $('#cardTotalExpenses').text(fmt(totals.totalExpenses || 0));
+        $('#cardTotalSavings').text(fmt(
+            (rawData.savings || []).reduce((s, p) => s + p[1], 0)
+        ));
+        const $rem = $('#cardTotalRemaining');
+        $rem.text(fmt(remaining));
+        $rem.removeClass('text-info text-danger text-success')
+            .addClass(remaining >= 0 ? 'text-success' : 'text-danger');
     }
 
     function aggregateByMonth(points) {
@@ -88,46 +121,27 @@ $totals = $this->totals ?? [];
             const key = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
             map[key]  = (map[key] || 0) + val;
         });
-        return Object.entries(map)
-            .map(([k, v]) => [Number(k), v])
-            .sort((a, b) => a[0] - b[0]);
+        return Object.entries(map).map(([k, v]) => [Number(k), v]).sort((a, b) => a[0] - b[0]);
     }
 
     function renderExpensesChart(containerId, isMonthly) {
         const title      = isMonthly ? 'Thu / Chi theo tháng' : 'Thu / Chi theo ngày';
         const dateFormat = isMonthly ? '%m/%Y' : '%d/%m/%Y';
-
         const makeSeries = (name, key, color, dashStyle = 'Solid') => ({
-            name,
-            color,
-            dashStyle,
+            name, color, dashStyle,
             data: isMonthly ? aggregateByMonth(rawData[key]) : (rawData[key] || []),
         });
-
         Highcharts.chart(containerId, {
             chart: { type: 'line', zoomType: 'x' },
             title: { text: title },
-            xAxis: {
-                type: 'datetime',
-                labels: { format: `{value:${dateFormat}}` },
-            },
+            xAxis: { type: 'datetime', labels: { format: `{value:${dateFormat}}` } },
             yAxis: {
                 title: { text: 'VNĐ' },
-                labels: {
-                    formatter: function () {
-                        return Highcharts.numberFormat(this.value, 0, '.', ',');
-                    }
-                },
-                plotLines: [{
-                    value: 0,
-                    color: '#aaa',
-                    width: 1,
-                    dashStyle: 'Dot',
-                }]
+                labels: { formatter: function () { return Highcharts.numberFormat(this.value, 0, '.', ','); } },
+                plotLines: [{ value: 0, color: '#aaa', width: 1, dashStyle: 'Dot' }]
             },
             tooltip: {
-                shared: true,
-                xDateFormat: dateFormat,
+                shared: true, xDateFormat: dateFormat,
                 formatter: function () {
                     let s = `<b>${Highcharts.dateFormat(dateFormat, this.x)}</b><br/>`;
                     this.points.forEach(p => {
@@ -138,10 +152,10 @@ $totals = $this->totals ?? [];
             },
             legend: { enabled: true },
             series: [
-                makeSeries('Doanh thu',     'revenue',   '#2ecc71'),
-                makeSeries('Chi phí',       'expenses',  '#e74c3c'),
-                makeSeries('Tiết kiệm',     'savings',   '#95a5a6', 'ShortDash'),
-                makeSeries('Còn lại',       'remaining', '#3498db', 'ShortDot'),
+                makeSeries('Doanh thu', 'revenue',   '#2ecc71'),
+                makeSeries('Chi phí',   'expenses',  '#e74c3c'),
+                makeSeries('Tiết kiệm', 'savings',   '#95a5a6', 'ShortDash'),
+                makeSeries('Còn lại',   'remaining', '#3498db', 'ShortDot'),
             ],
             exporting: { enabled: true },
         });

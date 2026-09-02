@@ -13,7 +13,8 @@ use Collator;
 class DataTableService
 {
     /**
-     * Pipeline: filter → sort → addNo → paginate → trả JSON cho DataTables.
+     * Pipeline: date range filter → filter → sort → addNo → paginate → trả JSON cho DataTables.
+     * date_from / date_to: dd-mm-yyyy — lọc theo field 'date' của mỗi row.
      */
     public static function process($postData, array $data): array
     {
@@ -24,12 +25,15 @@ class DataTableService
             'searchValue'    => $postData['search']['value']           ?? '',
             'orderColumn'    => $postData['order'][0]['name']          ?? '',
             'orderDirection' => $postData['order'][0]['dir']           ?? 'asc',
+            'dateFrom'       => $postData['date_from']                 ?? '',
+            'dateTo'         => $postData['date_to']                   ?? '',
         ];
 
-        $filtered  = self::filter($data, $params['searchValue']);
-        $sorted    = self::sort($filtered, $params['orderColumn'], $params['orderDirection']);
-        $numbered  = self::addRowNumbers($sorted);
-        $paginated = self::paginate($numbered, $params['start'], $params['length']);
+        $dateFiltered = self::filterDateRange($data, $params['dateFrom'], $params['dateTo']);
+        $filtered     = self::filter($dateFiltered, $params['searchValue']);
+        $sorted       = self::sort($filtered, $params['orderColumn'], $params['orderDirection']);
+        $numbered     = self::addRowNumbers($sorted);
+        $paginated    = self::paginate($numbered, $params['start'], $params['length']);
 
         return [
             'draw'            => $params['draw'],
@@ -37,6 +41,34 @@ class DataTableService
             'recordsFiltered' => count($filtered),
             'data'            => array_values($paginated),
         ];
+    }
+
+    /**
+     * Lọc rows theo khoảng ngày date_from..date_to trên field 'date' (dd-mm-yyyy).
+     * Bỏ qua nếu cả hai đều rỗng.
+     */
+    public static function filterDateRange(array $data, string $dateFrom, string $dateTo): array
+    {
+        if ($dateFrom === '' && $dateTo === '') {
+            return $data;
+        }
+
+        $result = [];
+        foreach ($data as $key => $row) {
+            $rowDate = $row['date'] ?? $row['visit_date'] ?? '';
+            if ($rowDate === '') {
+                continue;
+            }
+
+            if ($dateFrom !== '' && DateHelper::compareDate($rowDate, $dateFrom) < 0) {
+                continue; // rowDate < dateFrom
+            }
+            if ($dateTo !== '' && DateHelper::compareDate($rowDate, $dateTo) > 0) {
+                continue; // rowDate > dateTo
+            }
+            $result[$key] = $row;
+        }
+        return $result;
     }
 
     public static function filter(array $data, string $searchValue): array

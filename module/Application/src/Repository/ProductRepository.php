@@ -151,8 +151,8 @@ class ProductRepository extends BaseRepository
 
         $this->execute("
             INSERT INTO products
-                (id, name, unit, sellingPrice, purchasePrice, initStock, repackageStock, invoiceCheck, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, name, unit, sellingPrice, purchasePrice, initStock, repackageStock, invoiceCheck, categoryId, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ", [
             $id,
             trim($postData['name']          ?? ''),
@@ -163,6 +163,7 @@ class ProductRepository extends BaseRepository
             (float) ($postData['repackageStock'] ?? 0),
             ($postData['invoiceCheck'] ?? self::INVOICE_CHECK_FALSE) === self::INVOICE_CHECK_TRUE
                 ? self::INVOICE_CHECK_TRUE : self::INVOICE_CHECK_FALSE,
+            !empty($postData['categoryId']) ? $postData['categoryId'] : null,
             $now,
             $now,
         ]);
@@ -181,6 +182,7 @@ class ProductRepository extends BaseRepository
                 initStock      = ?,
                 repackageStock = ?,
                 invoiceCheck   = ?,
+                categoryId     = ?,
                 updatedAt      = ?
             WHERE id = ?
         ", [
@@ -192,6 +194,7 @@ class ProductRepository extends BaseRepository
             (float) ($postData['repackageStock'] ?? 0),
             ($postData['invoiceCheck'] ?? self::INVOICE_CHECK_FALSE) === self::INVOICE_CHECK_TRUE
                 ? self::INVOICE_CHECK_TRUE : self::INVOICE_CHECK_FALSE,
+            !empty($postData['categoryId']) ? $postData['categoryId'] : null,
             $this->ts(),
             $postData['id'],
         ]);

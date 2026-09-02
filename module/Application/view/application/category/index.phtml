@@ -1,0 +1,145 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+<div class="container mt-4">
+    <h1 class="mb-3">&#x1F4C2; Danh mục sản phẩm</h1>
+
+    <div class="my-2">
+        <button class="btn btn-primary" onclick="openAddModal()">+ Thêm danh mục</button>
+    </div>
+
+    <table id="dataTable" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>STT</th>
+            <th>Tên danh mục</th>
+            <th>Số sản phẩm</th>
+            <th>Ghi chú</th>
+            <th>Thao tác</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+
+<!-- Modal Thêm -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm danh mục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label">Tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add-name" name="name" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <input type="text" class="form-control" id="add-note" name="note"/>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="doAdd()">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa danh mục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCategoryForm" novalidate>
+                    <input type="hidden" id="edit-id" name="id"/>
+                    <div class="mb-3">
+                        <label class="form-label">Tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit-name" name="name" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <input type="text" class="form-control" id="edit-note" name="note"/>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="doEdit()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const addModal  = new bootstrap.Modal('#addCategoryModal',  {});
+    const editModal = new bootstrap.Modal('#editCategoryModal', {});
+
+    const table = initDataTable('#dataTable', {
+        ...DATA_TABLES_CONFIG,
+        ajax: { url: '/category/data-table-server-side', type: 'POST' },
+        columns: [
+            { name: 'no',           data: 'no' },
+            { name: 'name',         data: 'name' },
+            { name: 'productCount', data: 'productCount' },
+            { name: 'note',         data: 'note' },
+            {
+                name: 'action', data: 'id',
+                render: function(id, type, row) {
+                    return '<button class="btn btn-primary btn-sm me-1" onclick=\'openEditModal(' + JSON.stringify(row) + ')\'>Sửa</button>'
+                         + '<button class="btn btn-danger btn-sm" onclick="removeRow(\'category\',\'' + id + '\',table)">Xóa</button>';
+                }
+            }
+        ],
+        serverSide: true
+    });
+
+    function openAddModal() {
+        clearModalForm('#addCategoryModal');
+        addModal.show();
+    }
+
+    function openEditModal(row) {
+        $('#edit-id').val(row.id);
+        $('#edit-name').val(row.name);
+        $('#edit-note').val(row.note || '');
+        editModal.show();
+    }
+
+    function doAdd() {
+        if (!validateModalForm('#addCategoryModal')) return;
+        $.post('/category/do-add', $('#addCategoryForm').serialize())
+            .done(function(res) {
+                if (res.success) {
+                    addModal.hide();
+                    table.draw(false);
+                    addFlashMessage(res.message);
+                } else {
+                    addFlashMessage(res.message, FLASH_MESSAGE_TYPE_ERROR);
+                }
+            });
+    }
+
+    function doEdit() {
+        if (!validateModalForm('#editCategoryModal')) return;
+        $.post('/category/do-edit', $('#editCategoryForm').serialize())
+            .done(function(res) {
+                if (res.success) {
+                    editModal.hide();
+                    table.draw(false);
+                    addFlashMessage(res.message);
+                } else {
+                    addFlashMessage(res.message, FLASH_MESSAGE_TYPE_ERROR);
+                }
+            });
+    }
+</script>

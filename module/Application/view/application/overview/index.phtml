@@ -1,17 +1,24 @@
 <?php
 $this->headScript()->appendFile('https://code.highcharts.com/highcharts.js');
 $this->headScript()->appendFile('https://code.highcharts.com/modules/exporting.js');
-
-// Truyền totals từ controller
-$totals = $this->totals ?? [];
 ?>
 
 <div class="container mt-4">
 
-    <!-- Tab Doanh thu / Thu Chi -->
+    <!-- Tab -->
     <div class="mb-3">
         <a class="btn btn-primary active" href="/overview">📈 Doanh thu</a>
         <a class="btn btn-outline-primary ms-2" href="/overview/expenses">💰 Thu / Chi</a>
+    </div>
+
+    <!-- Date range + nút load -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <span class="text-muted small">Khoảng thời gian:</span>
+        <input type="text" id="chartFrom" class="form-control date-picker" placeholder="Từ ngày" autocomplete="off" style="width:130px"/>
+        <span class="text-muted">—</span>
+        <input type="text" id="chartTo"   class="form-control date-picker" placeholder="Đến ngày" autocomplete="off" style="width:130px"/>
+        <button class="btn btn-primary btn-sm" onclick="loadChart()">Xem</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="clearFilter()">✕ Tất cả</button>
     </div>
 
     <!-- Summary cards -->
@@ -50,37 +57,63 @@ $totals = $this->totals ?? [];
         </div>
     </div>
 
-    <!-- Charts -->
-    <div id="dailyChart" class="chart mb-4"></div>
+    <div id="chartLoading" class="text-center text-muted py-4 d-none">
+        <div class="spinner-border spinner-border-sm me-2"></div>Đang tải biểu đồ...
+    </div>
+    <div id="dailyChart"   class="chart mb-4"></div>
     <div id="monthlyChart" class="chart"></div>
 </div>
 
 <script>
-    const rawData = <?= json_encode($this->data, JSON_UNESCAPED_UNICODE) ?>;
-    const totals  = <?= json_encode($totals, JSON_UNESCAPED_UNICODE) ?>;
+    let rawData = {};
 
-    $(function () {
-        fillSummaryCards();
-        renderRevenueChart('dailyChart', false);
-        renderRevenueChart('monthlyChart', true);
-    });
+    $(function () { loadChart(); });
 
-    function fillSummaryCards() {
-        const fmt = v => formatNumber(v) + ' VNĐ';
-        // Tính từ rawData để đảm bảo nhất quán với chart
-        let totalRevenue = 0, totalProfit = 0, totalTreatment = 0, totalSpa = 0;
-        (rawData.revenue        || []).forEach(p => totalRevenue   += p[1]);
-        (rawData.petShopProfit  || []).forEach(p => totalProfit    += p[1]);
-        (rawData.treatmentRevenue || []).forEach(p => totalTreatment += p[1]);
-        (rawData.spaRevenue     || []).forEach(p => totalSpa       += p[1]);
-
-        $('#cardTotalRevenue').text(fmt(totalRevenue));
-        $('#cardTotalProfit').text(fmt(totalProfit));
-        $('#cardTreatmentRevenue').text(fmt(totalTreatment));
-        $('#cardSpaRevenue').text(fmt(totalSpa));
+    function clearFilter() {
+        $('#chartFrom').val('').datepicker('clearDates');
+        $('#chartTo').val('').datepicker('clearDates');
+        loadChart();
     }
 
-    // Aggregate data gốc (array [[timestamp, value]]) theo tháng
+    function loadChart() {
+        const from = $('#chartFrom').val() || '';
+        const to   = $('#chartTo').val()   || '';
+
+        $('#chartLoading').removeClass('d-none');
+        $('#dailyChart, #monthlyChart').empty();
+
+        $.get('/overview/chart-data', { from, to })
+            .done(function (res) {
+                $('#chartLoading').addClass('d-none');
+                if (!res.success) {
+                    addFlashMessage('Lỗi tải biểu đồ: ' + res.message, FLASH_MESSAGE_TYPE_ERROR);
+                    return;
+                }
+                rawData = res.data || {};
+                fillSummaryCards(res.totals || {});
+                renderRevenueChart('dailyChart',   false);
+                renderRevenueChart('monthlyChart', true);
+            })
+            .fail(function () {
+                $('#chartLoading').addClass('d-none');
+                addFlashMessage('Không thể tải dữ liệu biểu đồ.', FLASH_MESSAGE_TYPE_ERROR);
+            });
+    }
+
+    function fillSummaryCards(totals) {
+        const fmt = v => formatNumber(Math.round(v)) + ' VNĐ';
+        $('#cardTotalRevenue').text(fmt(totals.totalRevenue       || 0));
+        $('#cardTotalProfit').text(fmt(
+            (rawData.petShopProfit || []).reduce((s, p) => s + p[1], 0)
+        ));
+        $('#cardTreatmentRevenue').text(fmt(
+            (rawData.treatmentRevenue || []).reduce((s, p) => s + p[1], 0)
+        ));
+        $('#cardSpaRevenue').text(fmt(
+            (rawData.spaRevenue || []).reduce((s, p) => s + p[1], 0)
+        ));
+    }
+
     function aggregateByMonth(points) {
         const map = {};
         (points || []).forEach(([ts, val]) => {
@@ -88,42 +121,26 @@ $totals = $this->totals ?? [];
             const key = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
             map[key]  = (map[key] || 0) + val;
         });
-        return Object.entries(map)
-            .map(([k, v]) => [Number(k), v])
-            .sort((a, b) => a[0] - b[0]);
+        return Object.entries(map).map(([k, v]) => [Number(k), v]).sort((a, b) => a[0] - b[0]);
     }
 
     function renderRevenueChart(containerId, isMonthly) {
         const title      = isMonthly ? 'Doanh thu theo tháng' : 'Doanh thu theo ngày';
         const dateFormat = isMonthly ? '%m/%Y' : '%d/%m/%Y';
-
         const makeSeries = (name, key, color) => ({
-            name,
-            color,
+            name, color,
             data: isMonthly ? aggregateByMonth(rawData[key]) : (rawData[key] || []),
         });
-
         Highcharts.chart(containerId, {
             chart: { type: 'line', zoomType: 'x' },
             title: { text: title },
-            xAxis: {
-                type: 'datetime',
-                labels: { format: `{value:${dateFormat}}` },
-            },
+            xAxis: { type: 'datetime', labels: { format: `{value:${dateFormat}}` } },
             yAxis: {
                 title: { text: 'VNĐ' },
-                labels: {
-                    formatter: function () {
-                        return Highcharts.numberFormat(this.value, 0, '.', ',');
-                    }
-                }
+                labels: { formatter: function () { return Highcharts.numberFormat(this.value, 0, '.', ','); } }
             },
             tooltip: {
-                shared: true,
-                xDateFormat: dateFormat,
-                valueDecimals: 0,
-                valuePrefix: '',
-                valueSuffix: ' VNĐ',
+                shared: true, xDateFormat: dateFormat,
                 formatter: function () {
                     let s = `<b>${Highcharts.dateFormat(dateFormat, this.x)}</b><br/>`;
                     this.points.forEach(p => {
