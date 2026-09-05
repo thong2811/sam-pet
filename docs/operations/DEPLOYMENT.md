@@ -29,7 +29,11 @@ DB_PATH="data/app.db"       # Đường dẫn file CSDL SQLite
 
 # GitHub Cloud Backup (tùy chọn)
 GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
-GITHUB_REPO="username/repository"
+GITHUB_REPO_OWNER="username"
+GITHUB_REPO_NAME="repository"
+
+# Google Apps Script Web App (Đồng bộ Xuất hàng & Chiết hàng)
+GOOGLE_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycb.../exec"
 ```
 
 ---

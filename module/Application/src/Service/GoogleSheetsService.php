@@ -6,7 +6,24 @@ namespace Application\Service;
 
 class GoogleSheetsService
 {
-    public const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdleboFPOhYW4y7JNAyVMgtLuPrjyEEFzf3oveJ9WiurbwsyVXXWwRaItEkpmfEm0/exec';
+    public const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyE6Sms6dOVaqowarrIx8Jdj53PcvZzqua4bafuiXhu2W9eWrQW57Tmw1d7lsAneo4/exec';
+
+    private string $appsScriptUrl;
+
+    public function __construct(?string $appsScriptUrl = null)
+    {
+        $url = $appsScriptUrl
+            ?? ($_ENV['GOOGLE_APPS_SCRIPT_URL'] ?? null)
+            ?? getenv('GOOGLE_APPS_SCRIPT_URL')
+            ?: self::DEFAULT_APPS_SCRIPT_URL;
+
+        $this->appsScriptUrl = (string) $url;
+    }
+
+    public function getAppsScriptUrl(): string
+    {
+        return $this->appsScriptUrl;
+    }
 
     /**
      * Lấy toàn bộ dữ liệu từ Google Sheets (tab PhieuXuat).
@@ -17,7 +34,7 @@ class GoogleSheetsService
      */
     public function fetchAll(): array
     {
-        $response = $this->httpGet(self::APPS_SCRIPT_URL);
+        $response = $this->httpGet($this->appsScriptUrl);
 
         $data = json_decode($response, true);
 
@@ -61,7 +78,7 @@ class GoogleSheetsService
      */
     public function fetchRepackageAll(): array
     {
-        $url = self::APPS_SCRIPT_URL . '?type=repackage';
+        $url = $this->appsScriptUrl . '?type=repackage';
         $response = $this->httpGet($url);
 
         $data = json_decode($response, true);
