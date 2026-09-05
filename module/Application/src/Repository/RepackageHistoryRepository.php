@@ -176,43 +176,112 @@ class RepackageHistoryRepository extends BaseRepository
     }
 
     /**
-     * Lọc các rows chưa tồn tại trong DB (chống duplicate khi sync Sheets).
+     * Phân loại các rows từ Google Sheets thành 3 nhóm:
+     * - 'new': Các dòng chưa có trong DB (chèn mới).
+     * - 'updated': Các dòng đã có trong DB nhưng có sự thay đổi về số lượng/thông tin (cần cập nhật & điều chỉnh tồn kho lệch).
+     * - 'unchanged': Các dòng đã có trong DB và hoàn toàn khớp dữ liệu (bỏ qua).
+     *
+     * @param array[] $rows  Rows từ Google Sheets (đã cast type)
+     * @return array{new: array[], updated: array[], unchanged: array[], allSync: array[]}
+     */
+    public function categorizeSyncRows(array $rows): array
+    {
+        if (empty($rows)) {
+            return ['new' => [], 'updated' => [], 'unchanged' => [], 'allSync' => []];
+        }
+
+        $ids = array_filter(array_column($rows, 'id'));
+        $existingMap = [];
+
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $existingRows = $this->fetchAll(
+                "SELECT * FROM repackage_history WHERE id IN ($placeholders)",
+                array_values($ids)
+            );
+            foreach ($existingRows as $er) {
+                $existingMap[$er['id']] = $er;
+            }
+        }
+
+        $newRows       = [];
+        $updatedRows   = [];
+        $unchangedRows = [];
+
+        foreach ($rows as $row) {
+            $id = (string) ($row['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+
+            if (!isset($existingMap[$id])) {
+                $row['_syncStatus'] = 'new';
+                $newRows[] = $row;
+            } else {
+                $db = $existingMap[$id];
+                $dbFromQty    = (float) ($db['fromQuantity'] ?? 0);
+                $dbToQty      = (float) ($db['toQuantity'] ?? 0);
+                $sheetFromQty = (float) ($row['fromQuantity'] ?? 0);
+                $sheetToQty   = (float) ($row['toQuantity'] ?? 0);
+
+                $dbFromPid    = (string) ($db['fromProductId'] ?? '');
+                $sheetFromPid = (string) ($row['fromProductId'] ?? '');
+                $dbToPid      = (string) ($db['toProductId'] ?? '');
+                $sheetToPid   = (string) ($row['toProductId'] ?? '');
+
+                $dbDate       = (string) ($db['date'] ?? '');
+                $sheetDate    = (string) ($row['date'] ?? '');
+                $dbNote       = (string) ($db['note'] ?? '');
+                $sheetNote    = (string) ($row['note'] ?? '');
+
+                $isChanged = abs($dbFromQty - $sheetFromQty) > 0.0001
+                    || abs($dbToQty - $sheetToQty) > 0.0001
+                    || $dbFromPid !== $sheetFromPid
+                    || $dbToPid !== $sheetToPid
+                    || $dbDate !== $sheetDate
+                    || $dbNote !== $sheetNote;
+
+                if ($isChanged) {
+                    $row['_syncStatus']       = 'updated';
+                    $row['_oldFromQuantity']  = $dbFromQty;
+                    $row['_oldToQuantity']    = $dbToQty;
+                    $row['_oldFromProductId'] = $dbFromPid;
+                    $row['_oldToProductId']   = $dbToPid;
+                    $row['_oldDate']          = $dbDate;
+                    $row['_oldNote']          = $dbNote;
+                    $updatedRows[] = $row;
+                } else {
+                    $row['_syncStatus'] = 'unchanged';
+                    $unchangedRows[] = $row;
+                }
+            }
+        }
+
+        return [
+            'new'       => $newRows,
+            'updated'   => $updatedRows,
+            'unchanged' => $unchangedRows,
+            'allSync'   => array_merge($newRows, $updatedRows),
+        ];
+    }
+
+    /**
+     * Lọc các rows cần đồng bộ (bao gồm cả dòng mới & dòng đã sửa trên Sheets).
      *
      * @param array[] $rows  Rows từ Google Sheets (đã cast type)
      * @return array[]
      */
     public function filterNewRows(array $rows): array
     {
-        if (empty($rows)) {
-            return [];
-        }
-
-        $ids = array_filter(array_column($rows, 'id'));
-        if (empty($ids)) {
-            return $rows;
-        }
-
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $existing = $this->fetchAll(
-            "SELECT id FROM repackage_history WHERE id IN ($placeholders)",
-            array_values($ids)
-        );
-        $existingIds = array_column($existing, 'id');
-
-        return array_values(array_filter($rows, function (array $row) use ($existingIds): bool {
-            $id = $row['id'] ?? '';
-            return $id !== '' && !in_array($id, $existingIds, true);
-        }));
+        return $this->categorizeSyncRows($rows)['allSync'];
     }
 
     /**
-     * Import rows chiết hàng từ Google Sheets:
-     * - Chèn vào repackage_history (giữ nguyên timestamps gốc).
-     * - Cập nhật products.repackageStock:
-     *   + Trừ kho sản phẩm nguồn (fromProductId) nếu fromQuantity > 0.
-     *   + Cộng kho sản phẩm đích (toProductId) nếu toQuantity > 0.
+     * Import / Cập nhật rows chiết hàng từ Google Sheets:
+     * - Dòng mới: Chèn vào repackage_history và trừ kho nguồn / cộng kho đích.
+     * - Dòng cập nhật: Cập nhật repackage_history và điều chỉnh độ lệch tồn kho tương ứng.
      *
-     * @param array[] $rows  Đã qua filterNewRows()
+     * @param array[] $rows  Đã qua categorize / filter
      */
     public function importFromSheets(array $rows): void
     {
@@ -225,14 +294,27 @@ class RepackageHistoryRepository extends BaseRepository
                          fromQuantity, toQuantity, note, createdAt, updatedAt)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        $sqlUpdateSource = "UPDATE products SET repackageStock = repackageStock - ?, updatedAt = ? WHERE id = ?";
-        $sqlUpdateTarget = "UPDATE products SET repackageStock = repackageStock + ?, updatedAt = ? WHERE id = ?";
+        $sqlUpdateRow = "UPDATE repackage_history SET
+                            date = ?, fromProductId = ?, fromProductName = ?,
+                            toProductId = ?, toProductName = ?,
+                            fromQuantity = ?, toQuantity = ?, note = ?, updatedAt = ?
+                         WHERE id = ?";
 
-        $this->db->transactional(function () use ($rows, $sqlInsert, $sqlUpdateSource, $sqlUpdateTarget): void {
-            $newRows = $this->filterNewRows($rows);
+        $sqlUpdateSourceDec = "UPDATE products SET repackageStock = repackageStock - ?, updatedAt = ? WHERE id = ?";
+        $sqlUpdateSourceInc = "UPDATE products SET repackageStock = repackageStock + ?, updatedAt = ? WHERE id = ?";
+        $sqlUpdateTargetInc = "UPDATE products SET repackageStock = repackageStock + ?, updatedAt = ? WHERE id = ?";
+        $sqlUpdateTargetDec = "UPDATE products SET repackageStock = repackageStock - ?, updatedAt = ? WHERE id = ?";
+
+        $this->db->transactional(function () use (
+            $rows, $sqlInsert, $sqlUpdateRow,
+            $sqlUpdateSourceDec, $sqlUpdateSourceInc,
+            $sqlUpdateTargetInc, $sqlUpdateTargetDec
+        ): void {
+            $categorized = $this->categorizeSyncRows($rows);
             $now = $this->ts();
 
-            foreach ($newRows as $row) {
+            // 1. Xử lý các dòng mới (NEW)
+            foreach ($categorized['new'] as $row) {
                 $id            = (string) ($row['id'] ?? '');
                 $date          = (string) ($row['date'] ?? '');
                 $fromProductId = !empty($row['fromProductId']) ? (string) $row['fromProductId'] : null;
@@ -245,33 +327,91 @@ class RepackageHistoryRepository extends BaseRepository
                 $createdAt     = !empty($row['createdAt']) ? (int) $row['createdAt'] : $now;
                 $updatedAt     = !empty($row['updatedAt']) ? (int) $row['updatedAt'] : $now;
 
-                if ($id === '') {
-                    continue;
-                }
+                if ($id === '') continue;
 
-                // 1. Chèn vào lịch sử
                 $this->execute($sqlInsert, [
-                    $id,
-                    $date,
-                    $fromProductId,
-                    $fromProdName,
-                    $toProductId,
-                    $toProdName,
-                    $fromQty,
-                    $toQty,
-                    $note,
-                    $createdAt,
-                    $updatedAt,
+                    $id, $date, $fromProductId, $fromProdName,
+                    $toProductId, $toProdName, $fromQty, $toQty,
+                    $note, $createdAt, $updatedAt
                 ]);
 
-                // 2. Cập nhật tồn kho sản phẩm nguồn (nếu fromQty > 0)
                 if ($fromProductId !== null && $fromQty > 0) {
-                    $this->execute($sqlUpdateSource, [$fromQty, $updatedAt, $fromProductId]);
+                    $this->execute($sqlUpdateSourceDec, [$fromQty, $updatedAt, $fromProductId]);
                 }
 
-                // 3. Cập nhật tồn kho sản phẩm đích (nếu toQty > 0)
                 if ($toProductId !== null && $toQty > 0) {
-                    $this->execute($sqlUpdateTarget, [$toQty, $updatedAt, $toProductId]);
+                    $this->execute($sqlUpdateTargetInc, [$toQty, $updatedAt, $toProductId]);
+                }
+            }
+
+            // 2. Xử lý các dòng cập nhật (UPDATED)
+            foreach ($categorized['updated'] as $row) {
+                $id            = (string) ($row['id'] ?? '');
+                $date          = (string) ($row['date'] ?? '');
+                $fromProductId = !empty($row['fromProductId']) ? (string) $row['fromProductId'] : null;
+                $fromProdName  = (string) ($row['fromProductName'] ?? '');
+                $toProductId   = !empty($row['toProductId']) ? (string) $row['toProductId'] : null;
+                $toProdName    = (string) ($row['toProductName'] ?? '');
+                $newFromQty    = (float) ($row['fromQuantity'] ?? 0);
+                $newToQty      = (float) ($row['toQuantity'] ?? 0);
+                $oldFromQty    = (float) ($row['_oldFromQuantity'] ?? 0);
+                $oldToQty      = (float) ($row['_oldToQuantity'] ?? 0);
+                $oldFromPid    = !empty($row['_oldFromProductId']) ? (string) $row['_oldFromProductId'] : null;
+                $oldToPid      = !empty($row['_oldToProductId']) ? (string) $row['_oldToProductId'] : null;
+                $note          = (string) ($row['note'] ?? '');
+                $updatedAt     = !empty($row['updatedAt']) ? (int) $row['updatedAt'] : $now;
+
+                if ($id === '') continue;
+
+                // Cập nhật lại row trong DB
+                $this->execute($sqlUpdateRow, [
+                    $date, $fromProductId, $fromProdName,
+                    $toProductId, $toProdName, $newFromQty, $newToQty,
+                    $note, $updatedAt, $id
+                ]);
+
+                // Điều chỉnh tồn kho NGUỒN:
+                if ($fromProductId === $oldFromPid) {
+                    $diffFrom = $newFromQty - $oldFromQty;
+                    if ($fromProductId !== null && abs($diffFrom) > 0.0001) {
+                        if ($diffFrom > 0) {
+                            // Tăng thêm lượng chiết -> trừ thêm vào kho
+                            $this->execute($sqlUpdateSourceDec, [$diffFrom, $updatedAt, $fromProductId]);
+                        } else {
+                            // Giảm bớt lượng chiết -> cộng trả lại kho
+                            $this->execute($sqlUpdateSourceInc, [abs($diffFrom), $updatedAt, $fromProductId]);
+                        }
+                    }
+                } else {
+                    // Đổi mã sản phẩm nguồn: hoàn trả SP cũ, trừ SP mới
+                    if ($oldFromPid !== null && $oldFromQty > 0) {
+                        $this->execute($sqlUpdateSourceInc, [$oldFromQty, $updatedAt, $oldFromPid]);
+                    }
+                    if ($fromProductId !== null && $newFromQty > 0) {
+                        $this->execute($sqlUpdateSourceDec, [$newFromQty, $updatedAt, $fromProductId]);
+                    }
+                }
+
+                // Điều chỉnh tồn kho ĐÍCH:
+                if ($toProductId === $oldToPid) {
+                    $diffTo = $newToQty - $oldToQty;
+                    if ($toProductId !== null && abs($diffTo) > 0.0001) {
+                        if ($diffTo > 0) {
+                            // Tăng số lượng tạo thành -> cộng thêm vào kho
+                            $this->execute($sqlUpdateTargetInc, [$diffTo, $updatedAt, $toProductId]);
+                        } else {
+                            // Giảm số lượng tạo thành -> trừ bớt khỏi kho
+                            $this->execute($sqlUpdateTargetDec, [abs($diffTo), $updatedAt, $toProductId]);
+                        }
+                    }
+                } else {
+                    // Đổi mã sản phẩm đích: thu hồi SP cũ, cộng SP mới
+                    if ($oldToPid !== null && $oldToQty > 0) {
+                        $this->execute($sqlUpdateTargetDec, [$oldToQty, $updatedAt, $oldToPid]);
+                    }
+                    if ($toProductId !== null && $newToQty > 0) {
+                        $this->execute($sqlUpdateTargetInc, [$newToQty, $updatedAt, $toProductId]);
+                    }
                 }
             }
         });

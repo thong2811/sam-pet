@@ -134,39 +134,113 @@ class ExportStockRepository extends BaseRepository
     }
 
     /**
-     * Lọc các rows chưa tồn tại trong DB (chống duplicate khi sync Sheets).
+     * Phân loại các rows từ Google Sheets thành 3 nhóm:
+     * - 'new': Các dòng chưa có trong DB (chèn mới).
+     * - 'updated': Các dòng đã có trong DB nhưng có sự thay đổi về số lượng/giá/thông tin (cần cập nhật).
+     * - 'unchanged': Các dòng đã có trong DB và hoàn toàn khớp dữ liệu (bỏ qua).
+     *
+     * @param array[] $rows  Rows từ Google Sheets (đã cast type)
+     * @return array{new: array[], updated: array[], unchanged: array[], allSync: array[]}
+     */
+    public function categorizeSyncRows(array $rows): array
+    {
+        if (empty($rows)) {
+            return ['new' => [], 'updated' => [], 'unchanged' => [], 'allSync' => []];
+        }
+
+        $ids = array_filter(array_column($rows, 'id'));
+        $existingMap = [];
+
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $existingRows = $this->fetchAll(
+                "SELECT * FROM export_stock WHERE id IN ($placeholders)",
+                array_values($ids)
+            );
+            foreach ($existingRows as $er) {
+                $existingMap[$er['id']] = $er;
+            }
+        }
+
+        $newRows       = [];
+        $updatedRows   = [];
+        $unchangedRows = [];
+
+        foreach ($rows as $row) {
+            $id = (string) ($row['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+
+            if (!isset($existingMap[$id])) {
+                $row['_syncStatus'] = 'new';
+                $newRows[] = $row;
+            } else {
+                $db = $existingMap[$id];
+                $dbQty           = (float) ($db['quantity'] ?? 0);
+                $dbSellPrice     = (float) ($db['sellingPrice'] ?? 0);
+                $dbPurchasePrice = (float) ($db['purchasePrice'] ?? 0);
+                $sheetQty        = (float) ($row['quantity'] ?? 0);
+                $sheetSellPrice  = (float) ($row['sellingPrice'] ?? 0);
+                $sheetPurchPrice = (float) ($row['purchasePrice'] ?? 0);
+
+                $dbPid           = (string) ($db['productId'] ?? '');
+                $sheetPid        = (string) ($row['productId'] ?? '');
+                $dbPname         = (string) ($db['productName'] ?? '');
+                $sheetPname      = (string) ($row['productName'] ?? '');
+                $dbDate          = (string) ($db['date'] ?? '');
+                $sheetDate       = (string) ($row['date'] ?? '');
+                $dbNote          = (string) ($db['note'] ?? '');
+                $sheetNote       = (string) ($row['note'] ?? '');
+
+                $isChanged = abs($dbQty - $sheetQty) > 0.0001
+                    || abs($dbSellPrice - $sheetSellPrice) > 0.0001
+                    || abs($dbPurchasePrice - $sheetPurchPrice) > 0.0001
+                    || $dbPid !== $sheetPid
+                    || $dbPname !== $sheetPname
+                    || $dbDate !== $sheetDate
+                    || $dbNote !== $sheetNote;
+
+                if ($isChanged) {
+                    $row['_syncStatus']       = 'updated';
+                    $row['_oldQuantity']      = $dbQty;
+                    $row['_oldSellingPrice']  = $dbSellPrice;
+                    $row['_oldPurchasePrice'] = $dbPurchasePrice;
+                    $row['_oldProductId']     = $dbPid;
+                    $row['_oldProductName']   = $dbPname;
+                    $row['_oldDate']          = $dbDate;
+                    $row['_oldNote']          = $dbNote;
+                    $updatedRows[] = $row;
+                } else {
+                    $row['_syncStatus'] = 'unchanged';
+                    $unchangedRows[] = $row;
+                }
+            }
+        }
+
+        return [
+            'new'       => $newRows,
+            'updated'   => $updatedRows,
+            'unchanged' => $unchangedRows,
+            'allSync'   => array_merge($newRows, $updatedRows),
+        ];
+    }
+
+    /**
+     * Lọc các rows cần đồng bộ (bao gồm cả dòng mới & dòng đã sửa trên Sheets).
      *
      * @param array[] $rows  Rows từ Google Sheets (đã cast type)
      * @return array[]
      */
     public function filterNewRows(array $rows): array
     {
-        if (empty($rows)) {
-            return [];
-        }
-
-        $ids = array_filter(array_column($rows, 'id'));
-        if (empty($ids)) {
-            return $rows;
-        }
-
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $existing = $this->fetchAll(
-            "SELECT id FROM export_stock WHERE id IN ($placeholders)",
-            array_values($ids)
-        );
-        $existingIds = array_column($existing, 'id');
-
-        return array_values(array_filter($rows, function (array $row) use ($existingIds): bool {
-            $id = $row['id'] ?? '';
-            return $id !== '' && !in_array($id, $existingIds, true);
-        }));
+        return $this->categorizeSyncRows($rows)['allSync'];
     }
 
     /**
-     * Import rows từ Google Sheets — preserve createdAt/updatedAt gốc.
+     * Import / Cập nhật rows xuất hàng từ Google Sheets — preserve createdAt/updatedAt gốc.
      *
-     * @param array[] $rows  Đã qua filterNewRows()
+     * @param array[] $rows  Đã qua categorize / filter
      */
     public function importFromSheets(array $rows): void
     {
@@ -174,16 +248,23 @@ class ExportStockRepository extends BaseRepository
             return;
         }
 
-        $sql = "INSERT OR IGNORE INTO export_stock
-                    (id, date, productId, productName, quantity, sellingPrice, purchasePrice, note, createdAt, updatedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sqlInsert = "INSERT OR IGNORE INTO export_stock
+                        (id, date, productId, productName, quantity, sellingPrice, purchasePrice, note, createdAt, updatedAt)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        $this->db->transactional(function () use ($rows, $sql): void {
-            // Lọc lại lần 2 trong transaction để chống race condition
-            $newRows = $this->filterNewRows($rows);
-            foreach ($newRows as $row) {
-                $now = $this->ts();
-                $this->execute($sql, [
+        $sqlUpdate = "UPDATE export_stock SET
+                        date = ?, productId = ?, productName = ?,
+                        quantity = ?, sellingPrice = ?, purchasePrice = ?,
+                        note = ?, updatedAt = ?
+                      WHERE id = ?";
+
+        $this->db->transactional(function () use ($rows, $sqlInsert, $sqlUpdate): void {
+            $categorized = $this->categorizeSyncRows($rows);
+            $now = $this->ts();
+
+            // 1. Chèn dòng mới (NEW)
+            foreach ($categorized['new'] as $row) {
+                $this->execute($sqlInsert, [
                     $row['id'],
                     $row['date']          ?? '',
                     $row['productId']     ?? '',
@@ -192,9 +273,23 @@ class ExportStockRepository extends BaseRepository
                     (float) ($row['sellingPrice']  ?? 0),
                     (float) ($row['purchasePrice'] ?? 0),
                     $row['note']          ?? '',
-                    // Giữ nguyên timestamps gốc từ Sheets
                     !empty($row['createdAt']) ? (int) $row['createdAt'] : $now,
                     !empty($row['updatedAt']) ? (int) $row['updatedAt'] : $now,
+                ]);
+            }
+
+            // 2. Cập nhật dòng đã sửa (UPDATED)
+            foreach ($categorized['updated'] as $row) {
+                $this->execute($sqlUpdate, [
+                    $row['date']          ?? '',
+                    $row['productId']     ?? '',
+                    $row['productName']   ?? '',
+                    (float) ($row['quantity']      ?? 0),
+                    (float) ($row['sellingPrice']  ?? 0),
+                    (float) ($row['purchasePrice'] ?? 0),
+                    $row['note']          ?? '',
+                    !empty($row['updatedAt']) ? (int) $row['updatedAt'] : $now,
+                    $row['id'],
                 ]);
             }
         });

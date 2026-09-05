@@ -111,10 +111,19 @@ class ExportStockController extends AbstractActionController
                 ? array_values(array_filter($allRows, fn($r) => ($r['date'] ?? '') === $date))
                 : $allRows;
 
-            $newRows      = $this->exportRepo->filterNewRows($rows);
-            $skippedCount = count($rows) - count($newRows);
+            $categorized  = $this->exportRepo->categorizeSyncRows($rows);
+            $newRows      = $categorized['allSync'];
+            $newCount     = count($categorized['new']);
+            $updatedCount = count($categorized['updated']);
+            $skippedCount = count($categorized['unchanged']);
 
-            return new JsonModel(['success' => true, 'newRows' => $newRows, 'newCount' => count($newRows), 'skippedCount' => $skippedCount]);
+            return new JsonModel([
+                'success'      => true,
+                'newRows'      => $newRows,
+                'newCount'     => $newCount,
+                'updatedCount' => $updatedCount,
+                'skippedCount' => $skippedCount,
+            ]);
         } catch (\RuntimeException $e) {
             return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         } catch (\Throwable $e) {
@@ -146,19 +155,23 @@ class ExportStockController extends AbstractActionController
                 return new JsonModel(['success' => false, 'message' => 'Không có bản ghi hợp lệ để đồng bộ.']);
             }
 
+            $categorized  = $this->exportRepo->categorizeSyncRows($validRows);
+            $newCount     = count($categorized['new']);
+            $updatedCount = count($categorized['updated']);
+
             $this->exportRepo->importFromSheets($validRows);
-            $added   = count($this->exportRepo->filterNewRows($validRows)) === 0
-                ? count($validRows)
-                : count($validRows) - count($this->exportRepo->filterNewRows($validRows));
 
-            // filterNewRows sau importFromSheets trả về [] vì đã insert hết
-            // nên đếm added = count($validRows) là đúng
-            $added   = count($validRows);
-            $message = $added > 0
-                ? sprintf('Đã đồng bộ %d bản ghi mới.', $added)
-                : 'Không có bản ghi mới (tất cả đã tồn tại).';
+            $parts = [];
+            if ($newCount > 0) $parts[] = "$newCount bản ghi mới";
+            if ($updatedCount > 0) $parts[] = "$updatedCount bản ghi cập nhật";
+            $message = !empty($parts) ? 'Đã đồng bộ thành công: ' . implode(', ', $parts) . '.' : 'Đã đồng bộ thành công!';
 
-            return new JsonModel(['success' => true, 'added' => $added, 'skipped' => 0, 'message' => $message]);
+            return new JsonModel([
+                'success'      => true,
+                'newCount'     => $newCount,
+                'updatedCount' => $updatedCount,
+                'message'      => $message,
+            ]);
         } catch (\RuntimeException $e) {
             return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
         } catch (\Throwable $e) {

@@ -95,8 +95,9 @@
                     <table class="table table-sm table-bordered table-hover">
                         <thead class="table-light">
                         <tr>
-                            <th>STT</th>
-                            <th>Ngày</th>
+                            <th style="width: 50px" class="text-center">STT</th>
+                            <th style="width: 90px" class="text-center">Trạng thái</th>
+                            <th style="width: 100px">Ngày</th>
                             <th>Tên hàng hóa</th>
                             <th class="text-end">Giá nhập</th>
                             <th class="text-end">Giá bán</th>
@@ -143,27 +144,30 @@
 
                 _syncRows = response.newRows || [];
                 const newCount     = response.newCount || 0;
+                const updatedCount = response.updatedCount || 0;
                 const skippedCount = response.skippedCount || 0;
+                const totalAction  = newCount + updatedCount;
                 const dateLabel    = date ? ` ngày <strong>${date}</strong>` : '';
 
                 // Tóm tắt
                 let summaryHtml = '';
-                if (newCount === 0) {
+                if (totalAction === 0) {
                     summaryHtml = `<div class="alert alert-info mb-0">
-                        Dữ liệu${dateLabel} đã đồng bộ — không có bản ghi mới.
+                        Dữ liệu${dateLabel} đã đồng bộ — không có thay đổi mới.
                         ${skippedCount > 0 ? `<span class="text-muted">(${skippedCount} bản ghi đã tồn tại)</span>` : ''}
                     </div>`;
                 } else {
                     summaryHtml = `<div class="d-flex gap-2 align-items-center flex-wrap">
-                        <span class="badge bg-success fs-6">${newCount} bản ghi mới</span>
-                        ${skippedCount > 0 ? `<span class="badge bg-secondary fs-6">${skippedCount} đã tồn tại (bỏ qua)</span>` : ''}
+                        ${newCount > 0 ? `<span class="badge bg-success fs-6">${newCount} bản ghi mới</span>` : ''}
+                        ${updatedCount > 0 ? `<span class="badge bg-warning text-dark fs-6">${updatedCount} bản ghi cập nhật</span>` : ''}
+                        ${skippedCount > 0 ? `<span class="badge bg-secondary fs-6">${skippedCount} không đổi (bỏ qua)</span>` : ''}
                         ${dateLabel ? `<span class="text-muted small">— Lọc theo${dateLabel}</span>` : ''}
                     </div>`;
                 }
                 $('#syncSummary').html(summaryHtml);
 
                 // Bảng preview — group theo ngày, cuối mỗi ngày có dòng tổng
-                if (newCount > 0) {
+                if (totalAction > 0) {
                     // Group rows theo ngày, giữ thứ tự xuất hiện
                     const grouped = {};
                     const dateOrder = [];
@@ -190,20 +194,40 @@
                             dayRevenue += sell     * qty;
                             dayProfit  += (sell - purchase) * qty;
 
+                            let statusBadge = row._syncStatus === 'updated'
+                                ? `<span class="badge bg-warning text-dark">Cập nhật</span>`
+                                : `<span class="badge bg-success">Mới</span>`;
+
+                            let qtyHtml = qty.toLocaleString();
+                            if (row._syncStatus === 'updated' && row._oldQuantity !== undefined && Number(row._oldQuantity) !== qty) {
+                                qtyHtml = `<span class="fw-bold text-danger">${qty.toLocaleString()}</span> <small class="text-muted">(${Number(row._oldQuantity).toLocaleString()})</small>`;
+                            }
+
+                            let sellHtml = sell.toLocaleString();
+                            if (row._syncStatus === 'updated' && row._oldSellingPrice !== undefined && Number(row._oldSellingPrice) !== sell) {
+                                sellHtml = `<span class="fw-bold text-danger">${sell.toLocaleString()}</span> <small class="text-muted">(${Number(row._oldSellingPrice).toLocaleString()})</small>`;
+                            }
+
+                            let purchHtml = purchase.toLocaleString();
+                            if (row._syncStatus === 'updated' && row._oldPurchasePrice !== undefined && Number(row._oldPurchasePrice) !== purchase) {
+                                purchHtml = `<span class="fw-bold text-danger">${purchase.toLocaleString()}</span> <small class="text-muted">(${Number(row._oldPurchasePrice).toLocaleString()})</small>`;
+                            }
+
                             rows += `<tr>
-                                <td>${stt++}</td>
+                                <td class="text-center">${stt++}</td>
+                                <td class="text-center">${statusBadge}</td>
                                 <td>${row.date || ''}</td>
                                 <td>${row.productName || ''}</td>
-                                <td class="text-end">${purchase.toLocaleString()}</td>
-                                <td class="text-end">${sell.toLocaleString()}</td>
-                                <td class="text-end">${qty.toLocaleString()}</td>
+                                <td class="text-end">${purchHtml}</td>
+                                <td class="text-end">${sellHtml}</td>
+                                <td class="text-end">${qtyHtml}</td>
                                 <td>${row.note || ''}</td>
                             </tr>`;
                         });
 
                         // Dòng tổng cuối ngày
                         rows += `<tr class="table-warning fw-bold">
-                            <td colspan="5" class="text-end">Tổng ngày ${date}</td>
+                            <td colspan="6" class="text-end">Tổng ngày ${date}</td>
                             <td colspan="2">
                                 Doanh thu: ${dayRevenue.toLocaleString()} &nbsp;|&nbsp;
                                 Lợi nhuận: ${dayProfit.toLocaleString()}

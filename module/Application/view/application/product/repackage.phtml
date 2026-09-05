@@ -240,17 +240,27 @@
                     fromProductId: r.fromProductId || '',
                     fromProductName: r.fromProductName || '',
                     fromQuantity: r.sessionFromQty !== undefined ? Number(r.sessionFromQty) : (Number(r.fromQuantity) || 0),
+                    _syncStatus: r._syncStatus || 'new',
+                    _oldFromQuantity: r._oldFromQuantity,
                     createdAt: r.createdAt || 0,
                     items: []
                 });
             }
             const session = map.get(key);
+            if (r._syncStatus === 'updated') {
+                session._syncStatus = 'updated';
+            }
+            if (r._oldFromQuantity !== undefined) {
+                session._oldFromQuantity = r._oldFromQuantity;
+            }
             session.items.push({
                 id: r.id,
                 toProductId: r.toProductId || '',
                 toProductName: r.toProductName || '',
                 toQuantity: Number(r.toQuantity) || 0,
-                note: r.note || ''
+                note: r.note || '',
+                _syncStatus: r._syncStatus || 'new',
+                _oldToQuantity: r._oldToQuantity
             });
         });
         return Array.from(map.values());
@@ -280,44 +290,65 @@
 
                 _syncRepackageRows = response.newRows || [];
                 const newCount     = response.newCount || 0;
+                const updatedCount = response.updatedCount || 0;
                 const skippedCount = response.skippedCount || 0;
+                const totalAction  = newCount + updatedCount;
                 const dateLabel    = date ? ` ngày <strong>${date}</strong>` : '';
 
                 let summaryHtml = '';
-                if (newCount === 0) {
+                if (totalAction === 0) {
                     summaryHtml = `<div class="alert alert-info mb-0">
-                        Dữ liệu chiết hàng${dateLabel} đã đồng bộ — không có bản ghi mới.
+                        Dữ liệu chiết hàng${dateLabel} đã đồng bộ — không có thay đổi mới.
                         ${skippedCount > 0 ? `<span class="text-muted">(${skippedCount} bản ghi đã tồn tại)</span>` : ''}
                     </div>`;
                 } else {
                     const sessions = groupRepackageSessions(_syncRepackageRows);
                     summaryHtml = `<div class="d-flex gap-2 align-items-center flex-wrap">
-                        <span class="badge bg-success fs-6">${newCount} dòng mới (${sessions.length} phiên chiết)</span>
-                        ${skippedCount > 0 ? `<span class="badge bg-secondary fs-6">${skippedCount} dòng đã tồn tại (bỏ qua)</span>` : ''}
+                        ${newCount > 0 ? `<span class="badge bg-success fs-6">${newCount} dòng mới</span>` : ''}
+                        ${updatedCount > 0 ? `<span class="badge bg-warning text-dark fs-6">${updatedCount} dòng cập nhật thay đổi</span>` : ''}
+                        <span class="badge bg-info text-dark fs-6">${sessions.length} phiên chiết cần đồng bộ</span>
+                        ${skippedCount > 0 ? `<span class="badge bg-secondary fs-6">${skippedCount} dòng không đổi (bỏ qua)</span>` : ''}
                         ${dateLabel ? `<span class="text-muted small">— Lọc theo${dateLabel}</span>` : ''}
                     </div>`;
                 }
                 $('#syncRepackageSummary').html(summaryHtml);
 
-                if (newCount > 0) {
+                if (totalAction > 0) {
                     const sessions = groupRepackageSessions(_syncRepackageRows);
                     let rowsHtml = '';
                     sessions.forEach(function (session, idx) {
                         let toItemsHtml = '<ul class="list-unstyled mb-0">';
                         session.items.forEach(function (item) {
+                            let itemBadge = `<span class="badge bg-primary me-1">+${item.toQuantity}</span>`;
+                            if (item._syncStatus === 'updated' && item._oldToQuantity !== undefined && item._oldToQuantity !== item.toQuantity) {
+                                itemBadge = `<span class="badge bg-warning text-dark me-1" title="Số lượng cũ: ${item._oldToQuantity}">+${item.toQuantity} (cũ: +${item._oldToQuantity})</span>`;
+                            }
+
                             toItemsHtml += `<li class="py-1">
-                                <span class="badge bg-primary me-1">+${item.toQuantity}</span>
+                                ${itemBadge}
                                 <strong>${item.toProductName}</strong>
                                 ${item.note ? `<span class="text-muted ms-2 fst-italic">(${item.note})</span>` : ''}
                             </li>`;
                         });
                         toItemsHtml += '</ul>';
 
+                        let fromBadge = `<span class="badge bg-danger me-1">-${session.fromQuantity}</span>`;
+                        if (session._oldFromQuantity !== undefined && session._oldFromQuantity !== session.fromQuantity) {
+                            fromBadge = `<span class="badge bg-warning text-dark me-1" title="Số lượng cũ: ${session._oldFromQuantity}">-${session.fromQuantity} (cũ: -${session._oldFromQuantity})</span>`;
+                        }
+
+                        let statusBadge = session._syncStatus === 'updated'
+                            ? `<span class="badge bg-warning text-dark ms-1">Cập nhật</span>`
+                            : `<span class="badge bg-success ms-1">Mới</span>`;
+
                         rowsHtml += `<tr>
-                            <td class="text-center fw-bold">${idx + 1}</td>
+                            <td class="text-center fw-bold">
+                                ${idx + 1}
+                                <div>${statusBadge}</div>
+                            </td>
                             <td>${session.date}</td>
                             <td>
-                                <span class="badge bg-danger me-1">-${session.fromQuantity}</span>
+                                ${fromBadge}
                                 <strong>${session.fromProductName}</strong>
                             </td>
                             <td>${toItemsHtml}</td>

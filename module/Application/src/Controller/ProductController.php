@@ -141,13 +141,17 @@ class ProductController extends AbstractActionController
                 ? array_values(array_filter($allRows, fn($r) => ($r['date'] ?? '') === $date))
                 : $allRows;
 
-            $newRows      = $this->historyRepo->filterNewRows($rows);
-            $skippedCount = count($rows) - count($newRows);
+            $categorized  = $this->historyRepo->categorizeSyncRows($rows);
+            $newRows      = $categorized['allSync'];
+            $newCount     = count($categorized['new']);
+            $updatedCount = count($categorized['updated']);
+            $skippedCount = count($categorized['unchanged']);
 
             return new JsonModel([
                 'success'      => true,
                 'newRows'      => $newRows,
-                'newCount'     => count($newRows),
+                'newCount'     => $newCount,
+                'updatedCount' => $updatedCount,
                 'skippedCount' => $skippedCount,
             ]);
         } catch (\RuntimeException $e) {
@@ -181,15 +185,22 @@ class ProductController extends AbstractActionController
                 return new JsonModel(['success' => false, 'message' => 'Không có bản ghi hợp lệ để đồng bộ.']);
             }
 
+            $categorized  = $this->historyRepo->categorizeSyncRows($validRows);
+            $newCount     = count($categorized['new']);
+            $updatedCount = count($categorized['updated']);
+
             $this->historyRepo->importFromSheets($validRows);
-            $added   = count($validRows);
-            $message = sprintf('Đã đồng bộ %d bản ghi chiết hàng mới.', $added);
+
+            $parts = [];
+            if ($newCount > 0) $parts[] = "$newCount bản ghi mới";
+            if ($updatedCount > 0) $parts[] = "$updatedCount bản ghi cập nhật";
+            $message = !empty($parts) ? 'Đã đồng bộ thành công: ' . implode(', ', $parts) . '.' : 'Đã đồng bộ thành công!';
 
             return new JsonModel([
-                'success' => true,
-                'added'   => $added,
-                'skipped' => 0,
-                'message' => $message,
+                'success'      => true,
+                'newCount'     => $newCount,
+                'updatedCount' => $updatedCount,
+                'message'      => $message,
             ]);
         } catch (\RuntimeException $e) {
             return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
