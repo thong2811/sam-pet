@@ -212,7 +212,7 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
             // View không cần tự viết sub-nav nữa
             $activeGroup = null;
             foreach ($navGroups as $group) {
-                if ($isGroupActive($group['prefixes'])) {
+                if ($isGroupActive($group['items'])) {
                     $activeGroup = $group;
                     break;
                 }
@@ -221,7 +221,7 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
             ?>
             <nav class="sub-nav d-flex flex-wrap gap-2 py-2 px-1 mb-3">
                 <?php foreach ($activeGroup['items'] as $item):
-                    $itemActive = str_starts_with($currentPath, $item['href']);
+                    $itemActive = ($item['href'] === $matchedHref);
                 ?>
                 <a href="<?= $item['href'] ?>"
                    class="btn btn-sm <?= $itemActive ? 'btn-light text-dark fw-bold' : 'btn-outline-light' ?>">
