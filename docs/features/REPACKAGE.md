@@ -171,13 +171,6 @@ CREATE INDEX IF NOT EXISTS idx_repackage_history_toProductId   ON repackage_hist
 
 ```php
 // Trích đoạn logic trong ProductRepository::doRepackage
-$remainStockBig = $this->calcRemainStock($productIdBig);
-if ($remainStockBig < $quantityBig) {
-    throw new \RuntimeException(
-        "Tồn kho không đủ để chiết. Hiện còn: $remainStockBig {$productBig['unit']}."
-    );
-}
-
 $this->db->transactional(function () use (...): void {
     // 1. Trừ repackageStock của sản phẩm nguồn
     $this->execute(
@@ -235,11 +228,8 @@ Các bản ghi trong `repackage_history` được nhóm theo phiên chiết (`da
 ## 8. Kiểm Tra & Xác Minh (Testing & Verification)
 
 1. **Kiểm tra luồng chuẩn (Happy Path):**
-   - Chọn sản phẩm nguồn có tồn kho $> 0$, nhập số lượng chiết hợp lệ.
+   - Chọn sản phẩm nguồn và nhập số lượng chiết hợp lệ.
    - Chọn 1 hoặc nhiều sản phẩm đích với số lượng $> 0$.
    - Bấm **Lưu** $\rightarrow$ Hệ thống báo thành công, tồn kho nguồn giảm, tồn kho đích tăng, lịch sử xuất hiện phiên chiết mới.
-2. **Kiểm tra khi tồn kho không đủ (Insufficient Stock):**
-   - Chọn sản phẩm nguồn có tồn kho $= 2$, nhập số lượng chiết $= 5$.
-   - Bấm **Lưu** $\rightarrow$ Hệ thống báo lỗi `Tồn kho không đủ để chiết. Hiện còn: 2...`, dữ liệu tồn kho không bị thay đổi.
-3. **Kiểm tra bảo mật CSRF:**
+2. **Kiểm tra bảo mật CSRF:**
    - Thử gửi request POST trực tiếp không có hoặc sai CSRF token $\rightarrow$ Bị chặn ngay lập tức.

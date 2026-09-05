@@ -252,13 +252,6 @@ class ProductRepository extends BaseRepository
             throw new \RuntimeException("Không tìm thấy sản phẩm chiết: $productIdBig");
         }
 
-        $remainStockBig = $this->calcRemainStock($productIdBig);
-        if ($remainStockBig < $quantityBig) {
-            throw new \RuntimeException(
-                "Tồn kho không đủ để chiết. Hiện còn: $remainStockBig {$productBig['unit']}."
-            );
-        }
-
         $productIdSmallList = $postData['productId_small'] ?? [];
         $quantitySmallList  = $postData['quantity_small']  ?? [];
 

@@ -117,12 +117,6 @@ class Product extends LeagueCsv
         // Tính remainStock server-side, không dùng giá trị client gửi lên
         $remainStockBig = $this->calcRemainStock($productIdBig, $productBig);
 
-        if ($remainStockBig < $quantityBig) {
-            throw new \Exception(
-                "Tồn kho không đủ để chiết. Hiện còn: $remainStockBig {$productBig['unit']}."
-            );
-        }
-
         $repackageStockBig      = (float) ($productBig['repackageStock'] ?? 0);
         $repackageStockBigAfter = $repackageStockBig - $quantityBig;
         $remainStockBigAfter    = $remainStockBig - $quantityBig;

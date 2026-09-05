@@ -5,7 +5,15 @@
 ?>
 
 <div class="row mt-4">
-    <h1 class="mb-3"> Chiết hàng</h1>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h1 class="mb-0">Chiết hàng</h1>
+        <div class="input-group w-auto">
+            <button class="btn btn-success" type="button" onclick="syncRepackagePreview()">
+                &#8595; Đồng bộ từ Google Sheets
+            </button>
+            <input class="form-control date-picker" id="syncDate" name="syncDate" autocomplete="off" placeholder="Theo ngày (tuỳ chọn)..." style="width:190px"/>
+        </div>
+    </div>
     <input type="hidden" id="productList" value='<?= htmlspecialchars(json_encode($this->productList ?? [])) ?>'>
     <form method="post" action="/product/do-repackage">
         <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\Application\Service\CsrfService::getToken(), ENT_QUOTES, 'UTF-8') ?>">
@@ -85,14 +93,14 @@
 </div>
 <div class="row mt-5">
     <div class="bg-dark text-light">
-        <h1>Lịch sử chiết hàng:</h1>
+        <h1 class="p-2">Lịch sử chiết hàng:</h1>
         <div>
             <?php foreach ($this->repackageHistoryList as $id => $repackageHistoryData): ?>
-                <div class="bg-light text-dark ps-1">
+                <div class="bg-light text-dark ps-2 py-1 fw-bold">
                     <?= date("d-m-Y H:i:s", (int) ($repackageHistoryData['createdAt'] ?? 0)) ?>
                     — Ngày chiết: <?= htmlspecialchars($repackageHistoryData['date'] ?? '') ?>
                 </div>
-                <pre class="text-info"><?php
+                <pre class="text-info ps-2 my-2"><?php
                     $from  = htmlspecialchars($repackageHistoryData['fromProductName'] ?? '');
                     $fromQ = (float) ($repackageHistoryData['fromQuantity'] ?? 0);
                     $note  = trim($repackageHistoryData['note'] ?? '');
@@ -115,9 +123,51 @@
     </div>
 </div>
 
+<!-- Modal đồng bộ Google Sheets cho Chiết hàng -->
+<div class="modal fade" id="syncRepackagePreviewModal" tabindex="-1" aria-labelledby="syncRepackagePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="syncRepackagePreviewModalLabel">&#8595; Đồng bộ Chiết hàng từ Google Sheets</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tóm tắt -->
+                <div id="syncRepackageSummary" class="mb-3"></div>
+
+                <!-- Bảng preview gom nhóm theo phiên chiết -->
+                <div id="syncRepackageWrapper" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px" class="text-center">STT</th>
+                                <th style="width: 120px">Ngày</th>
+                                <th style="width: 35%">Sản phẩm nguồn (Xuất giảm)</th>
+                                <th>Sản phẩm đích (Nhập tăng) & Ghi chú</th>
+                            </tr>
+                            </thead>
+                            <tbody id="syncRepackageBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success d-none" id="btnConfirmRepackageSync" onclick="doRepackageSync()">
+                    &#10003; Xác nhận đồng bộ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let tableInputRowHtml = ``;
     let productList = [];
+    let _syncRepackageRows = [];
+    const syncRepackageModal = new bootstrap.Modal('#syncRepackagePreviewModal', {});
+
     $(document).ready(function() {
         tableInputRowHtml = `<tr>${$('.table-form').find('tbody tr').last().html()}</tr>`;
         initVariable();
@@ -172,4 +222,163 @@
         });
         datePicker.val(date);
     }
-</script>
+
+    function groupRepackageSessions(flatRows) {
+        const map = new Map();
+        flatRows.forEach((r) => {
+            const key = r.sessionId || (r.createdAt ? `${r.date}_${r.fromProductId}_${r.createdAt}` : r.id);
+            if (!map.has(key)) {
+                map.set(key, {
+                    sessionId: key,
+                    date: r.date || '',
+                    fromProductId: r.fromProductId || '',
+                    fromProductName: r.fromProductName || '',
+                    fromQuantity: r.sessionFromQty !== undefined ? Number(r.sessionFromQty) : (Number(r.fromQuantity) || 0),
+                    createdAt: r.createdAt || 0,
+                    items: []
+                });
+            }
+            const session = map.get(key);
+            session.items.push({
+                id: r.id,
+                toProductId: r.toProductId || '',
+                toProductName: r.toProductName || '',
+                toQuantity: Number(r.toQuantity) || 0,
+                note: r.note || ''
+            });
+        });
+        return Array.from(map.values());
+    }
+
+    function syncRepackagePreview() {
+        const date = $('#syncDate').val();
+
+        if (typeof showOverlay === 'function') showOverlay();
+
+        $.ajax({
+            url: '/product/repackage-sync-preview',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ date: date }),
+            success: function (response) {
+                if (typeof hideOverlay === 'function') hideOverlay();
+
+                if (!response.success) {
+                    if (typeof addFlashMessage === 'function') {
+                        addFlashMessage('Lỗi khi lấy dữ liệu từ Google Sheets: ' + (response.message || 'Lỗi không xác định.'), FLASH_MESSAGE_TYPE_ERROR);
+                    } else {
+                        alert('Lỗi: ' + (response.message || 'Lỗi không xác định.'));
+                    }
+                    return;
+                }
+
+                _syncRepackageRows = response.newRows || [];
+                const newCount     = response.newCount || 0;
+                const skippedCount = response.skippedCount || 0;
+                const dateLabel    = date ? ` ngày <strong>${date}</strong>` : '';
+
+                let summaryHtml = '';
+                if (newCount === 0) {
+                    summaryHtml = `<div class="alert alert-info mb-0">
+                        Dữ liệu chiết hàng${dateLabel} đã đồng bộ — không có bản ghi mới.
+                        ${skippedCount > 0 ? `<span class="text-muted">(${skippedCount} bản ghi đã tồn tại)</span>` : ''}
+                    </div>`;
+                } else {
+                    const sessions = groupRepackageSessions(_syncRepackageRows);
+                    summaryHtml = `<div class="d-flex gap-2 align-items-center flex-wrap">
+                        <span class="badge bg-success fs-6">${newCount} dòng mới (${sessions.length} phiên chiết)</span>
+                        ${skippedCount > 0 ? `<span class="badge bg-secondary fs-6">${skippedCount} dòng đã tồn tại (bỏ qua)</span>` : ''}
+                        ${dateLabel ? `<span class="text-muted small">— Lọc theo${dateLabel}</span>` : ''}
+                    </div>`;
+                }
+                $('#syncRepackageSummary').html(summaryHtml);
+
+                if (newCount > 0) {
+                    const sessions = groupRepackageSessions(_syncRepackageRows);
+                    let rowsHtml = '';
+                    sessions.forEach(function (session, idx) {
+                        let toItemsHtml = '<ul class="list-unstyled mb-0">';
+                        session.items.forEach(function (item) {
+                            toItemsHtml += `<li class="py-1">
+                                <span class="badge bg-primary me-1">+${item.toQuantity}</span>
+                                <strong>${item.toProductName}</strong>
+                                ${item.note ? `<span class="text-muted ms-2 fst-italic">(${item.note})</span>` : ''}
+                            </li>`;
+                        });
+                        toItemsHtml += '</ul>';
+
+                        rowsHtml += `<tr>
+                            <td class="text-center fw-bold">${idx + 1}</td>
+                            <td>${session.date}</td>
+                            <td>
+                                <span class="badge bg-danger me-1">-${session.fromQuantity}</span>
+                                <strong>${session.fromProductName}</strong>
+                            </td>
+                            <td>${toItemsHtml}</td>
+                        </tr>`;
+                    });
+
+                    $('#syncRepackageBody').html(rowsHtml);
+                    $('#syncRepackageWrapper').removeClass('d-none');
+                    $('#btnConfirmRepackageSync').removeClass('d-none');
+                } else {
+                    $('#syncRepackageWrapper').addClass('d-none');
+                    $('#btnConfirmRepackageSync').addClass('d-none');
+                }
+
+                syncRepackageModal.show();
+            },
+            error: function (xhr, status, error) {
+                if (typeof hideOverlay === 'function') hideOverlay();
+                if (typeof addFlashMessage === 'function') {
+                    addFlashMessage('Đã xảy ra lỗi khi kết nối: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+                } else {
+                    alert('Đã xảy ra lỗi khi kết nối: ' + error);
+                }
+            }
+        });
+    }
+
+    function doRepackageSync() {
+        if (!_syncRepackageRows.length) {
+            return;
+        }
+
+        $('#btnConfirmRepackageSync').prop('disabled', true).text('Đang đồng bộ...');
+        if (typeof showOverlay === 'function') showOverlay();
+
+        $.ajax({
+            url: '/product/do-repackage-sync',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ rows: _syncRepackageRows }),
+            success: function (response) {
+                if (typeof hideOverlay === 'function') hideOverlay();
+                $('#btnConfirmRepackageSync').prop('disabled', false).html('&#10003; Xác nhận đồng bộ');
+                syncRepackageModal.hide();
+
+                if (response.success) {
+                    if (typeof addFlashMessage === 'function') {
+                        addFlashMessage(response.message || 'Đồng bộ thành công!');
+                    }
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    if (typeof addFlashMessage === 'function') {
+                        addFlashMessage('Lỗi khi đồng bộ: ' + (response.message || 'Lỗi không xác định.'), FLASH_MESSAGE_TYPE_ERROR);
+                    } else {
+                        alert('Lỗi khi đồng bộ: ' + (response.message || 'Lỗi không xác định.'));
+                    }
+                }
+            },
+            error: function (xhr, status, error) {
+                if (typeof hideOverlay === 'function') hideOverlay();
+                $('#btnConfirmRepackageSync').prop('disabled', false).html('&#10003; Xác nhận đồng bộ');
+                if (typeof addFlashMessage === 'function') {
+                    addFlashMessage('Đã xảy ra lỗi khi đồng bộ: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+                } else {
+                    alert('Đã xảy ra lỗi khi đồng bộ: ' + error);
+                }
+            }
+        });
+    }
+</script>

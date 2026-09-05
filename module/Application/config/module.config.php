@@ -96,8 +96,16 @@ return [
                 ],
             ]),
             'product'     => createSegmentRoute(ProductController::class, '/product', [
-                'edit'   => createChildRoute('edit',   ['id']),
-                'delete' => createChildRoute('delete', ['id']),
+                'edit'                 => createChildRoute('edit',   ['id']),
+                'delete'               => createChildRoute('delete', ['id']),
+                'repackageSyncPreview' => [
+                    'type'    => Segment::class,
+                    'options' => ['route' => '/repackage-sync-preview', 'defaults' => ['action' => 'repackageSyncPreview']],
+                ],
+                'doRepackageSync'      => [
+                    'type'    => Segment::class,
+                    'options' => ['route' => '/do-repackage-sync', 'defaults' => ['action' => 'doRepackageSync']],
+                ],
             ]),
             'stocktaking' => createSegmentRoute(StocktakingController::class, '/stocktaking', []),
             'exportStock' => createSegmentRoute(ExportStockController::class, '/export-stock', [

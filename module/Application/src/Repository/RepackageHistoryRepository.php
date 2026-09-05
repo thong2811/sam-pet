@@ -106,8 +106,111 @@ class RepackageHistoryRepository extends BaseRepository
         ]);
     }
 
+    /**
+     * Lọc các rows chưa tồn tại trong DB (chống duplicate khi sync Sheets).
+     *
+     * @param array[] $rows  Rows từ Google Sheets (đã cast type)
+     * @return array[]
+     */
+    public function filterNewRows(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $ids = array_filter(array_column($rows, 'id'));
+        if (empty($ids)) {
+            return $rows;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $existing = $this->fetchAll(
+            "SELECT id FROM repackage_history WHERE id IN ($placeholders)",
+            array_values($ids)
+        );
+        $existingIds = array_column($existing, 'id');
+
+        return array_values(array_filter($rows, function (array $row) use ($existingIds): bool {
+            $id = $row['id'] ?? '';
+            return $id !== '' && !in_array($id, $existingIds, true);
+        }));
+    }
+
+    /**
+     * Import rows chiết hàng từ Google Sheets:
+     * - Chèn vào repackage_history (giữ nguyên timestamps gốc).
+     * - Cập nhật products.repackageStock:
+     *   + Trừ kho sản phẩm nguồn (fromProductId) nếu fromQuantity > 0.
+     *   + Cộng kho sản phẩm đích (toProductId) nếu toQuantity > 0.
+     *
+     * @param array[] $rows  Đã qua filterNewRows()
+     */
+    public function importFromSheets(array $rows): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        $sqlInsert = "INSERT OR IGNORE INTO repackage_history
+                        (id, date, fromProductId, fromProductName, toProductId, toProductName,
+                         fromQuantity, toQuantity, note, createdAt, updatedAt)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $sqlUpdateSource = "UPDATE products SET repackageStock = repackageStock - ?, updatedAt = ? WHERE id = ?";
+        $sqlUpdateTarget = "UPDATE products SET repackageStock = repackageStock + ?, updatedAt = ? WHERE id = ?";
+
+        $this->db->transactional(function () use ($rows, $sqlInsert, $sqlUpdateSource, $sqlUpdateTarget): void {
+            $newRows = $this->filterNewRows($rows);
+            $now = $this->ts();
+
+            foreach ($newRows as $row) {
+                $id            = (string) ($row['id'] ?? '');
+                $date          = (string) ($row['date'] ?? '');
+                $fromProductId = !empty($row['fromProductId']) ? (string) $row['fromProductId'] : null;
+                $fromProdName  = (string) ($row['fromProductName'] ?? '');
+                $toProductId   = !empty($row['toProductId']) ? (string) $row['toProductId'] : null;
+                $toProdName    = (string) ($row['toProductName'] ?? '');
+                $fromQty       = (float) ($row['fromQuantity'] ?? 0);
+                $toQty         = (float) ($row['toQuantity'] ?? 0);
+                $note          = (string) ($row['note'] ?? '');
+                $createdAt     = !empty($row['createdAt']) ? (int) $row['createdAt'] : $now;
+                $updatedAt     = !empty($row['updatedAt']) ? (int) $row['updatedAt'] : $now;
+
+                if ($id === '') {
+                    continue;
+                }
+
+                // 1. Chèn vào lịch sử
+                $this->execute($sqlInsert, [
+                    $id,
+                    $date,
+                    $fromProductId,
+                    $fromProdName,
+                    $toProductId,
+                    $toProdName,
+                    $fromQty,
+                    $toQty,
+                    $note,
+                    $createdAt,
+                    $updatedAt,
+                ]);
+
+                // 2. Cập nhật tồn kho sản phẩm nguồn (nếu fromQty > 0)
+                if ($fromProductId !== null && $fromQty > 0) {
+                    $this->execute($sqlUpdateSource, [$fromQty, $updatedAt, $fromProductId]);
+                }
+
+                // 3. Cập nhật tồn kho sản phẩm đích (nếu toQty > 0)
+                if ($toProductId !== null && $toQty > 0) {
+                    $this->execute($sqlUpdateTarget, [$toQty, $updatedAt, $toProductId]);
+                }
+            }
+        });
+    }
+
     public function remove(string $id): bool
     {
         return $this->deleteRow(self::TABLE, $id);
     }
 }
+
