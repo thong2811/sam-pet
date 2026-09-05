@@ -10,29 +10,29 @@ $errorMessages   = $this->flashMessenger()->getErrorMessages();
 $infoMessages    = $this->flashMessenger()->getMessages();
 $csrfToken       = CsrfService::getToken();
 
-// Active nav: lấy path hiện tại để highlight đúng menu item
-$currentPath = '/' . ltrim($_SERVER['REQUEST_URI'] ?? '', '/');
+// Active nav: lấy path hiện tại (loại bỏ query string) để highlight đúng menu item
+$requestUri     = $_SERVER['REQUEST_URI'] ?? '/';
+$currentPath    = parse_url($requestUri, PHP_URL_PATH) ?? '/';
+$normalizedPath = ($currentPath === '/') ? '/overview' : '/' . ltrim($currentPath, '/');
 
-// Nhóm navbar dropdown — mỗi nhóm gồm label, icon, href prefix để detect active, và danh sách items
+// Nhóm navbar dropdown — mỗi nhóm gồm label, icon, và danh sách items
 $navGroups = [
     [
         'label' => 'Kho hàng',
         'icon'  => '🏪',
-        'prefixes' => ['/product', '/import-stock', '/export-stock', '/stocktaking', '/category'],
         'items' => [
-            ['href' => '/product',      'label' => 'Quản lý kho'],
-            ['href' => '/import-stock', 'label' => 'Nhập hàng'],
-            ['href' => '/export-stock', 'label' => 'Xuất hàng'],
-            ['href' => '/product/repackage',  'label' => 'Chiết hàng'],
-            ['href' => '/stocktaking',  'label' => 'Kiểm kê'],
-            ['href' => '/category',     'label' => 'Danh mục'],
-            ['href' => '/product/add-invoice-check',  'label' => 'Trạng thái hóa đơn'],
+            ['href' => '/product',                  'label' => 'Quản lý kho'],
+            ['href' => '/import-stock',             'label' => 'Nhập hàng'],
+            ['href' => '/export-stock',             'label' => 'Xuất hàng'],
+            ['href' => '/product/repackage',        'label' => 'Chiết hàng'],
+            ['href' => '/stocktaking',              'label' => 'Kiểm kê'],
+            ['href' => '/category',                 'label' => 'Danh mục'],
+            ['href' => '/product/add-invoice-check','label' => 'Trạng thái hóa đơn'],
         ],
     ],
     [
         'label' => 'Phòng khám',
         'icon'  => '🏥',
-        'prefixes' => ['/owner-pet', '/medical-record', '/vet-care'],
         'items' => [
             ['href' => '/vet-care',        'label' => 'Điều trị - Spa'],
             ['href' => '/owner-pet',       'label' => 'Vật nuôi'],
@@ -42,7 +42,6 @@ $navGroups = [
     [
         'label' => 'Tài chính',
         'icon'  => '📊',
-        'prefixes' => ['/overview', '/report', '/export-invoice', '/expenses'],
         'items' => [
             ['href' => '/overview',        'label' => 'Tổng quan'],
             ['href' => '/expenses',        'label' => 'Quản lý chi'],
@@ -52,10 +51,32 @@ $navGroups = [
     ],
 ];
 
+// Tìm menu item khớp nhất (longest matching prefix) để tránh active trùng khi URL con chứa tiền tố URL cha
+$matchedHref = null;
+$longestMatchLength = 0;
+$allNavHrefs = ['/settings'];
+foreach ($navGroups as $group) {
+    foreach ($group['items'] as $item) {
+        $allNavHrefs[] = $item['href'];
+    }
+}
+
+foreach ($allNavHrefs as $href) {
+    if ($normalizedPath === $href || str_starts_with($normalizedPath, rtrim($href, '/') . '/')) {
+        $len = strlen($href);
+        if ($len > $longestMatchLength) {
+            $longestMatchLength = $len;
+            $matchedHref = $href;
+        }
+    }
+}
+
 // Helper: kiểm tra nhóm có active không
-$isGroupActive = function(array $prefixes) use ($currentPath): bool {
-    foreach ($prefixes as $prefix) {
-        if (str_starts_with($currentPath, $prefix)) return true;
+$isGroupActive = function(array $items) use ($matchedHref): bool {
+    foreach ($items as $item) {
+        if ($item['href'] === $matchedHref) {
+            return true;
+        }
     }
     return false;
 };
@@ -143,7 +164,7 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
                 <div class="collapse navbar-collapse" id="navbarMain">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <?php foreach ($navGroups as $gi => $group):
-                            $groupActive = $isGroupActive($group['prefixes']);
+                            $groupActive = $isGroupActive($group['items']);
                             $dropdownId  = 'navDropdown' . $gi;
                         ?>
                         <li class="nav-item dropdown<?= $groupActive ? ' active' : '' ?>">
@@ -157,7 +178,7 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="<?= $dropdownId ?>">
                                 <?php foreach ($group['items'] as $item):
-                                    $itemActive = str_starts_with($currentPath, $item['href']);
+                                    $itemActive = ($item['href'] === $matchedHref);
                                 ?>
                                 <li>
                                     <a class="dropdown-item<?= $itemActive ? ' active' : '' ?>"
@@ -172,7 +193,7 @@ $storeName = htmlspecialchars($_ENV['STORE_NAME'] ?? 'Sam Pet', ENT_QUOTES, 'UTF
                         <?php endforeach; ?>
 
                         <!-- Cài đặt — item đơn, không dropdown -->
-                        <?php $settingsActive = str_starts_with($currentPath, '/settings'); ?>
+                        <?php $settingsActive = ($matchedHref === '/settings'); ?>
                         <li class="nav-item<?= $settingsActive ? ' active' : '' ?>">
                             <a class="nav-link<?= $settingsActive ? ' active' : '' ?>"
                                href="/settings"
