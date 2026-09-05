@@ -17,12 +17,15 @@ Hệ thống quản lý bán lẻ, kho hàng, dịch vụ phòng khám thú y, s
 
 | Tài liệu | Mô tả |
 | :--- | :--- |
-| 🏗️ [Kiến trúc hệ thống](docs/ARCHITECTURE.md) | Mô hình MVC + Repository, luồng dữ liệu, bảo mật CSRF và công nghệ |
-| 🗄️ [Sơ đồ CSDL](docs/DATABASE_SCHEMA.md) | Chi tiết 15 bảng CSDL SQLite, khóa chính/ngoại, indexes |
-| 🧩 [Phân hệ & Nghiệp vụ](docs/MODULES_AND_FEATURES.md) | Quy tắc tính tồn kho, chiết hàng, chốt kho, sổ khám và báo cáo |
-| 🌐 [Danh sách API & Routes](docs/API_AND_ROUTES.md) | Toàn bộ danh sách URLs, Controllers và Actions |
-| 🚀 [Vận hành & Triển khai](docs/OPERATIONS_AND_DEPLOYMENT.md) | Hướng dẫn cài đặt môi trường, Docker, cấu hình `.env` & khôi phục dữ liệu |
-| 💾 [Chiến lược sao lưu](docs/backup-strategy.md) | Chi tiết 3 cơ chế sao lưu tự động & quy trình khôi phục |
+| 📖 [Mục lục tài liệu tổng quan](docs/README.md) | Cổng thông tin tài liệu kỹ thuật & hướng dẫn tra cứu |
+| 🏗️ [Kiến trúc hệ thống](docs/architecture/ARCHITECTURE.md) | Mô hình MVC + Repository, luồng dữ liệu, bảo mật CSRF và công nghệ |
+| 🗄️ [Sơ đồ CSDL](docs/architecture/DATABASE_SCHEMA.md) | Chi tiết 15 bảng CSDL SQLite, khóa chính/ngoại, indexes |
+| 🌐 [Danh sách API & Routes](docs/architecture/API_AND_ROUTES.md) | Toàn bộ danh sách URLs, Controllers và Actions |
+| 🧩 [Phân hệ & Nghiệp vụ](docs/features/MODULES_AND_FEATURES.md) | Quy tắc tính tồn kho, chiết hàng, chốt kho, sổ khám và báo cáo |
+| 📦 [Chức năng Chiết hàng](docs/features/REPACKAGE.md) | Đặc tả chi tiết nghiệp vụ chiết tách bao, kiến trúc, luồng xử lý và CSDL |
+| 🚀 [Vận hành & Triển khai](docs/operations/DEPLOYMENT.md) | Hướng dẫn cài đặt môi trường, Docker, cấu hình `.env` & khôi phục dữ liệu |
+| 💾 [Chiến lược sao lưu](docs/operations/BACKUP_STRATEGY.md) | Chi tiết 3 cơ chế sao lưu tự động & quy trình khôi phục |
+| 🔄 [Hướng dẫn Migration](docs/operations/MIGRATION_GUIDE.md) | Hướng dẫn chuyển đổi dữ liệu từ CSV sang SQLite |
 
 ---
 
