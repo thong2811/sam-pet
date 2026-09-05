@@ -39,6 +39,7 @@ class RepackageHistoryRepository extends BaseRepository
             if (!isset($groups[$key])) {
                 $groups[$key] = [
                     'id'              => $row['id'],
+                    'rowIds'          => [$row['id']],
                     'date'            => $row['date']            ?? '',
                     'fromProductName' => $row['fromProductName'] ?? '',
                     'fromProductId'   => $row['fromProductId']   ?? null,
@@ -48,11 +49,23 @@ class RepackageHistoryRepository extends BaseRepository
                     'updatedAt'       => $row['updatedAt']       ?? null,
                     'toItems'         => [],
                 ];
+            } else {
+                $groups[$key]['rowIds'][] = $row['id'];
+                if ((float) ($row['fromQuantity'] ?? 0) > 0) {
+                    $groups[$key]['fromQuantity'] = (float) $row['fromQuantity'];
+                }
+                if (!empty($row['fromProductId'])) {
+                    $groups[$key]['fromProductId'] = $row['fromProductId'];
+                }
+                if (!empty($row['fromProductName'])) {
+                    $groups[$key]['fromProductName'] = $row['fromProductName'];
+                }
             }
 
             // Thêm sản phẩm đích vào group
             if (!empty($row['toProductName']) || (float)($row['toQuantity'] ?? 0) > 0) {
                 $groups[$key]['toItems'][] = [
+                    'id'            => $row['id'],
                     'toProductId'   => $row['toProductId']   ?? null,
                     'toProductName' => $row['toProductName'] ?? '',
                     'toQuantity'    => (float) ($row['toQuantity'] ?? 0),
@@ -71,6 +84,62 @@ class RepackageHistoryRepository extends BaseRepository
     public function getDataById(string $id): ?array
     {
         return $this->fetchOne("SELECT * FROM repackage_history WHERE id = ?", [$id]);
+    }
+
+    /**
+     * Hoàn tác (rollback) một phiên chiết:
+     * 1. Lấy thông tin các dòng trong DB theo $rowIds.
+     * 2. Đảo ngược thay đổi tồn kho trên bảng products:
+     *    - Hoàn trả lại tồn kho nguồn (+fromQuantity).
+     *    - Thu hồi tồn kho đích (-toQuantity).
+     * 3. Xóa các dòng trong repackage_history.
+     *
+     * @param string[] $rowIds
+     * @throws \RuntimeException
+     */
+    public function rollbackSession(array $rowIds): void
+    {
+        $cleanIds = array_values(array_filter(array_map('strval', $rowIds)));
+        if (empty($cleanIds)) {
+            throw new \RuntimeException('Không có ID bản ghi nào để hoàn tác.');
+        }
+
+        $placeholders = implode(',', array_fill(0, count($cleanIds), '?'));
+        $rows = $this->fetchAll(
+            "SELECT * FROM repackage_history WHERE id IN ($placeholders)",
+            $cleanIds
+        );
+
+        if (empty($rows)) {
+            throw new \RuntimeException('Không tìm thấy dữ liệu phiên chiết trong CSDL.');
+        }
+
+        $now = $this->ts();
+        $sqlUpdateSource = "UPDATE products SET repackageStock = repackageStock + ?, updatedAt = ? WHERE id = ?";
+        $sqlUpdateTarget = "UPDATE products SET repackageStock = repackageStock - ?, updatedAt = ? WHERE id = ?";
+        $sqlDelete       = "DELETE FROM repackage_history WHERE id IN ($placeholders)";
+
+        $this->db->transactional(function () use ($rows, $cleanIds, $sqlUpdateSource, $sqlUpdateTarget, $sqlDelete, $now): void {
+            foreach ($rows as $row) {
+                $fromProductId = !empty($row['fromProductId']) ? (string) $row['fromProductId'] : null;
+                $toProductId   = !empty($row['toProductId']) ? (string) $row['toProductId'] : null;
+                $fromQty       = (float) ($row['fromQuantity'] ?? 0);
+                $toQty         = (float) ($row['toQuantity'] ?? 0);
+
+                // 1. Hoàn trả tồn kho nguồn (cộng lại)
+                if ($fromProductId !== null && $fromQty > 0) {
+                    $this->execute($sqlUpdateSource, [$fromQty, $now, $fromProductId]);
+                }
+
+                // 2. Thu hồi tồn kho đích (trừ đi)
+                if ($toProductId !== null && $toQty > 0) {
+                    $this->execute($sqlUpdateTarget, [$toQty, $now, $toProductId]);
+                }
+            }
+
+            // 3. Xóa các bản ghi lịch sử
+            $this->execute($sqlDelete, $cleanIds);
+        });
     }
 
     // ----------------------------------------------------------------

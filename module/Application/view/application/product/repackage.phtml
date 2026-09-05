@@ -96,9 +96,15 @@
         <h1 class="p-2">Lịch sử chiết hàng:</h1>
         <div>
             <?php foreach ($this->repackageHistoryList as $id => $repackageHistoryData): ?>
-                <div class="bg-light text-dark ps-2 py-1 fw-bold">
-                    <?= date("d-m-Y H:i:s", (int) ($repackageHistoryData['createdAt'] ?? 0)) ?>
-                    — Ngày chiết: <?= htmlspecialchars($repackageHistoryData['date'] ?? '') ?>
+                <div class="bg-light text-dark ps-2 py-1 pe-2 fw-bold d-flex justify-content-between align-items-center flex-wrap">
+                    <span>
+                        <?= date("d-m-Y H:i:s", (int) ($repackageHistoryData['createdAt'] ?? 0)) ?>
+                        — Ngày chiết: <?= htmlspecialchars($repackageHistoryData['date'] ?? '') ?>
+                    </span>
+                    <button type="button" class="btn btn-danger btn-sm py-0 px-2"
+                            onclick='rollbackRepackage(<?= htmlspecialchars(json_encode($repackageHistoryData['rowIds'] ?? [$repackageHistoryData['id'] ?? '']), ENT_QUOTES, 'UTF-8') ?>)'>
+                        &#8617; Hoàn tác
+                    </button>
                 </div>
                 <pre class="text-info ps-2 my-2"><?php
                     $from  = htmlspecialchars($repackageHistoryData['fromProductName'] ?? '');
@@ -377,6 +383,50 @@
                     addFlashMessage('Đã xảy ra lỗi khi đồng bộ: ' + error, FLASH_MESSAGE_TYPE_ERROR);
                 } else {
                     alert('Đã xảy ra lỗi khi đồng bộ: ' + error);
+                }
+            }
+        });
+    }
+
+    function rollbackRepackage(rowIds) {
+        if (!rowIds || !rowIds.length) {
+            alert('Không tìm thấy danh sách bản ghi cần hoàn tác.');
+            return;
+        }
+
+        if (!confirm('Bạn có chắc chắn muốn hoàn tác phiên chiết này không?\n\n- Tồn kho sản phẩm nguồn sẽ được hoàn trả lại.\n- Tồn kho sản phẩm đích sẽ bị thu hồi.\n- Lịch sử phiên chiết này sẽ bị xóa khỏi hệ thống.')) {
+            return;
+        }
+
+        if (typeof showOverlay === 'function') showOverlay();
+
+        $.ajax({
+            url: '/product/do-repackage-rollback',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ rowIds: rowIds }),
+            success: function (response) {
+                if (typeof hideOverlay === 'function') hideOverlay();
+
+                if (response.success) {
+                    if (typeof addFlashMessage === 'function') {
+                        addFlashMessage(response.message || 'Hoàn tác thành công!');
+                    }
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    if (typeof addFlashMessage === 'function') {
+                        addFlashMessage('Lỗi khi hoàn tác: ' + (response.message || 'Lỗi không xác định.'), FLASH_MESSAGE_TYPE_ERROR);
+                    } else {
+                        alert('Lỗi: ' + (response.message || 'Lỗi không xác định.'));
+                    }
+                }
+            },
+            error: function (xhr, status, error) {
+                if (typeof hideOverlay === 'function') hideOverlay();
+                if (typeof addFlashMessage === 'function') {
+                    addFlashMessage('Đã xảy ra lỗi khi hoàn tác: ' + error, FLASH_MESSAGE_TYPE_ERROR);
+                } else {
+                    alert('Đã xảy ra lỗi khi hoàn tác: ' + error);
                 }
             }
         });

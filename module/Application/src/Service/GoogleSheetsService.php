@@ -17,27 +17,7 @@ class GoogleSheetsService
      */
     public function fetchAll(): array
     {
-        $context = stream_context_create([
-            'http' => [
-                'method'          => 'GET',
-                'timeout'         => 30,
-                'follow_location' => true,
-                'max_redirects'   => 5,
-            ],
-            'ssl' => [
-                'verify_peer'      => true,
-                'verify_peer_name' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents(self::APPS_SCRIPT_URL, false, $context);
-
-        if ($response === false) {
-            $error = error_get_last();
-            throw new \RuntimeException(
-                'Không thể kết nối Google Sheets: ' . ($error['message'] ?? 'Lỗi không xác định.')
-            );
-        }
+        $response = $this->httpGet(self::APPS_SCRIPT_URL);
 
         $data = json_decode($response, true);
 
@@ -47,7 +27,8 @@ class GoogleSheetsService
             );
         }
 
-        if (($data['status'] ?? '') !== 'ok') {
+        $status = strtolower((string) ($data['status'] ?? ''));
+        if ($status !== 'ok' && $status !== 'success') {
             $message = $data['message'] ?? 'Lỗi không xác định từ Apps Script.';
             throw new \RuntimeException('Google Sheets trả về lỗi: ' . $message);
         }
@@ -80,28 +61,8 @@ class GoogleSheetsService
      */
     public function fetchRepackageAll(): array
     {
-        $context = stream_context_create([
-            'http' => [
-                'method'          => 'GET',
-                'timeout'         => 30,
-                'follow_location' => true,
-                'max_redirects'   => 5,
-            ],
-            'ssl' => [
-                'verify_peer'      => true,
-                'verify_peer_name' => true,
-            ],
-        ]);
-
         $url = self::APPS_SCRIPT_URL . '?type=repackage';
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            $error = error_get_last();
-            throw new \RuntimeException(
-                'Không thể kết nối Google Sheets: ' . ($error['message'] ?? 'Lỗi không xác định.')
-            );
-        }
+        $response = $this->httpGet($url);
 
         $data = json_decode($response, true);
 
@@ -118,6 +79,67 @@ class GoogleSheetsService
         }
 
         return $this->castRepackageRows($data['repackageRows'] ?? []);
+    }
+
+    /**
+     * Thực hiện HTTP GET request tới Google Apps Script (sử dụng cURL với IPv4 resolve, fallback file_get_contents).
+     *
+     * @param string $url
+     * @return string
+     * @throws \RuntimeException
+     */
+    private function httpGet(string $url): string
+    {
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_USERAGENT      => 'SamPet/2.0 GoogleSheetsClient',
+            ]);
+
+            $response = curl_exec($ch);
+            $error    = curl_error($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($response !== false && ($httpCode === 200 || $httpCode === 302)) {
+                return (string) $response;
+            }
+
+            if ($response === false) {
+                throw new \RuntimeException('Không thể kết nối Google Sheets (cURL): ' . ($error ?: "HTTP $httpCode"));
+            }
+        }
+
+        // Fallback file_get_contents
+        $context = stream_context_create([
+            'http' => [
+                'method'          => 'GET',
+                'timeout'         => 30,
+                'follow_location' => true,
+                'max_redirects'   => 5,
+            ],
+            'ssl' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false,
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            $error = error_get_last();
+            throw new \RuntimeException(
+                'Không thể kết nối Google Sheets: ' . ($error['message'] ?? 'Lỗi không xác định.')
+            );
+        }
+
+        return (string) $response;
     }
 
     /**

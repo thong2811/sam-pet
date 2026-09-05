@@ -106,6 +106,10 @@ return [
                     'type'    => Segment::class,
                     'options' => ['route' => '/do-repackage-sync', 'defaults' => ['action' => 'doRepackageSync']],
                 ],
+                'doRepackageRollback'  => [
+                    'type'    => Segment::class,
+                    'options' => ['route' => '/do-repackage-rollback', 'defaults' => ['action' => 'doRepackageRollback']],
+                ],
             ]),
             'stocktaking' => createSegmentRoute(StocktakingController::class, '/stocktaking', []),
             'exportStock' => createSegmentRoute(ExportStockController::class, '/export-stock', [

@@ -199,6 +199,30 @@ class ProductController extends AbstractActionController
         }
     }
 
+    public function doRepackageRollbackAction()
+    {
+        try {
+            $input  = json_decode($this->getRequest()->getContent(), true) ?? [];
+            $rowIds = $input['rowIds'] ?? [];
+
+            if (empty($rowIds) || !is_array($rowIds)) {
+                return new JsonModel(['success' => false, 'message' => 'Không có danh sách bản ghi cần hoàn tác.']);
+            }
+
+            $this->historyRepo->rollbackSession($rowIds);
+
+            return new JsonModel([
+                'success' => true,
+                'message' => 'Hoàn tác phiên chiết thành công, tồn kho đã được khôi phục!',
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonModel(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            CommonService::loggerException()->error($e->getMessage());
+            return new JsonModel(['success' => false, 'message' => 'Đã xảy ra lỗi không xác định.']);
+        }
+    }
+
     public function addInvoiceCheckAction()
     {
         [$totals, $productList] = $this->productRepo->getDataToView();

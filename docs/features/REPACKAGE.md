@@ -213,6 +213,16 @@ Các bản ghi trong `repackage_history` được nhóm theo phiên chiết (`da
 
 ---
 
+### 6.4. Hoàn Tác Phiên Chiết (Rollback Repackage)
+Người dùng có thể hoàn tác (xóa) một phiên chiết đã thực hiện bằng nút **"↩ Hoàn tác"**:
+- **Cơ chế**:
+  1. Sản phẩm nguồn: Hoàn trả lại số lượng đã xuất (`repackageStock = repackageStock + fromQuantity`).
+  2. Sản phẩm đích: Thu hồi số lượng đã nhập (`repackageStock = repackageStock - toQuantity`).
+  3. Xóa các dòng con trong bảng `repackage_history`.
+- Toàn bộ được thực thi an toàn trong **1 SQLite transaction**.
+
+---
+
 ## 7. Các Tệp Mã Nguồn Liên Quan
 
 | Tệp mã nguồn | Vai trò |
